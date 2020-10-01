@@ -279,7 +279,7 @@ void handle_server_lobby(Connection & connection, const Options & options)
 
 		//insert server address in address vector
 		err = fi_av_insert(connection.av, msgGetConn.addr, 1, &connection.remoteLiAddr[recievedClients], 0, NULL);
-		fprintf(stderr,"av_insert : %d\n", err);
+		printf("av_insert : %d\n", err);
 		if (err != 1) {
 			LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 		}
@@ -462,6 +462,7 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 		cnt = ping_pong_server(connection, options);
 	} else {
 		cnt = ping_pong_client(connection, options);
+		wait_for_comp(connection.rx_cq, NULL, options.wait);
 	}
 
 	//time
@@ -469,7 +470,7 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	double result = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1e9;    // in microseconds
 	double rate = (double)cnt / result / 1000.0;
 	double bandwidth = 8.0 * (double)cnt * (double)sizeof(Message) / result / 1000.0 / 1000.0 / 1000.0;
-	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s\n", result, rate, bandwidth);
+	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, size: %zu\n", result, rate, bandwidth, options.msgSize);
 
 	//free buffers
 	for (int i = 0 ; i < options.clients ; i++) {
