@@ -20,7 +20,7 @@ function run_server()
 		hwloc-bind --cpubind core:${CLIENTS} -- ./poc -m ${MESSAGES} -S ${size} -C ${CLIENTS} -s ${IP} | egrep '^Time' | tee -a result.log
 	done
 	# grep driver mode
-	mode="$(cat client.log | egrep '^NET:' | head -n 1 | cut -d ' ' -f 2)"
+	mode="$(cat client.log | egrep '^NET:' | head -n 1 | cut -d ' ' -f 2 | sed -e 's/_/-/g')"
 	# gen plot cmd
 	cat > 'result.gnuplot' <<-EOF
 	set term pdf
