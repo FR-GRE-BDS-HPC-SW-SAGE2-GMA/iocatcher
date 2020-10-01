@@ -6,6 +6,7 @@
 #include <cassert>
 #include <thread>
 #include <string>
+#include <cstring>
 #include <unistd.h>
 #include <argp.h>
 //zero mq

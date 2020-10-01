@@ -1,0 +1,48 @@
+#!/bin/sh
+######################################################
+#            PROJECT  : numaprof                     #
+#            VERSION  : 1.3.0-dev                    #
+#            AUTHOR   : Sébastien Valat              #
+#            LICENSE  : Apache 2.0                   #
+#            COPYRIGHT: 2020 Bull SAS                #
+######################################################
+
+######################################################
+#set project name
+cfg_set_projet "MALT"
+
+######################################################
+#test
+#cfg_add_enable_option --name='test' \
+#						--on='-DENABLE_TESTS=${ON}' \
+#						--doc='Disable unit tests' \
+#						--invert-help
+
+######################################################
+#libunwind
+cfg_add_with_option --name='libfabric' \
+						--doc='Define prefix to find libfabric [/usr]' \
+						--var='LIBFABRIC_PREFIX'
+
+######################################################
+#If we want to document extra options
+#CFG_CUSTOM_HELP="My custom options:"
+
+######################################################
+# here we can parse our own options if we want
+# Vars available are :
+#  - $arg : full argument (eg. --with-gcc=gcc)
+#  - $val : value after first '=', egg 'gcc'
+#  - $ON $OFF, $ENABLE, $DISABLE, $WIDTH, $WITHOUT
+#cfg_parse_custom_opts()
+#{
+#	return 1
+#}
+
+######################################################
+#pre check to ease error messages
+#All cmake vars are loaded in memory as OPT_* (OPT_CMAKE_C_FLAGS)
+#cfg_custom_pre_check()
+#{
+#	return 1
+#}
