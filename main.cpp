@@ -44,6 +44,7 @@ struct Options
 	int threads;
 	int clients;
 	bool wait;
+	size_t msgSize;
 };
 
 enum MessageType
@@ -75,8 +76,8 @@ struct Connection
 	//server address
 	fi_addr_t serverLiAddr;
 	//buffers
-	Message msgPings[MAX_CLIENTS];
-	Message msgPongs[MAX_CLIENTS];
+	void * bufferPings[MAX_CLIENTS];
+	void * bufferPongs[MAX_CLIENTS];
 };
 
 #define LIBFABRIC_CHECK_STATUS(call, status) \
@@ -100,6 +101,7 @@ void options_set_default(Options * options)
 	options->clients = 1;
 	options->threads = 1;
 	options->wait = false;
+	options->msgSize = sizeof(Message);
 }
 
 void options_display(Options * options)
@@ -116,6 +118,7 @@ void options_display(Options * options)
 	printf("clients:      %d\n", options->clients);
 	printf("threads:      %d\n", options->threads);
 	printf("wait:         %s\n", ((options->wait)?"true":"false"));
+	printf("size:         %zu\n", options->msgSize);
 	printf("==========================================\n");
 }
 
@@ -129,6 +132,7 @@ error_t option_parse_opt(int key, char *arg, struct argp_state *state) {
 		case 't': options->threads = atoi(arg); assert(options->threads <= MAX_THREADS); break;
 		case 'p': options->port = arg; break;
 		case 'w': options->wait = true; break;
+		case 'S': options->msgSize = atol(arg); assert(options->msgSize >= siezof(Message)); break;
 		case ARGP_KEY_ARG: options->ip = arg; break;
 		default: return ARGP_ERR_UNKNOWN;
 	}
@@ -153,6 +157,7 @@ int options_parse(Options * options, int argc, char ** argv)
 		{ "threads", 't', "THREADS", 0, "Set the number of threads to run in this client."},
 		{ "port", 'p', "PORT", 0, "Set connection port."},
 		{ "wait", 'w', 0, 0, "Use waiting mode instead of active pooling."},
+		{ "size", 'S', "SIZE", 0, "Message size for ping pong."},
 		{ 0 } 
 	};
 
@@ -333,7 +338,7 @@ void post_recives(Connection & connection, const Options & options)
 {
 	int err;
 	for (int c = 0 ; c < options.clients ; c++) {
-		err = fi_recv(connection.ep, &connection.msgPings[c], sizeof(connection.msgPings[c]), 0, 0, (void*)(unsigned long)c);
+		err = fi_recv(connection.ep, connection.bufferPings[c], options.msgSize, 0, 0, (void*)(unsigned long)c);
 		LIBFABRIC_CHECK_STATUS("fi_recv", err);
 	}
 }
@@ -366,13 +371,15 @@ unsigned long ping_pong_server(Connection & connection, const Options & options)
 		//recive id
 		wait_for_comp(connection.rx_cq, &opContext, options.wait);
 		unsigned long clientId = (unsigned long)opContext;
-		connection.msgPongs[clientId].type = MSG_PING_PONG;
-		connection.msgPongs[clientId].id = connection.msgPings[clientId].id;
+		Message * msgPings = (Message*)connection.bufferPings[clientId];
+		Message * msgPongs = (Message*)connection.bufferPings[clientId];
+		msgPongs->type = MSG_PING_PONG;
+		msgPongs->id = msgPings->id;
 		//repost before send
-		err = fi_recv(connection.ep, &connection.msgPings[clientId], sizeof(connection.msgPings[clientId]), 0, 0, (void*)clientId);
+		err = fi_recv(connection.ep, connection.bufferPings[clientId], options.msgSize, 0, 0, (void*)clientId);
 		LIBFABRIC_CHECK_STATUS("fi_recv", err);
 		//send
-		err = fi_send(connection.ep, &connection.msgPongs[clientId], sizeof(connection.msgPongs[clientId]), 0, connection.remoteLiAddr[connection.msgPongs[clientId].id], (void*)clientId);
+		err = fi_send(connection.ep, connection.bufferPongs[clientId], options.msgSize, 0, connection.remoteLiAddr[msgPongs->id], (void*)clientId);
 		LIBFABRIC_CHECK_STATUS("fi_send", err);	
 		wait_for_comp(connection.tx_cq, NULL, options.wait);
 		//inc
@@ -391,13 +398,15 @@ unsigned long ping_pong_client(Connection & connection, const Options & options)
 		//recive id
 		wait_for_comp(connection.rx_cq, &opContext, options.wait);
 		unsigned long clientId = (unsigned long)opContext;
-		connection.msgPongs[clientId].type = MSG_PING_PONG;
-		connection.msgPongs[clientId].id = connection.msgPings[clientId].id;
+		Message * msgPings = (Message*)connection.bufferPings[clientId];
+		Message * msgPongs = (Message*)connection.bufferPings[clientId];
+		msgPongs->type = MSG_PING_PONG;
+		msgPongs->id = msgPings->id;
 		//repost before send
-		err = fi_recv(connection.ep, &connection.msgPings[clientId], sizeof(connection.msgPings[clientId]), 0, 0, (void*)clientId);
+		err = fi_recv(connection.ep, connection.bufferPings[clientId], options.msgSize, 0, 0, (void*)clientId);
 		LIBFABRIC_CHECK_STATUS("fi_recv", err);
 		//send
-		err = fi_send(connection.ep, &connection.msgPongs[clientId], sizeof(connection.msgPongs[clientId]), 0, connection.serverLiAddr, (void*)clientId);
+		err = fi_send(connection.ep, connection.bufferPongs[clientId], options.msgSize, 0, connection.serverLiAddr, (void*)clientId);
 		LIBFABRIC_CHECK_STATUS("fi_send", err);	
 		wait_for_comp(connection.tx_cq, NULL, options.wait);
 		//inc
@@ -411,6 +420,12 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 {
 	//create connection
 	Connection connection;
+
+	//allocate buffers
+	for (int i = 0 ; i < options.clients ; i++) {
+		connection.bufferPings[i] = malloc(options.msgSize);
+		connection.bufferPongs[i] = malloc(options.msgSize);
+	}
 
 	//setup endpoint
 	connection_setup_endpoint(&connection, options, fi, domain);
@@ -448,6 +463,12 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	double rate = (double)cnt / result / 1000.0;
 	double bandwidth = 8.0 * (double)cnt * (double)sizeof(Message) / result / 1000.0 / 1000.0 / 1000.0;
 	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s\n", result, rate, bandwidth);
+
+	//free buffers
+	for (int i = 0 ; i < options.clients ; i++) {
+		free(connection.bufferPings[i]);
+		free(connection.bufferPongs[i]);
+	}
 }
 
 int main(int argc, char ** argv)
