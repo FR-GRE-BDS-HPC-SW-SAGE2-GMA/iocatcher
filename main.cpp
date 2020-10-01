@@ -445,7 +445,9 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	//time
 	clock_gettime(CLOCK_MONOTONIC, &stop);
 	double result = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1e9;    // in microseconds
-	printf("Time: %g s, rate: %g kOPS\n", result, (double)cnt / result / 1000.0);
+	double rate = (double)cnt / result / 1000.0;
+	double bandwidth = 8.0 * (double)cnt * (double)sizeof(Message) / result / 1000.0 / 1000.0 / 1000.0;
+	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s\n", result, rate, bandwidth);
 }
 
 int main(int argc, char ** argv)
