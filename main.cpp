@@ -18,7 +18,7 @@
 #include <rdma/fi_rma.h>
 #include <rdma/fi_domain.h>
 
-//g++ main.cpp -L$PWD/testinstall/lib -lfabric -I$HOME/testinstall/include -g -Wall -lzmq
+//g++ main.cpp -L$PWD/testinstall/lib -lfabric -I$HOME/testinstall/include -g -Wall -lzmq -lpthread
 
 //implemented following : https://www.slideshare.net/dgoodell/ofi-libfabric-tutorial
 
