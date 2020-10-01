@@ -430,6 +430,13 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	//setup endpoint
 	connection_setup_endpoint(&connection, options, fi, domain);
 
+	//mr register
+	for (int i = 0 ; i < options.clients ; i++) {
+		fid_mr * mr;
+		fi_mr_reg(domain, connection.bufferPings[i], options.msgSize, FI_RECV, 0, 0, 0, &mr, NULL);
+		fi_mr_reg(domain, connection.bufferPongs[i], options.msgSize, FI_SEND, 0, 0, 0, &mr, NULL);
+	}
+
 	//post recv
 	if (options.mode == MODE_SERVER) {
 		handle_server_lobby(connection, options);
