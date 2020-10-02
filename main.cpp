@@ -24,63 +24,96 @@
 
 //implemented following : https://www.slideshare.net/dgoodell/ofi-libfabric-tutorial
 
+/** Setup for argp module to generate help message. **/
 const char *argp_program_version = "0.0.1";
+/** Setup for argp module to generate help message. **/
 const char *argp_program_bug_address = "<sebastien.valat@atos.net>";
 
+/** Maximum number of threads allowed. **/
 const int MAX_THREADS = 64;
+/** Maximum number of clients allowed. **/
 const int MAX_CLIENTS = 64;
 
-enum RunningMode
+/** Define the role, client or server. **/
+enum Role
 {
-	MODE_SERVER,
-	MODE_CLIENT,
+	ROLE_SERVER,
+	ROLE_CLIENT,
 };
 
+/** Option struct to configure the application. **/
 struct Options
 {
+	/** Number of message to send on client side, this will represent.
+	 * (client * message) on the server side. 
+	**/
 	unsigned long messages;
-	RunningMode mode;
+	/** Role to apply in the current process. **/
+	Role role;
+	/** Address IP to listen or connect on. **/
 	std::string ip;
+	/** Port to listen or connect on. **/
 	std::string port;
+	/** Numuber of client threads to launch. **/
 	int threads;
+	/** Number of client to wait for on the server side. **/
 	int clients;
+	/** Use passive poling instead or active poling. **/
 	bool wait;
+	/** Size of the messages to exchange. **/
 	size_t msgSize;
 };
 
+/** Define the type of message exchanged. **/
 enum MessageType
 {
+	/** Message use after connection to send the client address to the server. **/
 	MSG_CONN_INIT,
+	/** Answer to MSG_CONN_INIT to assign an ID to the client. **/
 	MSG_ASSIGN_ID,
+	/** This is a ping pong message to respond to. **/
 	MSG_PING_PONG,
 };
 
+/** Message header to be exchaned for the ping pong. **/
 struct Message
 {
+	/** Type of message **/
 	MessageType type;
+	/** Client to address to be send to the server on MSG_CONN_INIT **/
 	char addr[32];
+	/** Client ID so the server know to who to respond. **/
 	int id;
 };
 
+/**
+ * Keep all informations related to a connection to be used by communications
+ * functions.
+**/
 struct Connection
 {
-	//transmission completion queue
+	/** Transmission completion queue. **/
 	struct fid_cq *tx_cq;
-	//revive completion queue
+	//** Revive completion queue. **/
 	struct fid_cq *rx_cq;
-	//address vector
+	/** Address vector. **/
 	struct fid_av *av;
-	//endpoint
+	/** Endpoint **/
 	struct fid_ep *ep;
-	//remote addrs
+	/** Remote addresses. **/
 	fi_addr_t remoteLiAddr[MAX_CLIENTS];
-	//server address
+	/** Server address **/
 	fi_addr_t serverLiAddr;
-	//buffers
+	/** Buffer for reception. **/
 	void * bufferPings[MAX_CLIENTS];
+	/** Buffer for emission. **/
 	void * bufferPongs[MAX_CLIENTS];
 };
 
+/**
+ * Macro to check libfabric function status and stop with an error message
+ * in case of failure.
+**/
 #define LIBFABRIC_CHECK_STATUS(call, status) \
 	do { \
 		if(status != 0) { \
@@ -96,7 +129,7 @@ void options_set_default(Options * options)
 
 	//default
 	options->messages = 100000;
-	options->mode = MODE_SERVER;
+	options->role = ROLE_SERVER;
 	options->ip = "127.0.0.1";
 	options->port = "8556";
 	options->clients = 1;
@@ -113,7 +146,7 @@ void options_display(Options * options)
 	//infos
 	printf("================ OPTIONS =================\n");
 	printf("messages:     %lu\n", options->messages);
-	printf("mode:         %s\n", ((options->mode == MODE_SERVER) ? "SERVER": "CLIENT"));
+	printf("role:         %s\n", ((options->role == ROLE_SERVER) ? "SERVER": "CLIENT"));
 	printf("ip:           %s\n", options->ip.c_str());
 	printf("port:         %s\n", options->port.c_str());
 	printf("clients:      %d\n", options->clients);
@@ -127,8 +160,8 @@ error_t option_parse_opt(int key, char *arg, struct argp_state *state) {
 	struct Options *options = static_cast<Options*>(state->input);
 	switch (key) {
 		case 'm': options->messages = atol(arg); break;
-		case 's': options->mode = MODE_SERVER; break;
-		case 'c': options->mode = MODE_CLIENT; break;
+		case 's': options->role = ROLE_SERVER; break;
+		case 'c': options->role = ROLE_CLIENT; break;
 		case 'C': options->clients = atoi(arg); assert(options->clients <= MAX_CLIENTS); break;
 		case 't': options->threads = atoi(arg); assert(options->threads <= MAX_THREADS); break;
 		case 'p': options->port = arg; break;
@@ -439,7 +472,7 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	}
 
 	//post recv
-	if (options.mode == MODE_SERVER) {
+	if (options.role == ROLE_SERVER) {
 		handle_server_lobby(connection, options);
 	} else {
 		handle_client_lobby(connection, options, fi);
@@ -449,7 +482,7 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	post_recives(connection, options);
 
 	//bootstrap fist ping
-	if (options.mode == MODE_SERVER) {
+	if (options.role == ROLE_SERVER) {
 		bootstrap_first_ping(connection, options);
 	}
 
@@ -459,7 +492,7 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 
 	//ping pong loops
 	unsigned long cnt = 0;
-	if (options.mode == MODE_SERVER) {
+	if (options.role == ROLE_SERVER) {
 		cnt = ping_pong_server(connection, options);
 	} else {
 		cnt = ping_pong_client(connection, options);
@@ -502,7 +535,7 @@ int main(int argc, char ** argv)
 
 	//get fi_info
 	int err;
-	if (options.mode == MODE_SERVER)
+	if (options.role == ROLE_SERVER)
 		err = fi_getinfo(FI_VERSION(1,11), options.ip.c_str(), options.port.c_str(), FI_SOURCE, hints, &fi);
 	else
 		err = fi_getinfo(FI_VERSION(1,11), options.ip.c_str(), options.port.c_str(), 0, hints, &fi);
@@ -522,7 +555,7 @@ int main(int argc, char ** argv)
 	LIBFABRIC_CHECK_STATUS("fi_domain",err);
 
 	//do work
-	if (options.mode == MODE_SERVER) {
+	if (options.role == ROLE_SERVER) {
 		handle_connection(options, fi, domain);
 	} else {
 		std::thread threads[MAX_THREADS];
