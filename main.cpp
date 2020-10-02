@@ -1,3 +1,4 @@
+#undef NDEBUG
 //std
 #include <cstdlib>
 #include <cstdio>
@@ -132,7 +133,7 @@ error_t option_parse_opt(int key, char *arg, struct argp_state *state) {
 		case 't': options->threads = atoi(arg); assert(options->threads <= MAX_THREADS); break;
 		case 'p': options->port = arg; break;
 		case 'w': options->wait = true; break;
-		case 'S': options->msgSize = atol(arg); assert(options->msgSize >= siezof(Message)); break;
+		case 'S': options->msgSize = atol(arg); assert(options->msgSize >= sizeof(Message)); break;
 		case ARGP_KEY_ARG: options->ip = arg; break;
 		default: return ARGP_ERR_UNKNOWN;
 	}
@@ -372,7 +373,7 @@ unsigned long ping_pong_server(Connection & connection, const Options & options)
 		wait_for_comp(connection.rx_cq, &opContext, options.wait);
 		unsigned long clientId = (unsigned long)opContext;
 		Message * msgPings = (Message*)connection.bufferPings[clientId];
-		Message * msgPongs = (Message*)connection.bufferPings[clientId];
+		Message * msgPongs = (Message*)connection.bufferPongs[clientId];
 		msgPongs->type = MSG_PING_PONG;
 		msgPongs->id = msgPings->id;
 		//repost before send
@@ -399,7 +400,7 @@ unsigned long ping_pong_client(Connection & connection, const Options & options)
 		wait_for_comp(connection.rx_cq, &opContext, options.wait);
 		unsigned long clientId = (unsigned long)opContext;
 		Message * msgPings = (Message*)connection.bufferPings[clientId];
-		Message * msgPongs = (Message*)connection.bufferPings[clientId];
+		Message * msgPongs = (Message*)connection.bufferPongs[clientId];
 		msgPongs->type = MSG_PING_PONG;
 		msgPongs->id = msgPings->id;
 		//repost before send
