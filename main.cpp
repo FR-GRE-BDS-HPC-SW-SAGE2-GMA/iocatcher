@@ -122,6 +122,10 @@ struct Connection
 		} \
 	} while(0)
 
+/**
+ * Set the default options.
+ * @param options Structure to fill.
+**/
 void options_set_default(Options * options)
 {
 	//check
@@ -138,6 +142,10 @@ void options_set_default(Options * options)
 	options->msgSize = sizeof(Message);
 }
 
+/**
+ * Display the setup to be used.
+ * @param options Structure containing the parameters to display.
+**/
 void options_display(Options * options)
 {
 	//check
@@ -156,6 +164,13 @@ void options_display(Options * options)
 	printf("==========================================\n");
 }
 
+/**
+ * Handler to be called bu the parser to apply options on the option state.
+ * @param key Key defining the current option to be parsed.
+ * @param arg Define the argument value.
+ * @param state To access to the option structure.
+ * @return Return 0 on success and another value in case of error.
+**/
 error_t option_parse_opt(int key, char *arg, struct argp_state *state) {
 	struct Options *options = static_cast<Options*>(state->input);
 	switch (key) {
@@ -173,6 +188,14 @@ error_t option_parse_opt(int key, char *arg, struct argp_state *state) {
 	return 0;
 }
 
+/**
+ * Setup the argp parser and call it to parse the program options and setup
+ * the option struct.
+ * @param options Option struct to be filled by the parser.
+ * @param argc Number of parameters recieved by the program.
+ * @param argv List of parameters recived by the program.
+ * @return Return 0 on success, another value on error.
+**/
 int options_parse(Options * options, int argc, char ** argv)
 {
 	//check
@@ -204,6 +227,15 @@ int options_parse(Options * options, int argc, char ** argv)
 	return status;
 }
 
+/**
+ * Wait on the given completion queue.
+ * @param cq Define the completion queue to wait on.
+ * @param context Define the context object to be recived to identify which
+ * operation has finished.
+ * @param wait Define if we should use the active or passive polling.
+ * @return Return the number of completion recived. Should be 1 with the current
+ * implementation.
+**/
 int wait_for_comp(struct fid_cq * cq, void ** context, bool wait)
 {
 	struct fi_cq_entry entry;
@@ -231,6 +263,14 @@ int wait_for_comp(struct fid_cq * cq, void ** context, bool wait)
 	}
 }
 
+/**
+ * Use the given fi & domain structure to establish a connection arround an 
+ * endpoint.
+ * @param connection Pointer to the structure to fill.
+ * @param options Define the options used to configure the connection.
+ * @param fi Define the libfabric service configuration to be used.
+ * @param domaine Define the libfabric domain to attach the endpoint to.
+**/
 void connection_setup_endpoint(Connection * connection, const Options & options, struct fi_info *fi, struct fid_domain *domain)
 {
 	//check
@@ -291,6 +331,13 @@ void connection_setup_endpoint(Connection * connection, const Options & options,
 	LIBFABRIC_CHECK_STATUS("fi_enable", err);
 }
 
+/**
+ * To be used by server to wait all the clients to connect and be assigned
+ * to a client ID. This function exit only when all the clients are therer.
+ * This function should recived only MSG_CONN_INIT messages.
+ * @param connection Define the connection to read on.
+ * @param options Define the options to know how many clients to wait.
+**/
 void handle_server_lobby(Connection & connection, const Options & options)
 {
 	//vars
