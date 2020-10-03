@@ -380,6 +380,12 @@ void handle_server_lobby(Connection & connection, const Options & options)
 	}
 }
 
+/**
+ * On the client side establish connection by completing the address vector,
+ * send the CONN_INI message and wait for client ID assignement.
+ * @param connection Define the connection to read on.
+ * @param options Define the options to know how many clients to wait.
+**/
 void handle_client_lobby(Connection & connection, const Options & options, struct fi_info *fi)
 {
 	//vars
@@ -415,6 +421,11 @@ void handle_client_lobby(Connection & connection, const Options & options, struc
 	printf("Get client ID %d !\n", msgGetId.id);
 }
 
+/**
+ * Post recives before starting to send messages so we are ready.
+ * @param connection Define the connection to read on.
+ * @param options Define the options to know how many clients to read from.
+**/
 void post_recives(Connection & connection, const Options & options)
 {
 	int err;
@@ -424,6 +435,11 @@ void post_recives(Connection & connection, const Options & options)
 	}
 }
 
+/**
+ * On the server side, when we are ready, send the first ping to all clients.
+ * @param connection Define the connection to use for sending.
+ * @param options Define the options to know how many clients to contact.
+**/
 void bootstrap_first_ping(Connection & connection, const Options & options)
 {
 	//vars
@@ -443,6 +459,11 @@ void bootstrap_first_ping(Connection & connection, const Options & options)
 	}
 }
 
+/**
+ * On the server side, wait for reception of ping request and send back a pong.
+ * @param connection Define the connection to use.
+ * @param options Define the options to know how many clients to wait.
+**/
 unsigned long ping_pong_server(Connection & connection, const Options & options)
 {
 	int err;
@@ -470,6 +491,11 @@ unsigned long ping_pong_server(Connection & connection, const Options & options)
 	return cnt;
 }
 
+/**
+ * On the server side, wait for reception of pong request and send back a ping.
+ * @param connection Define the connection to use.
+ * @param options Define the options to know how many clients to wait.
+**/
 unsigned long ping_pong_client(Connection & connection, const Options & options)
 {
 	int err;
@@ -497,6 +523,15 @@ unsigned long ping_pong_client(Connection & connection, const Options & options)
 	return cnt;
 }
 
+/**
+ * Apply operation no the given connection. It setup the endpoint, connect,
+ * handle connection messages and finish by making the ping pong communications.
+ * It finished by printing the message rate and bandwidth.
+ * @param options Options to use to configuration the actions.
+ * @param fi Define the fabric to be used.
+ * @param domain Define the domain to which attach the connections and register
+ * the memory regions.
+**/
 void handle_connection(const Options & options, struct fi_info *fi, struct fid_domain *domain)
 {
 	//create connection
