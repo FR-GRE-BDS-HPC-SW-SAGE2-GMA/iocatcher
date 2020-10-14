@@ -6,6 +6,9 @@
 *****************************************************/
 
 /****************************************************/
+//std
+#include <cassert>
+//local
 #include "LibfabricDomain.hpp"
 #include "../common/Debug.hpp"
 
@@ -16,8 +19,12 @@ namespace IOC
 /****************************************************/
 LibfabricDomain::LibfabricDomain(std::string & serverIp, std::string & port, bool isDomainServer)
 {
+	//check
+	assert(serverIp.empty() == false);
+	assert(port.empty() == false);
+
 	//allocate fi
-	struct fi_info *hints, *fi;
+	struct fi_info *hints;
 	hints = fi_allocinfo();
 	if (!hints) {
 		printf("fi_allocinfo failed\n");
@@ -55,6 +62,24 @@ LibfabricDomain::~LibfabricDomain(void)
 	fi_close(&domain->fid);
 	fi_close(&fabric->fid);
 	fi_freeinfo(fi);
+}
+
+/****************************************************/
+struct fi_info * LibfabricDomain::getFiInfo(void)
+{
+	return this->fi;
+}
+
+/****************************************************/
+struct fid_fabric * LibfabricDomain::getFabric(void)
+{
+	return this->fabric;
+}
+
+/****************************************************/
+struct fid_domain * LibfabricDomain::getDomain(void)
+{
+	return this->domain;
 }
 
 }

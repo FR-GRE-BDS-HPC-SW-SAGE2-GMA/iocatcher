@@ -9,9 +9,11 @@
 #define IOC_LIBFABRIC_DOMAIN_HPP
 
 /****************************************************/
+//std
 #include <string>
 //libfabric
 #include <rdma/fabric.h>
+#include <rdma/fi_errno.h>
 #include <rdma/fi_domain.h>
 
 /****************************************************/
@@ -24,10 +26,13 @@ class LibfabricDomain
 	public:
 		LibfabricDomain(std::string & server, std::string & port, bool isDomainServer);
 		~LibfabricDomain(void);
+		fi_info * getFiInfo(void);
+		fid_fabric * getFabric(void);
+		fid_domain * getDomain(void);
 	private:
-		struct fi_info *fi;
-		struct fid_fabric *fabric;
-		struct fid_domain *domain;
+		fi_info *fi;
+		fid_fabric *fabric;
+		fid_domain *domain;
 };
 
 }
