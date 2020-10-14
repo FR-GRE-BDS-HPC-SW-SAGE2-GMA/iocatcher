@@ -36,6 +36,7 @@ class LibfabricConnection
 		fid_av *av;
 		/** Endpoint **/
 		fid_ep *ep;
+		bool wait;
 };
 
 }

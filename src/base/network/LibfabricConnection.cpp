@@ -23,6 +23,9 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfdomain, bool wait)
 	//check
 	assert(domain != NULL);
 
+	//set
+	this->wait = wait;
+
 	//extract
 	fi_info *fi = lfdomain->getFiInfo();
 	fid_domain *domain = lfdomain->getDomain();
