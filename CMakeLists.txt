@@ -12,6 +12,7 @@ project(libfabric-poc)
 
 ######################################################
 #global setup
+set(ENABLE_TESTS ON CACHE BOOL "Enable unit tests requiring build of googletest and googlmock")
 enable_testing()
 
 ######################################################
@@ -21,15 +22,21 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
 ######################################################
 #Delegate some cmake scripts
 include(${CMAKE_SOURCE_DIR}/cmake/macros.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/unittest-macros.cmake)
 
 ######################################################
 find_package(LibFabric REQUIRED)
 find_package(Threads REQUIRED)
 
 ######################################################
+setup_internal_gmock_and_gtest()
 enable_cxx_11()
 
 ######################################################
 include_directories(${LIBFABRIC_INCLUDE_DIRS})
 add_executable(poc main.cpp)
 target_link_libraries(poc ${LIBFABRIC_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+######################################################
+add_subdirectory(extern-deps)
+add_subdirectory(src)

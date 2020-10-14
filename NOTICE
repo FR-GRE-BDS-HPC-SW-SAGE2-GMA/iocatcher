@@ -1,0 +1,29 @@
+iocatcher - Copyright 2020-2022 Bull SAS
+
+------------------------------------------------------------------------
+
+This product includes software developed by Bull SAS under Apache 2.0 license.
+
+------------------------------------------------------------------------
+
+The sources embedd in the directory './extern-deps/googletest-release-1.10.0' the
+google test and google mock frameworks to build and run the unit tests. The
+files in this directory are redistributed as it is under their original
+BSD-3 license. The original project is hosted at https://google.github.io/googletest/.
+
+------------------------------------------------------------------------
+
+The sources contains some external files imported from other open source
+projects distributed under CeCILL-C license:
+ - The './configure' script imported from MALT and developped by
+   Sebastien Valat (https://github.com/memtt/malt/).
+ - The directory './extern-deps/from-cern-lhcb-daqpipe-v2' which contains
+   files imported from the lhcb-daqpipe-v2 project from CERN 
+   (https://gitlab.cern.ch/lhcb-online-eb/lhcb-daqpipe-v2)
+
+------------------------------------------------------------------------
+
+The sources embed in the directories ./extern-deps/from-motr-sample-apps/ and
+./extern-deps/from-clovis-sample-apps/ are imported code from the Seagate
+Motr application sample apps distributed under Apache 2.0 license and
+hosted at https://github.com/Seagate/cortx-motr-apps.

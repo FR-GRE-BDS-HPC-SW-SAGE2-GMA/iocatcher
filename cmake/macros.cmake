@@ -1,13 +1,24 @@
 ######################################################
-#            PROJECT  : lhcb-daqpipe                 #
-#            VERSION  : 2.5.0-dev                    #
-#            AUTHOR   : Valat Sébastien              #
+#            PROJECT  : IO Busters                   #
+#            AUTHOR   : Valat Sébastien  - ATOS      #
 #            LICENSE  : Apache 2.0                   #
 #            COPYRIGHT: 2020 Bull SAS                #
 ######################################################
 
 #part of this file is imported from project MALT developped by Sebastien Valat.
 #at exascale lab / university of versailles into the MAQAO
+
+######################################################
+#Setup paths to gtest/gmock headers and library
+MACRO(setup_internal_gmock_and_gtest)
+	set(GMOCK_SOURCE_DIR ${CMAKE_SOURCE_DIR}/extern-deps/googletest-release-1.10.0)
+	set(GMOCK_INCLUDE_DIR ${GMOCK_SOURCE_DIR}/include)
+	set(GMOCK_INCLUDE_DIRS ${GMOCK_SOURCE_DIR}/include)
+	set(GMOCK_BOTH_LIBRARIES gmock gmock_main)
+	set(GTEST_BOTH_LIBRARIES gtest)
+	set(GTEST_INCLUDE_DIR ${GMOCK_SOURCE_DIR}/gtest/include/)
+	set(GTEST_INCLUDE_DIRS ${GMOCK_SOURCE_DIR}/gtest/include/)
+ENDMACRO(setup_internal_gmock_and_gtest)
 
 ######################################################
 MACRO(enable_cxx_11)

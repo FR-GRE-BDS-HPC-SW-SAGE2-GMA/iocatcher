@@ -15,7 +15,7 @@ find_path(LIBFABRIC_INCLUDE_DIR rdma/fabric.h
 
 ######################################################
 find_library(LIBFABRIC_LIBRARY NAMES fabric
-	HINTS ${LIBFABRIC_PREFIX}/lib)
+	HINTS ${LIBFABRIC_PREFIX}/lib ${LIBFABRIC_PREFIX}/lib64)
 
 ######################################################
 set(LIBFABRIC_LIBRARIES ${LIBFABRIC_LIBRARY} )
