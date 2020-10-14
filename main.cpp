@@ -618,9 +618,9 @@ int main(int argc, char ** argv)
 	//get fi_info
 	int err;
 	if (options.role == ROLE_SERVER)
-		err = fi_getinfo(FI_VERSION(1,11), options.ip.c_str(), options.port.c_str(), FI_SOURCE, hints, &fi);
+		err = fi_getinfo(FI_VERSION(1,6), options.ip.c_str(), options.port.c_str(), FI_SOURCE, hints, &fi);
 	else
-		err = fi_getinfo(FI_VERSION(1,11), options.ip.c_str(), options.port.c_str(), 0, hints, &fi);
+		err = fi_getinfo(FI_VERSION(1,6), options.ip.c_str(), options.port.c_str(), 0, hints, &fi);
 	LIBFABRIC_CHECK_STATUS("fi_getinfo",err);
 
 	//display

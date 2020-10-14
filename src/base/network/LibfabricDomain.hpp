@@ -24,7 +24,7 @@ namespace IOC
 class LibfabricDomain
 {
 	public:
-		LibfabricDomain(std::string & server, std::string & port, bool isDomainServer);
+		LibfabricDomain(const std::string & server, const std::string & port, bool isDomainServer);
 		~LibfabricDomain(void);
 		fi_info * getFiInfo(void);
 		fid_fabric * getFabric(void);

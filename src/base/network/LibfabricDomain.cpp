@@ -17,7 +17,7 @@ namespace IOC
 {
 
 /****************************************************/
-LibfabricDomain::LibfabricDomain(std::string & serverIp, std::string & port, bool isDomainServer)
+LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string & port, bool isDomainServer)
 {
 	//check
 	assert(serverIp.empty() == false);
@@ -39,13 +39,13 @@ LibfabricDomain::LibfabricDomain(std::string & serverIp, std::string & port, boo
 	//get fi_info
 	int err;
 	if (isDomainServer)
-		err = fi_getinfo(FI_VERSION(1,11), serverIp.c_str(), port.c_str(), FI_SOURCE, hints, &this->fi);
+		err = fi_getinfo(FI_VERSION(1,6), serverIp.c_str(), port.c_str(), FI_SOURCE, hints, &this->fi);
 	else
-		err = fi_getinfo(FI_VERSION(1,11), serverIp.c_str(), port.c_str(), 0, hints, &this->fi);
+		err = fi_getinfo(FI_VERSION(1,6), serverIp.c_str(), port.c_str(), 0, hints, &this->fi);
 	LIBFABRIC_CHECK_STATUS("fi_getinfo",err);
 
 	//display
-	IOC_INFO_ARG("NEt: %1").arg(fi->fabric_attr->prov_name).end();
+	IOC_INFO_ARG("NET: %1").arg(fi->fabric_attr->prov_name).end();
 
 	//IOC_
 	err = fi_fabric(fi->fabric_attr, &this->fabric, nullptr);
