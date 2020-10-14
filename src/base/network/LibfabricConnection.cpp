@@ -18,7 +18,7 @@ namespace IOC
 {
 
 /****************************************************/
-LibfabricConnection::LibfabricConnection(LibfabricDomain * lfdomain, bool wait)
+LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 {
 	//check
 	assert(domain != NULL);
@@ -27,8 +27,8 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfdomain, bool wait)
 	this->wait = wait;
 
 	//extract
-	fi_info *fi = lfdomain->getFiInfo();
-	fid_domain *domain = lfdomain->getDomain();
+	fi_info *fi = lfDomain->getFiInfo();
+	fid_domain *domain = lfDomain->getDomain();
 
 	//vars
 	int err;

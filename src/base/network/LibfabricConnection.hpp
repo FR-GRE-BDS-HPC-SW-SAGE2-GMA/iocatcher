@@ -24,7 +24,7 @@ namespace IOC
 class LibfabricConnection
 {
 	public:
-		LibfabricConnection(LibfabricDomain * domain, bool wait);
+		LibfabricConnection(LibfabricDomain * lfDomain, bool wait);
 		~LibfabricConnection(void);
 	private:
 		LibfabricDomain * domain;
