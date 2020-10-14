@@ -24,7 +24,7 @@ set(IOC_INTERNAL_CODE
 	$<TARGET_OBJECTS:daqpipe-common>
 	#internal
 #	$<TARGET_OBJECTS:ioc-common>
-#	$<TARGET_OBJECTS:ioc-core>
+	$<TARGET_OBJECTS:ioc-network>
 	#we should keep an eye on portability of this
 #	$<TARGET_OBJECTS:ioc-portability>
 	#optional
@@ -43,3 +43,4 @@ install(TARGETS iocatcher DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ######################################################
 add_subdirectory(common)
+add_subdirectory(network)
