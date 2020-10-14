@@ -19,28 +19,6 @@ include_directories(${CMAKE_SOURCE_DIR}/extern-deps)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 ######################################################
-set(IOC_INTERNAL_CODE
-	#extern deps
-	$<TARGET_OBJECTS:daqpipe-common>
-	#internal
-#	$<TARGET_OBJECTS:ioc-common>
-	$<TARGET_OBJECTS:ioc-network>
-	#we should keep an eye on portability of this
-#	$<TARGET_OBJECTS:ioc-portability>
-	#optional
-#	${OPTIONAL_EXTRA}
-)
-
-######################################################
-set(IOC_EXTERN_LIBS ${LIBFABRIC_LIBRARIES})
-
-######################################################
-add_library(iocatcher SHARED ${IOC_INTERNAL_CODE})
-set_target_properties(iocatcher PROPERTIES VERSION 0.0.0 SOVERSION 0)
-target_link_libraries(iocatcher ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(iocatcher ${IOC_EXTERN_LIBS})
-install(TARGETS iocatcher DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-######################################################
-add_subdirectory(common)
-add_subdirectory(network)
+add_subdirectory(base)
+add_subdirectory(client)
+add_subdirectory(server)

@@ -1,0 +1,25 @@
+######################################################
+#            PROJECT  : IO Catcher                   #
+#            AUTHOR   : Valat Sébastien  - ATOS      #
+#            LICENSE  : Apache 2.0                   #
+#            COPYRIGHT: 2020 Bull SAS                #
+######################################################
+
+######################################################
+set(IOC_SERVER_INTERNAL_CODE
+	#extern deps
+#	$<TARGET_OBJECTS:daqpipe-common>
+	#internal
+#	$<TARGET_OBJECTS:ioc-common>
+#	$<TARGET_OBJECTS:ioc-network>
+	#we should keep an eye on portability of this
+#	$<TARGET_OBJECTS:ioc-portability>
+	#optional
+#	${OPTIONAL_EXTRA}
+	main.cpp
+)
+
+######################################################
+add_executable(iocatcher-server main.cpp)
+target_link_libraries(iocatcher-server iocatcher-base)
+install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
