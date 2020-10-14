@@ -19,5 +19,5 @@ set(TEST_NAMES TestDebug
 FOREACH(test_name ${TEST_NAMES})
 	add_executable(${test_name} ${test_name}.cpp $<TARGET_OBJECTS:daqpipe-common>)
 	target_link_libraries(${test_name} ${GTEST_BOTH_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
-	iob_add_test(${test_name} ${test_name})
+	ioc_add_test(${test_name} ${test_name})
 ENDFOREACH(test_name)

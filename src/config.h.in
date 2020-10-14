@@ -1,15 +1,15 @@
 /*****************************************************
-			 PROJECT  : IO Busters
+			 PROJECT  : IO Catcher
 			 LICENSE  : Apache 2.0
 			COPYRIGHT: 2020 Bull SAS
 			 COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
-#ifndef IOB_CONFIG_HPP
-#define IOB_CONFIG_HPP
+#ifndef IOC_CONFIG_HPP
+#define IOC_CONFIG_HPP
 
 /********************  MACRO  ***********************/
 //version
-#define IOB_VERSION "0.0.0-dev"
+#define IOC_VERSION "0.0.0-dev"
 
-#endif //IOB_CONFIG_HPP
+#endif //IOC_CONFIG_HPP

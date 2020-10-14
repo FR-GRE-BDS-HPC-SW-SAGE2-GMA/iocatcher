@@ -1,5 +1,5 @@
 ######################################################
-#            PROJECT  : IO Busters                   #
+#            PROJECT  : IO Catcher                   #
 #            AUTHOR   : Valat Sébastien  - ATOS      #
 #            LICENSE  : Apache 2.0                   #
 #            COPYRIGHT: 2020 Bull SAS                #
