@@ -10,6 +10,9 @@ IP=10.1.3.26
 SIZES="40 64 128 256 512 1024 $((1024*2)) $((1024*4)) $((1024*8)) $((1024*16)) $((1024*32)) $((1024*64)) $((1024*128)) $((1024*256)) $((1024*512)) $((1024*1024)) $((1024*2048)) $((1024*4096))"
 DIVIDE_AT=$((64*1024))
 DIVIDE_AT2=$((1024*1024))
+#CLIENT_OPTS=-w
+#SERVER_OPTS=-w
+EXTRA_TITLE=
 
 set -e
 
@@ -27,7 +30,7 @@ function gen_chart()
 	set ytics tc lt 1
 	set y2tics tc lt 2
 	set y2label 'Bandwidth (Gbits/s)' tc lt 2
-	set title "Libfaric ping pong (${mode})"
+	set title "Libfaric ping pong (${mode})${EXTRA_TITLE}"
 	set grid
 	plot 'result.log' u (\$11/1024):5 w lp title "Message rate", '' u (\$11/1024):8 axes x1y2 w lp title "Bandwidth"
 	EOF
@@ -45,7 +48,7 @@ function run_server()
 	do
 		if [ ${size} == $DIVIDE_AT ]; then MESSAGES=$(($MESSAGES/10)); fi
 		if [ ${size} == $DIVIDE_AT2 ]; then MESSAGES=$(($MESSAGES/10)); fi
-		hwloc-bind --cpubind core:${CLIENTS} -- ./poc -m ${MESSAGES} -S ${size} -C ${CLIENTS} -s ${IP} | egrep '^Time' | tee -a result.log
+		hwloc-bind --cpubind core:${CLIENTS} -- ./poc ${SERVER_OPTS} -m ${MESSAGES} -S ${size} -C ${CLIENTS} -s ${IP} | egrep '^Time' | tee -a result.log
 	done
 	gen_chart
 }
@@ -62,9 +65,9 @@ function run_client()
 		if [ ${size} == $DIVIDE_AT ]; then MESSAGES=$(($MESSAGES/10)); fi
 		if [ ${size} == $DIVIDE_AT2 ]; then MESSAGES=$(($MESSAGES/10)); fi
 		if [ ${CLIENTS} == 1 ]; then
-			hwloc-bind --cpubind core:0-$((${CLIENTS}-1)) -- ./poc -m ${MESSAGES} -S ${size} -t ${CLIENTS} -C ${CLIENTS} -c ${IP} | tee -a client.log
+			hwloc-bind --cpubind core:0-$((${CLIENTS}-1)) -- ./poc ${CLIENT_OPTS} -m ${MESSAGES} -S ${size} -t ${CLIENTS} -C ${CLIENTS} -c ${IP} | tee -a client.log
 		else
-			hwloc-bind --cpubind core:$((${CLIENTS}-1)) -- ./poc -m ${MESSAGES} -S ${size} -t ${CLIENTS} -C ${CLIENTS} -c ${IP} | tee -a client.log
+			hwloc-bind --cpubind core:$((${CLIENTS}-1)) -- ./poc ${CLIENT_OPTS} -m ${MESSAGES} -S ${size} -t ${CLIENTS} -C ${CLIENTS} -c ${IP} | tee -a client.log
 		fi
 		sleep 2
 	done
