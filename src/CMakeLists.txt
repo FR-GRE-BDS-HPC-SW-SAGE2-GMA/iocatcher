@@ -32,11 +32,14 @@ set(IOC_INTERNAL_CODE
 )
 
 ######################################################
-add_library(iocuster SHARED ${IOC_INTERNAL_CODE})
-set_target_properties(iocuster PROPERTIES VERSION 0.0.0 SOVERSION 0)
-target_link_libraries(iocuster ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(iocuster ${IOC_EXTERN_LIBS})
-install(TARGETS iocuster DESTINATION ${CMAKE_INSTALL_LIBDIR})
+set(IOC_EXTERN_LIBS ${LIBFABRIC_LIBRARIES})
+
+######################################################
+add_library(iocatcher SHARED ${IOC_INTERNAL_CODE})
+set_target_properties(iocatcher PROPERTIES VERSION 0.0.0 SOVERSION 0)
+target_link_libraries(iocatcher ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(iocatcher ${IOC_EXTERN_LIBS})
+install(TARGETS iocatcher DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ######################################################
 add_subdirectory(common)
