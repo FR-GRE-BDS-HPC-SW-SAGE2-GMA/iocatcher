@@ -9,6 +9,8 @@
 //std
 #include <cassert>
 #include <cstring>
+//libfabric
+#include "rdma/fi_cm.h"
 //local
 #include "LibfabricConnection.hpp"
 #include "../common/Debug.hpp"
@@ -28,7 +30,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	this->wait = wait;
 	this->recvBuffersCount = 0;
 	this->recvBuffers = NULL;
-	this->nextClientId = 0;
+	this->nextEndpointId = 0;
 	this->recvBuffersSize = 0;
 
 	//extract
@@ -140,6 +142,51 @@ void LibfabricConnection::repostRecive(size_t id)
 }
 
 /****************************************************/
+void LibfabricConnection::joinServer(void)
+{
+	//vars
+	int err;
+	size_t addrlen = IOC_LF_MAX_ADDR_LEN;
+
+	//insert server address in address vector
+	err = fi_av_insert(this->av, this->lfDomain->getFiInfo()->dest_addr, 1, &this->remoteLiAddr[IOC_LF_SERVER_ID], 0, NULL);
+	if (err != 1)
+		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
+
+	//new message
+	LibfabricMessage * msg = new LibfabricMessage;
+	msg->type = IOC_LF_MSG_CONNECT_INIT;
+	err = fi_getname(&this->ep->fid, msg->data.addr, &addrlen);
+	LIBFABRIC_CHECK_STATUS("fi_getname", err);
+	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
+
+	//send
+	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID);
+}
+
+/****************************************************/
+void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId)
+{
+	//vars
+	int err;
+
+	//checks
+	assert(size < recvBuffersSize);
+
+	//search
+	auto it = this->remoteLiAddr.find(destinationEpId);
+	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
+		.arg(destinationEpId)
+		.end();
+
+	//send
+	do {
+		err = fi_send(this->ep, buffer, size, NULL, it->second, buffer);
+	} while(err == -FI_EAGAIN);
+	LIBFABRIC_CHECK_STATUS("fi_send", err);
+}
+
+/****************************************************/
 void LibfabricConnection::poll(void)
 {
 	pollRx();
@@ -197,16 +244,16 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	assert(message->type == IOC_LF_MSG_CONNECT_INIT);
 
 	//assign id
-	int id = this->nextClientId++;
+	int epId = this->nextEndpointId++;
 
 	//insert server address in address vector
-	int err = fi_av_insert(this->av, message->data.addr, 1, &this->remoteLiAddr[id], 0, NULL);
+	int err = fi_av_insert(this->av, message->data.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
 	if (err != 1) {
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 	}
 
 	//notify
-	this->hookOnClientConnect(id);
+	this->hookOnEndpointConnect(epId);
 }
 
 /****************************************************/
@@ -238,9 +285,9 @@ int LibfabricConnection::pollForCompletion(struct fid_cq * cq, void ** context, 
 }
 
 /****************************************************/
-void LibfabricConnection::setHooks(std::function<void(int)> hookOnClientConnect)
+void LibfabricConnection::setHooks(std::function<void(int)> hookOnEndpointConnect)
 {
-	this->hookOnClientConnect = hookOnClientConnect;
+	this->hookOnEndpointConnect = hookOnEndpointConnect;
 }
 
 }

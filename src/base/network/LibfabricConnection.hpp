@@ -24,6 +24,10 @@ namespace IOC
 {
 
 /****************************************************/
+#define IOC_LF_MAX_ADDR_LEN 32
+#define IOC_LF_SERVER_ID 0
+
+/****************************************************/
 enum LibfabricMessageType
 {
 	IOC_LF_MSG_CONNECT_INIT,
@@ -36,7 +40,7 @@ struct LibfabricMessage
 	LibfabricMessageType type;
 	union {
 		/** Client to address to be send to the server on MSG_CONN_INIT **/
-		char addr[32];
+		char addr[IOC_LF_MAX_ADDR_LEN];
 		/** Client ID so the server know to who to respond. **/
 		int id;
 	} data;
@@ -49,8 +53,10 @@ class LibfabricConnection
 		LibfabricConnection(LibfabricDomain * lfDomain, bool wait);
 		~LibfabricConnection(void);
 		void postRecives(size_t size, int count);
+		void joinServer(void);
 		void poll(void);
-		void setHooks(std::function<void(int)> hookOnClientConnect);
+		void setHooks(std::function<void(int)> hookOnEndpointConnect);
+		void sendMessage(void * buffer, size_t size, int destinationEpId);
 	private:
 		bool pollRx(void);
 		bool pollTx(void);
@@ -75,8 +81,8 @@ class LibfabricConnection
 		int recvBuffersCount;
 		size_t recvBuffersSize;
 		std::map<int, fi_addr_t> remoteLiAddr;
-		int nextClientId;
-		std::function<void(int)> hookOnClientConnect;
+		int nextEndpointId;
+		std::function<void(int)> hookOnEndpointConnect;
 };
 
 }
