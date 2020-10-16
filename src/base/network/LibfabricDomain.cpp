@@ -30,7 +30,7 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 		printf("fi_allocinfo failed\n");
 		exit(1);
 	}
-	hints->caps = FI_MSG;
+	hints->caps = FI_MSG | FI_RMA;
 	//hints->caps = FI_MSG;
 	//hints->mode = FI_CONTEXT | FI_RX_CQ_DATA;
 	//hints->mode = FI_LOCAL_MR;

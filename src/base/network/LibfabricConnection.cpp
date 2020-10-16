@@ -20,12 +20,27 @@ namespace IOC
 {
 
 /****************************************************/
+void LibfabricPostAction::freeBuffer(void)
+{
+	if (connection != NULL)
+		if (isRecv)
+			connection->repostRecive(bufferId);
+}
+
+/****************************************************/
+bool LibfabricPostActionFunction::runPostAction(void)
+{
+	return this->function(this);
+};
+
+/****************************************************/
 LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 {
 	//check
 	assert(lfDomain != NULL);
 
 	//set
+	this->clientId = -1;
 	this->lfDomain = lfDomain;
 	this->wait = wait;
 	this->recvBuffersCount = 0;
@@ -47,7 +62,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	memset(&av_attr, 0, sizeof(av_attr));
 	
 	//setup attr
-	cq_attr.format = FI_CQ_FORMAT_CONTEXT;
+	cq_attr.format = FI_CQ_FORMAT_MSG;
 	cq_attr.size = fi->tx_attr->size;
 	if (wait)
 		cq_attr.wait_obj = FI_WAIT_UNSPEC;
@@ -55,15 +70,8 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 		cq_attr.wait_obj = FI_WAIT_NONE;
 	//printf("CQ_SIZE: %ld\n", cq_attr.size);
 
-	//setup cq read
-	err = fi_cq_open(domain, &cq_attr, &this->tx_cq, nullptr);
-	LIBFABRIC_CHECK_STATUS("fi_cq_open",err);
-	
-	//setup attr
-	cq_attr.size = fi->rx_attr->size;
-
-	//setup cq read
-	err = fi_cq_open(domain, &cq_attr, &this->rx_cq, nullptr);
+	//setup cq
+	err = fi_cq_open(domain, &cq_attr, &this->cq, nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_cq_open",err);
 
 	//addres vector
@@ -76,9 +84,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	LIBFABRIC_CHECK_STATUS("fi_endpoint",err);
 
 	//bind completion queue
-	err = fi_ep_bind(this->ep, (struct fid *)this->tx_cq, FI_SEND);
-	LIBFABRIC_CHECK_STATUS("fi_ep_bind",err);
-	err = fi_ep_bind(this->ep, (struct fid *)this->rx_cq, FI_RECV);
+	err = fi_ep_bind(this->ep, (struct fid *)this->cq, FI_TRANSMIT|FI_RECV);
 	LIBFABRIC_CHECK_STATUS("fi_ep_bind",err);
 
 	//bind
@@ -96,8 +102,7 @@ LibfabricConnection::~LibfabricConnection(void)
 	//close
 	fi_close((fid_t)ep);
 	fi_close((fid_t)av);
-	fi_close((fid_t)tx_cq);
-	fi_close((fid_t)rx_cq);
+	fi_close((fid_t)cq);
 
 	//destroy buffers
 	if (this->recvBuffers != NULL) {
@@ -155,17 +160,31 @@ void LibfabricConnection::joinServer(void)
 
 	//new message
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->type = IOC_LF_MSG_CONNECT_INIT;
+	msg->header.type = IOC_LF_MSG_CONNECT_INIT;
 	err = fi_getname(&this->ep->fid, msg->data.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
+	//register hook
+	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](int clientId, size_t id, void * buffer) {
+		printf("get clientID %d\n", clientId);
+		this->clientId = clientId;
+		this->repostRecive(id);
+		return true;
+	});
+
 	//send
-	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID);
+	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		delete [] msg;
+		return false;
+	}));
+
+	//wait send
+	this->poll();
 }
 
 /****************************************************/
-void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId)
+void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction)
 {
 	//vars
 	int err;
@@ -181,7 +200,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 
 	//send
 	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, buffer);
+		err = fi_send(this->ep, buffer, size, NULL, it->second, postAction);
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
 }
@@ -189,17 +208,38 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 /****************************************************/
 void LibfabricConnection::poll(void)
 {
-	pollRx();
-	pollTx();
+	//vars
+	fi_cq_msg_entry entry;
+
+	//poll
+	for (;;) {
+		int status = pollForCompletion(this->cq, &entry, this->wait);
+		if (status == 1) {
+			if (entry.flags & FI_RECV) {
+				if (this->onRecv((size_t)entry.op_context))
+					break;
+			} else {
+				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
+				bool status = action->runPostAction();
+				delete action;
+				if (status)
+					break;
+			}
+		}
+	}
 }
 
 /****************************************************/
 bool LibfabricConnection::pollRx(void)
 {
-	void * context = NULL;
-	int status = pollForCompletion(this->rx_cq, &context, this->wait);
+	//vars
+	fi_cq_msg_entry entry;
+
+	//poll
+	int status = pollForCompletion(this->cq, &entry, this->wait);
 	if (status == 1) {
-		this->onRecv((size_t)context);
+		printf("ENTRY RECV FLAG: %d == %d == %d\n", entry.flags, FI_RECV, FI_SEND);
+		this->onRecv((size_t)entry.op_context);
 		return true;
 	} else {
 		return false;
@@ -209,31 +249,70 @@ bool LibfabricConnection::pollRx(void)
 /****************************************************/
 bool LibfabricConnection::pollTx(void)
 {
-	return false;
+	fi_cq_msg_entry entry;
+	int status = pollForCompletion(this->cq, &entry, this->wait);
+	if (status == 1) {
+		printf("ENTRY SENT FLAG: %d\n", entry.flags);
+		this->onSent((void*)entry.op_context);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 /****************************************************/
-void LibfabricConnection::onRecv(size_t id)
+void LibfabricConnection::onSent(void * buffer)
+{
+	//check
+	assert(message != NULL);
+
+	//convert
+	LibfabricMessage * message = (LibfabricMessage *)buffer;
+
+	//check
+
+}
+
+/****************************************************/
+bool LibfabricConnection::onRecv(size_t id)
 {
 	//check
 	assert(id < this->recvBuffersCount);
 
 	//cast
-	char * buffer =  this->recvBuffers[id];
+	void * buffer =  this->recvBuffers[id];
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
 	//switch
-	switch(message->type) {
+	switch(message->header.type) {
 		case IOC_LF_MSG_CONNECT_INIT:
 			onConnInit(message);
 			repostRecive(id);
 			break;
-		case IOC_LF_MSG_ASSIGN_ID:
-			break;
 		default:
-			IOC_FATAL_ARG("Invalid message type %1").arg(message->type).end();
+			auto it = this->hooks.find(message->header.type);
+			if (it != this->hooks.end())
+				return it->second(message->header.clientId, id, buffer);
+			else
+				IOC_FATAL_ARG("Invalid message type %1").arg(message->header.type).end();
 			break;
 	}
+
+	//continue
+	return false;
+}
+
+/****************************************************/
+void LibfabricConnection::registerHook(int messageType, std::function<bool(int, size_t, void*)> function)
+{
+	assert(this->hooks.find(messageType) == this->hooks.end());
+	this->hooks[messageType] = function;
+}
+
+/****************************************************/
+void LibfabricConnection::unregisterHook(int messageType)
+{
+	this->hooks.erase(messageType);
 }
 
 /****************************************************/
@@ -252,24 +331,40 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 	}
 
+	//send message
+	LibfabricMessage * msg = new LibfabricMessage;
+	msg->header.type = IOC_LF_MSG_ASSIGN_ID;
+	msg->header.clientId = epId;
+
+	this->sendMessage(msg, sizeof (*msg), epId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		delete msg;
+		return false;
+	}));
+
 	//notify
 	this->hookOnEndpointConnect(epId);
 }
 
 /****************************************************/
-int LibfabricConnection::pollForCompletion(struct fid_cq * cq, void ** context, bool wait)
+int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool wait)
 {
-	struct fi_cq_entry entry;
+	//vars
+	struct fi_cq_msg_entry localEntry;
 	int ret;
 
+	//has no entry
+	if (entry == NULL)
+		entry = &localEntry;
+
+	//active or passive
 	if (wait)
-		ret = fi_cq_sread(cq, &entry, 1, NULL, -1);
+		ret = fi_cq_sread(cq, entry, 1, NULL, -1);
 	else
-		ret = fi_cq_read(cq, &entry, 1);
+		ret = fi_cq_read(cq, entry, 1);
+
+	//has one
 	if (ret > 0) {
 		//fprintf(stderr,"cq_read = %d\n", ret);
-		if (context != NULL)
-			*context = entry.op_context;
 		return 1;
 	} else if (ret != -FI_EAGAIN) {
 		struct fi_cq_err_entry err_entry;
