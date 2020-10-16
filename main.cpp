@@ -238,7 +238,7 @@ int options_parse(Options * options, int argc, char ** argv)
 **/
 int wait_for_comp(struct fid_cq * cq, void ** context, bool wait)
 {
-	struct fi_cq_entry entry;
+	struct fi_cq_msg_entry entry;
 	int ret;
 
 	while(1)
@@ -248,7 +248,7 @@ int wait_for_comp(struct fid_cq * cq, void ** context, bool wait)
 		else
 			ret = fi_cq_read(cq, &entry, 1);
 		if (ret > 0) {
-			//fprintf(stderr,"cq_read = %d\n", ret);
+			//fprintf(stderr,"cq_read = %d; size = %zu\n", ret, entry.len);
 			if (context != NULL)
 				*context = entry.op_context;
 			return 0;
@@ -288,7 +288,8 @@ void connection_setup_endpoint(Connection * connection, const Options & options,
 	memset(&av_attr, 0, sizeof(av_attr));
 	
 	//setup attr
-	cq_attr.format = FI_CQ_FORMAT_CONTEXT;
+	//cq_attr.format = FI_CQ_FORMAT_CONTEXT;
+	cq_attr.format = FI_CQ_FORMAT_MSG;
 	cq_attr.size = fi->tx_attr->size;
 	if (options.wait)
 		cq_attr.wait_obj = FI_WAIT_UNSPEC;
