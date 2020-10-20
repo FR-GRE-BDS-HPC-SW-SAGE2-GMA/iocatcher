@@ -29,7 +29,10 @@ int main(int argc, char ** argv)
 	//register hook
 	connection.registerHook(10, [&connection](int clientId, size_t id, void * buffer) {
 		//printf
-		printf("Get 10 %d\n", clientId);
+		//printf("Get 10 %d\n", clientId);
+
+		//republish
+		connection.repostRecive(id);
 
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
@@ -45,6 +48,6 @@ int main(int argc, char ** argv)
 	});
 
 	for(;;) {
-		connection.poll();
+		connection.poll(false);
 	}
 }

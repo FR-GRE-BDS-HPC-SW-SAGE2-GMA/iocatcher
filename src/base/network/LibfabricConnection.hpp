@@ -89,7 +89,7 @@ class LibfabricConnection
 		~LibfabricConnection(void);
 		void postRecives(size_t size, int count);
 		void joinServer(void);
-		void poll(void);
+		void poll(bool waitMsg);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction);
 		void repostRecive(size_t id);

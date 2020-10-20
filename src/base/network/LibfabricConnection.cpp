@@ -180,7 +180,7 @@ void LibfabricConnection::joinServer(void)
 	}));
 
 	//wait send
-	this->poll();
+	this->poll(true);
 }
 
 /****************************************************/
@@ -206,7 +206,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 }
 
 /****************************************************/
-void LibfabricConnection::poll(void)
+void LibfabricConnection::poll(bool waitMsg)
 {
 	//vars
 	fi_cq_msg_entry entry;
@@ -226,6 +226,8 @@ void LibfabricConnection::poll(void)
 					break;
 			}
 		}
+		if (!waitMsg)
+			break;
 	}
 }
 

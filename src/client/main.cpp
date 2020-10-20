@@ -32,16 +32,30 @@ int main(int argc, char ** argv)
 
 	//register hook
 	connection.registerHook(11, [&connection](int clientId, size_t id, void * buffer) {
-		printf("get 11 %d\n", clientId);
+		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
 		return true;
 	});
 
-	//send
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
-		return false;
-	}));
+	//time
+	struct timespec start, stop;
+	clock_gettime(CLOCK_MONOTONIC, &start);
 
-	//poll
-	connection.poll();
+	//send
+	int cnt = 1000;
+	for (int i = 0 ; i < cnt ; i++) {
+		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+			return false;
+		}));
+
+		//poll
+		connection.poll(true);
+	}
+
+	//time
+	clock_gettime(CLOCK_MONOTONIC, &stop);
+	double result = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1e9;    // in microseconds
+	double rate = (double)cnt / result / 1000.0;
+	double bandwidth = 8.0 * (double)cnt * (double)sizeof(msg) / result / 1000.0 / 1000.0 / 1000.0;
+	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, size: %zu\n", result, rate, bandwidth, sizeof(msg));
 }
