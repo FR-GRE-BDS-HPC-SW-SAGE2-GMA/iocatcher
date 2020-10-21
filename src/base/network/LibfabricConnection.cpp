@@ -11,6 +11,7 @@
 #include <cstring>
 //libfabric
 #include "rdma/fi_cm.h"
+#include "rdma/fi_rma.h"
 //local
 #include "LibfabricConnection.hpp"
 #include "../common/Debug.hpp"
@@ -206,6 +207,22 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 }
 
 /****************************************************/
+void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction)
+{
+	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
+	void * mrDesc = fi_mr_desc(mr);
+
+	//search
+	auto it = this->remoteLiAddr.find(destinationEpId);
+	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
+		.arg(destinationEpId)
+		.end();
+
+	int ret = fi_read(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	LIBFABRIC_CHECK_STATUS("fi_writedata", ret);
+}
+
+/****************************************************/
 void LibfabricConnection::poll(bool waitMsg)
 {
 	//vars
@@ -266,7 +283,7 @@ bool LibfabricConnection::pollTx(void)
 void LibfabricConnection::onSent(void * buffer)
 {
 	//check
-	assert(message != NULL);
+	assert(buffer != NULL);
 
 	//convert
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
@@ -322,7 +339,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 {
 	//check
 	assert(message != NULL);
-	assert(message->type == IOC_LF_MSG_CONNECT_INIT);
+	assert(message->header.type == IOC_LF_MSG_CONNECT_INIT);
 
 	//assign id
 	int epId = this->nextEndpointId++;

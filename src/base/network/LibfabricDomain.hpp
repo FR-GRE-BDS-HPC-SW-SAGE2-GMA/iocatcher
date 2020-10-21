@@ -11,14 +11,33 @@
 /****************************************************/
 //std
 #include <string>
+#include <list>
 //libfabric
 #include <rdma/fabric.h>
 #include <rdma/fi_errno.h>
 #include <rdma/fi_domain.h>
 
+//TMP
+//#define TEST_RDMA_SIZE (4*1024*1024)
+#define TEST_RDMA_SIZE (32)
+
 /****************************************************/
 namespace IOC
 {
+
+/****************************************************/
+struct MemoryRegion
+{
+	void * ptr;
+	size_t size;
+	fid_mr * mr;
+};
+
+struct Iov
+{
+	void * addr;
+	uint64_t key;
+};
 
 /****************************************************/
 class LibfabricDomain
@@ -26,13 +45,17 @@ class LibfabricDomain
 	public:
 		LibfabricDomain(const std::string & server, const std::string & port, bool isDomainServer);
 		~LibfabricDomain(void);
+		Iov registerSegment(void * ptr, size_t size);
 		fi_info * getFiInfo(void);
 		fid_fabric * getFabric(void);
 		fid_domain * getDomain(void);
+		fid_mr* getFidMR ( void* ptr, size_t size );
+		MemoryRegion* getMR ( void* ptr, size_t size );
 	private:
 		fi_info *fi;
 		fid_fabric *fabric;
 		fid_domain *domain;
+		std::list<MemoryRegion> segments;
 };
 
 }

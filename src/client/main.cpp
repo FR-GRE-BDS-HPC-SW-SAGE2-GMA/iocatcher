@@ -18,9 +18,14 @@ using namespace IOC;
 /****************************************************/
 int main(int argc, char ** argv)
 {
-	LibfabricDomain domain("127.0.0.1", "8556", false);
-	LibfabricConnection connection(&domain, true);
+	LibfabricDomain domain("10.100.3.26", "8556", false);
+	LibfabricConnection connection(&domain, false);
 	connection.postRecives(1024*1024, 2);
+
+	//rma
+	char * buffer = new char[TEST_RDMA_SIZE];
+	memset(buffer, 0, TEST_RDMA_SIZE);
+	Iov iov = domain.registerSegment(buffer, TEST_RDMA_SIZE);
 
 	//join server
 	connection.joinServer();
@@ -29,6 +34,7 @@ int main(int argc, char ** argv)
 	LibfabricMessage msg;
 	msg.header.type = 10;
 	msg.header.clientId = connection.getClientId();
+	msg.data.iov = iov;
 
 	//register hook
 	connection.registerHook(11, [&connection](int clientId, size_t id, void * buffer) {
@@ -56,6 +62,6 @@ int main(int argc, char ** argv)
 	clock_gettime(CLOCK_MONOTONIC, &stop);
 	double result = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1e9;    // in microseconds
 	double rate = (double)cnt / result / 1000.0;
-	double bandwidth = 8.0 * (double)cnt * (double)sizeof(msg) / result / 1000.0 / 1000.0 / 1000.0;
+	double bandwidth = 8.0 * (double)cnt * (double)(TEST_RDMA_SIZE+sizeof(msg)) / result / 1000.0 / 1000.0 / 1000.0;
 	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, size: %zu\n", result, rate, bandwidth, sizeof(msg));
 }
