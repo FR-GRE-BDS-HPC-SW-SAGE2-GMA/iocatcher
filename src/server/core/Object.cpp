@@ -60,6 +60,9 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size)
 	//load last
 	if (lastOffset < base + size)
 		segments.push_back(this->loadSegment(lastOffset, base + size - lastOffset));
+
+	//sort
+	segments.sort();
 }
 
 /****************************************************/
@@ -71,4 +74,10 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size)
 	segment.ptr = (char*)malloc(size);
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size);
+}
+
+/****************************************************/
+bool IOC::operator< (const ObjectSegment & seg1, const ObjectSegment & seg2)
+{
+	return seg1.offset < seg2.offset;
 }

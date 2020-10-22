@@ -32,12 +32,12 @@ int main(int argc, char ** argv)
 
 	//send open
 	LibfabricMessage msg;
-	msg.header.type = 10;
+	msg.header.type = IOC_LF_MSG_PING;
 	msg.header.clientId = connection.getClientId();
 	msg.data.iov = iov;
 
 	//register hook
-	connection.registerHook(11, [&connection](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_PONG, [&connection](int clientId, size_t id, void * buffer) {
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
 		return true;

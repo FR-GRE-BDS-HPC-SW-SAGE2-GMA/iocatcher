@@ -54,6 +54,9 @@ class Object
 		ObjectSegmentMap segmentMap;
 };
 
+/****************************************************/
+bool operator<(const ObjectSegment & seg1, const ObjectSegment & seg2);
+
 }
 
 #endif //IOC_OBJECT_HPP

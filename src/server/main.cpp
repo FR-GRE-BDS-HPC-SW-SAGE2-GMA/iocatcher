@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
 	});
 
 	//register hook
-	connection.registerHook(10, [&connection, rmaBuffer](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_PING, [&connection, rmaBuffer](int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get 10 %d\n", clientId);
 
@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
 		connection.rdmaWrite(clientId, rmaBuffer, clientMessage->data.iov.addr, clientMessage->data.iov.key, TEST_RDMA_SIZE, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
-			msg->header.type = 11;
+			msg->header.type = IOC_LF_MSG_PONG;
 			msg->header.clientId = 0;
 
 			connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){

@@ -18,40 +18,14 @@
 #include <rdma/fi_endpoint.h>
 //local
 #include "LibfabricDomain.hpp"
+#include "Protocol.hpp"
 
 /****************************************************/
 namespace IOC
 {
 
 /****************************************************/
-#define IOC_LF_MAX_ADDR_LEN 32
 #define IOC_LF_SERVER_ID 0
-
-/****************************************************/
-enum LibfabricMessageType
-{
-	IOC_LF_MSG_CONNECT_INIT,
-	IOC_LF_MSG_ASSIGN_ID,
-	IOC_LF_MSG_MAX,
-};
-
-/****************************************************/
-struct LibfabricMessageHeader
-{
-	int type;
-	int clientId;
-};
-
-/****************************************************/
-struct LibfabricMessage
-{
-	LibfabricMessageHeader header;
-	union {
-		/** Client to address to be send to the server on MSG_CONN_INIT **/
-		char addr[IOC_LF_MAX_ADDR_LEN];
-		Iov iov;
-	} data;
-};
 
 /****************************************************/
 class LibfabricConnection;
