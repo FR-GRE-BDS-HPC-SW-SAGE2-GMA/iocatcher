@@ -219,7 +219,23 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 		.end();
 
 	int ret = fi_read(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
-	LIBFABRIC_CHECK_STATUS("fi_writedata", ret);
+	LIBFABRIC_CHECK_STATUS("fi_read", ret);
+}
+
+/****************************************************/
+void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction)
+{
+	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
+	void * mrDesc = fi_mr_desc(mr);
+
+	//search
+	auto it = this->remoteLiAddr.find(destinationEpId);
+	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
+		.arg(destinationEpId)
+		.end();
+
+	int ret = fi_write(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	LIBFABRIC_CHECK_STATUS("fi_write", ret);
 }
 
 /****************************************************/

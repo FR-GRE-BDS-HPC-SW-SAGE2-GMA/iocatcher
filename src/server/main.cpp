@@ -40,7 +40,7 @@ int main(int argc, char ** argv)
 
 		//do rdma read
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
-		connection.rdmaRead(clientId, rmaBuffer, clientMessage->data.iov.addr, clientMessage->data.iov.key, TEST_RDMA_SIZE, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
+		connection.rdmaWrite(clientId, rmaBuffer, clientMessage->data.iov.addr, clientMessage->data.iov.key, TEST_RDMA_SIZE, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
 			msg->header.type = 11;
