@@ -58,6 +58,7 @@ class LibfabricDomain
 		fid_fabric *fabric;
 		fid_domain *domain;
 		std::list<MemoryRegion> segments;
+		bool virtMrMode;
 };
 
 }

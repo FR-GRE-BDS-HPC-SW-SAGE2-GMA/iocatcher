@@ -38,5 +38,8 @@ add_executable(poc main.cpp)
 target_link_libraries(poc ${LIBFABRIC_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 ######################################################
+add_definitions(-DENABLE_COLOR)
+
+######################################################
 add_subdirectory(extern-deps)
 add_subdirectory(src)

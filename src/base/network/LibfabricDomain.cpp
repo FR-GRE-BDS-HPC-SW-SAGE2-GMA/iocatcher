@@ -59,6 +59,11 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	//setup domain
 	err = fi_domain(fabric, fi, &this->domain, nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_domain",err);
+
+	//get mr mode
+	this->virtMrMode = true;
+	if (strncmp(fi->fabric_attr->prov_name, "tcp;", 4) == 0)
+		this->virtMrMode = false;
 }
 
 /****************************************************/
@@ -96,13 +101,14 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size)
 	region.mr = nullptr;
 
 	//reg into OFI
-	int ret = fi_mr_reg(domain, ptr, size, FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0/*TOTO*/, 0, &(region.mr), nullptr);
+	static int cnt = 0;
+	int ret = fi_mr_reg(domain, ptr, size, FI_REMOTE_READ | FI_REMOTE_WRITE, 0, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
 
 	segments.push_back(region);
 
 	Iov iov;
-	iov.addr = ptr;
+	iov.addr = (virtMrMode) ? ptr : 0;
 	iov.key = fi_mr_key(region.mr);
 
 	return iov;
