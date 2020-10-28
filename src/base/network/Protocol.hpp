@@ -31,8 +31,9 @@ enum LibfabricMessageType
 	IOC_LF_MSG_MAX,
 	IOC_LF_MSG_PING = 10,
 	IOC_LF_MSG_PONG,
-	IOC_LF_MSG_READ_OBJ = 100,
-	IOC_LF_MSG_WRITE_OBJ,
+	IOC_LF_MSG_OBJ_READ = 100,
+	IOC_LF_MSG_OBJ_WRITE,
+	IOC_LG_MSG_OBJ_READ_WRITE_ACK,
 };
 
 /****************************************************/
@@ -43,6 +44,16 @@ struct LibfabricMessageHeader
 };
 
 /****************************************************/
+struct LibfabricObjReadWriteInfos
+{
+	int64_t low;
+	int64_t high;
+	Iov iov;
+	uint64_t offset;
+	uint64_t size;
+};
+
+/****************************************************/
 struct LibfabricMessage
 {
 	LibfabricMessageHeader header;
@@ -50,6 +61,8 @@ struct LibfabricMessage
 		/** Client to address to be send to the server on MSG_CONN_INIT **/
 		char addr[IOC_LF_MAX_ADDR_LEN];
 		Iov iov;
+		int status;
+		LibfabricObjReadWriteInfos objReadWrite;
 	} data;
 };
 

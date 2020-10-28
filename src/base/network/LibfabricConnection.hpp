@@ -72,6 +72,7 @@ class LibfabricConnection
 		void registerHook(int messageType, std::function<bool(int, size_t, void*)> function);
 		void unregisterHook(int messageType);
 		int getClientId(void) { return clientId;};
+		LibfabricDomain & getDomain(void) {return *lfDomain;};
 	private:
 		bool pollRx(void);
 		bool pollTx(void);

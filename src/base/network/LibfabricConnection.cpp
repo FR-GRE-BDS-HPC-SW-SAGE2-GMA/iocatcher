@@ -340,7 +340,7 @@ bool LibfabricConnection::onRecv(size_t id)
 /****************************************************/
 void LibfabricConnection::registerHook(int messageType, std::function<bool(int, size_t, void*)> function)
 {
-	assert(this->hooks.find(messageType) == this->hooks.end());
+	//assert(this->hooks.find(messageType) == this->hooks.end());
 	this->hooks[messageType] = function;
 }
 

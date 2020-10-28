@@ -74,10 +74,22 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size)
 	segment.ptr = (char*)malloc(size);
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size);
+	return segment;
 }
 
 /****************************************************/
 bool IOC::operator< (const ObjectSegment & seg1, const ObjectSegment & seg2)
 {
 	return seg1.offset < seg2.offset;
+}
+
+/****************************************************/
+bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
+{
+	if (objId1.high < objId2.high)
+		return true;
+	else if (objId1.high == objId2.high)
+		return objId1.low < objId2.low;
+	else
+		return false;
 }

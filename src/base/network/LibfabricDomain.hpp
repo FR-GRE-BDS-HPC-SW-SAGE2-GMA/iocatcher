@@ -47,6 +47,7 @@ class LibfabricDomain
 		LibfabricDomain(const std::string & server, const std::string & port, bool isDomainServer);
 		~LibfabricDomain(void);
 		Iov registerSegment(void * ptr, size_t size);
+		void unregisterSegment(void * ptr, size_t size);
 		fi_info * getFiInfo(void);
 		fid_fabric * getFabric(void);
 		fid_domain * getDomain(void);

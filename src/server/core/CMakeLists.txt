@@ -6,7 +6,7 @@
 ######################################################
 
 ######################################################
-set(SERVER_CORE_SRC Object.cpp)
+set(SERVER_CORE_SRC Object.cpp Container.cpp)
 
 ######################################################
 add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC})

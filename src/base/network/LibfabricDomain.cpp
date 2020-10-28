@@ -108,6 +108,14 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size)
 	return iov;
 }
 
+/****************************************************/
+void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
+{
+	fid_mr* mr = getFidMR(ptr,size);
+	fi_close(&mr->fid);
+}
+
+/****************************************************/
 fid_mr* LibfabricDomain::getFidMR ( void* ptr, size_t size )
 {
 	MemoryRegion * region = getMR(ptr,size);
@@ -117,11 +125,13 @@ fid_mr* LibfabricDomain::getFidMR ( void* ptr, size_t size )
 		return region->mr;
 }
 
+/****************************************************/
 MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 {
 	//search
 	MemoryRegion * mr = nullptr;
 	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
+		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
 		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
 			if ((char*)ptr+size > (char*)it->ptr + it->size)
 				DAQ_WARNING("Caution, a segment from libfabric not completetly fit with the request which is larger.");

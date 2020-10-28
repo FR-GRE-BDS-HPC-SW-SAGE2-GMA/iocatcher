@@ -56,6 +56,7 @@ class Object
 
 /****************************************************/
 bool operator<(const ObjectSegment & seg1, const ObjectSegment & seg2);
+bool operator<(const ObjectId & objId1, const ObjectId & objId2);
 
 }
 
