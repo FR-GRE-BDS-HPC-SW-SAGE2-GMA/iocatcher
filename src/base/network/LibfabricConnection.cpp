@@ -223,6 +223,50 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 }
 
 /****************************************************/
+void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, LibfabricPostAction * postAction)
+{
+	void ** mrDesc = new void*[count];
+	for (int i = 0 ; i < count ; i++) {
+		fid_mr * mr = lfDomain->getFidMR(iov[i].iov_base,iov[i].iov_len);
+		mrDesc[i] = fi_mr_desc(mr);
+	}
+
+	//search
+	auto it = this->remoteLiAddr.find(destinationEpId);
+	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
+		.arg(destinationEpId)
+		.end();
+
+	int ret = fi_readv(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	LIBFABRIC_CHECK_STATUS("fi_read", ret);
+
+	//clear tmp
+	delete [] mrDesc;
+}
+
+/****************************************************/
+void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, LibfabricPostAction * postAction)
+{
+	void ** mrDesc = new void*[count];
+	for (int i = 0 ; i < count ; i++) {
+		fid_mr * mr = lfDomain->getFidMR(iov[i].iov_base,iov[i].iov_len);
+		mrDesc[i] = fi_mr_desc(mr);
+	}
+
+	//search
+	auto it = this->remoteLiAddr.find(destinationEpId);
+	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
+		.arg(destinationEpId)
+		.end();
+
+	int ret = fi_writev(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	LIBFABRIC_CHECK_STATUS("fi_read", ret);
+
+	//clear tmp
+	delete [] mrDesc;
+}
+
+/****************************************************/
 void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction)
 {
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);

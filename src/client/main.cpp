@@ -104,6 +104,47 @@ void obj_read(LibfabricConnection &connection, int64_t low, int64_t high, char* 
 }
 
 /****************************************************/
+void obj_write(LibfabricConnection &connection, int64_t low, int64_t high, char* buffer, size_t size, size_t offset)
+{
+	//register
+	Iov iov = connection.getDomain().registerSegment(buffer, size);
+
+	//setup message request
+	LibfabricMessage msg;
+	msg.header.type = IOC_LF_MSG_OBJ_WRITE;
+	msg.header.clientId = connection.getClientId();
+	msg.data.objReadWrite.low = low;
+	msg.data.objReadWrite.high = high;
+	msg.data.objReadWrite.iov = iov;
+	msg.data.objReadWrite.offset = offset;
+	msg.data.objReadWrite.size = size;
+
+	//register hook for reception
+	LibfabricMessage ackMsg;
+	connection.registerHook(IOC_LG_MSG_OBJ_READ_WRITE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+		ackMsg = *(LibfabricMessage *)buffer;
+		//printf("get 11 %d\n", clientId);
+		connection.repostRecive(id);
+		return true;
+	});
+
+	//send message
+	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		return false;
+	}));
+
+	//poll
+	connection.poll(true);
+
+	//unregister
+	connection.getDomain().unregisterSegment(buffer, size);
+
+	//check status
+	if (ackMsg.data.status != 0)
+		printf("Invalid status : %d\n", ackMsg.data.status);
+}
+
+/****************************************************/
 int main(int argc, char ** argv)
 {
 	if (argc != 2) {
@@ -119,11 +160,18 @@ int main(int argc, char ** argv)
 	connection.joinServer();
 
 	//do ping pong
+	printf("Run ping pong\n");
 	ping_pong(domain, connection);
 
 	//do obj read
+	printf("Run obj read\n");
 	char * buffer = new char[1024*1024];
 	obj_read(connection, 0x10, 0x11, buffer, 1024*1024, 0);
 	obj_read(connection, 0x10, 0x11, buffer, 1024*1024, 512*1024);
+
+	//do obj read
+	printf("Run obj write\n");
+	obj_write(connection, 0x10, 0x11, buffer, 1024*1024, 0);
+	obj_write(connection, 0x10, 0x11, buffer, 1024*1024, 512*1024);
 	delete buffer;
 }

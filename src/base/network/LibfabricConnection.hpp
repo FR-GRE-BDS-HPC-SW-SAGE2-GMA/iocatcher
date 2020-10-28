@@ -67,7 +67,9 @@ class LibfabricConnection
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction);
 		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction);
+		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, LibfabricPostAction * postAction);
 		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction);
+		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, LibfabricPostAction * postAction);
 		void repostRecive(size_t id);
 		void registerHook(int messageType, std::function<bool(int, size_t, void*)> function);
 		void unregisterHook(int messageType);
