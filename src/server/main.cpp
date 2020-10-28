@@ -18,7 +18,12 @@ using namespace IOC;
 /****************************************************/
 int main(int argc, char ** argv)
 {
-	LibfabricDomain domain("10.100.3.26", "8556", true);
+	if (argc != 2) {
+		fprintf(stderr, "Usage: iocatcher-server {IP}\n");
+		return 1;
+	}
+
+	LibfabricDomain domain(argv[1], "8556", true);
 	LibfabricConnection connection(&domain, false);
 	connection.postRecives(1024*1024, 64);
 
@@ -33,7 +38,7 @@ int main(int argc, char ** argv)
 	//register hook
 	connection.registerHook(IOC_LF_MSG_PING, [&connection, rmaBuffer](int clientId, size_t id, void * buffer) {
 		//printf
-		//printf("Get 10 %d\n", clientId);
+		printf("Get 10 %d\n", clientId);
 
 		//republish
 		connection.repostRecive(id);

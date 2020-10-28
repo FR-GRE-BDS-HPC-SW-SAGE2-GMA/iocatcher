@@ -18,7 +18,12 @@ using namespace IOC;
 /****************************************************/
 int main(int argc, char ** argv)
 {
-	LibfabricDomain domain("10.100.3.26", "8556", false);
+	if (argc != 2) {
+		fprintf(stderr, "Usage: iocatcher-server {IP}\n");
+		return 1;
+	}
+
+	LibfabricDomain domain(argv[1], "8556", false);
 	LibfabricConnection connection(&domain, false);
 	connection.postRecives(1024*1024, 2);
 
@@ -38,7 +43,7 @@ int main(int argc, char ** argv)
 
 	//register hook
 	connection.registerHook(IOC_LF_MSG_PONG, [&connection](int clientId, size_t id, void * buffer) {
-		//printf("get 11 %d\n", clientId);
+		printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
 		return true;
 	});
@@ -48,7 +53,7 @@ int main(int argc, char ** argv)
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	//send
-	int cnt = 1000;
+	int cnt = 10;
 	for (int i = 0 ; i < cnt ; i++) {
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
 			return false;

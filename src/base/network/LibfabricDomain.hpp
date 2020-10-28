@@ -17,6 +17,10 @@
 #include <rdma/fi_errno.h>
 #include <rdma/fi_domain.h>
 
+//TMP
+//#define TEST_RDMA_SIZE (4*1024*1024)
+#define TEST_RDMA_SIZE (4096)
+
 /****************************************************/
 namespace IOC
 {
