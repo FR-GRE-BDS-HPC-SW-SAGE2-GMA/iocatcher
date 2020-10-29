@@ -33,7 +33,9 @@ enum LibfabricMessageType
 	IOC_LF_MSG_PONG,
 	IOC_LF_MSG_OBJ_READ = 100,
 	IOC_LF_MSG_OBJ_WRITE,
-	IOC_LG_MSG_OBJ_READ_WRITE_ACK,
+	IOC_LF_MSG_OBJ_READ_WRITE_ACK,
+	IOC_LF_MSG_OBJ_FLUSH,
+	IOC_LF_MSG_OBJ_FLUSH_ACK,
 };
 
 /****************************************************/
@@ -54,6 +56,13 @@ struct LibfabricObjReadWriteInfos
 };
 
 /****************************************************/
+struct LibfabricObjFlushInfos
+{
+	int64_t low;
+	int64_t high;
+};
+
+/****************************************************/
 struct LibfabricMessage
 {
 	LibfabricMessageHeader header;
@@ -63,6 +72,7 @@ struct LibfabricMessage
 		Iov iov;
 		int status;
 		LibfabricObjReadWriteInfos objReadWrite;
+		LibfabricObjFlushInfos objFlush;
 	} data;
 };
 

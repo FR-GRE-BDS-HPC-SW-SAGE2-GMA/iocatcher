@@ -38,6 +38,10 @@ int main(int argc, char ** argv)
 	ioc_client_obj_read(client, 10, 20, buffer, 1024*1024, 512*1024);
 	delete buffer;
 
+	//flush
+	printf("Flush object\n");
+	ioc_client_obj_flush(client, 10, 20);
+
 	//clear
 	ioc_client_fini(client);
 }

@@ -93,16 +93,23 @@ struct fid_domain * LibfabricDomain::getDomain(void)
 }
 
 /****************************************************/
-Iov LibfabricDomain::registerSegment(void * ptr, size_t size)
+Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool write)
 {
 	MemoryRegion region;
 	region.ptr = ptr;
 	region.size = size;
 	region.mr = nullptr;
 
+	//flag
+	int accessFlag = 0;
+	if (read)
+		accessFlag |= FI_REMOTE_READ;
+	if (write)
+		accessFlag |= FI_REMOTE_WRITE;
+
 	//reg into OFI
 	static int cnt = 0;
-	int ret = fi_mr_reg(domain, ptr, size, FI_REMOTE_READ | FI_REMOTE_WRITE, 0, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
+	int ret = fi_mr_reg(domain, ptr, size, accessFlag, 0, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
 
 	segments.push_back(region);
@@ -119,6 +126,15 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 {
 	fid_mr* mr = getFidMR(ptr,size);
 	fi_close(&mr->fid);
+
+	//remove from list
+	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
+		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
+		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
+			segments.erase(it);
+			break;
+		}
+	}
 }
 
 /****************************************************/

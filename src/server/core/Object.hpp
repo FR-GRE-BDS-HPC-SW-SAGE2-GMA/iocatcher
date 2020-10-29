@@ -47,6 +47,7 @@ class Object
 		Object(LibfabricDomain * domain, int64_t low, int64_t high);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size);
+		int flush(void);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size);
 	private:

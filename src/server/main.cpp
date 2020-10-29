@@ -23,7 +23,7 @@ void setupPingPong(LibfabricConnection & connection)
 {
 	//rma
 	char * rmaBuffer = new char[TEST_RDMA_SIZE];
-	connection.getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE);
+	connection.getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true);
 
 	//register hook
 	connection.registerHook(IOC_LF_MSG_PING, [&connection, rmaBuffer](int clientId, size_t id, void * buffer) {
@@ -54,6 +54,39 @@ void setupPingPong(LibfabricConnection & connection)
 }
 
 /****************************************************/
+void setupObjFlush(LibfabricConnection & connection, Container & container)
+{
+	//register hook
+	connection.registerHook(IOC_LF_MSG_OBJ_FLUSH, [&connection, &container](int clientId, size_t id, void * buffer) {
+		//infos
+		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
+
+		//printf
+		printf("Get flush object %ld:%ld\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
+
+		//flush object
+		Object & object = container.getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
+		int ret = object.flush();
+
+		//send open
+		LibfabricMessage * msg = new LibfabricMessage;
+		msg->header.type = IOC_LF_MSG_OBJ_FLUSH_ACK;
+		msg->header.clientId = clientId;
+		msg->data.status = ret;
+
+		connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+			delete msg;
+			return false;
+		}));
+
+		//republish
+		connection.repostRecive(id);
+
+		return false;
+	});
+}
+
+/****************************************************/
 iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
 {
 	//compute intersection
@@ -74,7 +107,6 @@ iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
 	struct iovec * iov = new iovec[segments.size()];
 	int cnt = 0;
 	for (auto & it : segments) {
-		printf("%p -> %lu -> %lu\n", it.ptr, it.offset, it.size);
 		iov[cnt].iov_base = it.ptr;
 		iov[cnt].iov_len = it.size;
 		cnt++;
@@ -89,7 +121,7 @@ void setupObjRead(LibfabricConnection & connection, Container & container)
 	//register hook
 	connection.registerHook(IOC_LF_MSG_OBJ_READ, [&connection, &container](int clientId, size_t id, void * buffer) {
 		//printf
-		printf("Get OBJ_READ %d\n", clientId);
+		//printf("Get OBJ_READ %d\n", clientId);
 
 		//do rdma write on remote segment to send data to reader
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
@@ -106,7 +138,7 @@ void setupObjRead(LibfabricConnection & connection, Container & container)
 		connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
-			msg->header.type = IOC_LG_MSG_OBJ_READ_WRITE_ACK;
+			msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 			msg->header.clientId = 0;
 			msg->data.status = 0;
 
@@ -135,7 +167,7 @@ void setupObjWrite(LibfabricConnection & connection, Container & container)
 	//register hook
 	connection.registerHook(IOC_LF_MSG_OBJ_WRITE, [&connection, &container](int clientId, size_t id, void * buffer) {
 		//printf
-		printf("Get OBJ_READ %d\n", clientId);
+		//printf("Get OBJ_READ %d\n", clientId);
 
 		//do rdma write on remote segment to send data to write
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
@@ -149,10 +181,10 @@ void setupObjWrite(LibfabricConnection & connection, Container & container)
 		iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
 		//emit rdma write vec & implement callback
-		connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
+		connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([&connection, clientId, iov](LibfabricPostAction*action){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
-			msg->header.type = IOC_LG_MSG_OBJ_READ_WRITE_ACK;
+			msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 			msg->header.clientId = 0;
 			msg->data.status = 0;
 
@@ -188,7 +220,7 @@ int main(int argc, char ** argv)
 
 	//init domain & conn
 	LibfabricDomain domain(argv[1], "8556", true);
-	LibfabricConnection connection(&domain, false);
+	LibfabricConnection connection(&domain, true);
 	connection.postRecives(1024*1024, 64);
 
 	// client lobby
@@ -203,6 +235,7 @@ int main(int argc, char ** argv)
 	setupPingPong(connection);
 	setupObjRead(connection, container);
 	setupObjWrite(connection, container);
+	setupObjFlush(connection, container);
 
 	// poll
 	for(;;) {

@@ -67,6 +67,12 @@ void ioc_client_ping_pong(ioc_client_t * client)
 	ping_pong(*client->domain, *client->connection);
 }
 
+/****************************************************/
+int ioc_client_obj_flush(struct ioc_client_t * client, int64_t high, int64_t low)
+{
+	return obj_flush(*client->connection, high, low);
+}
+
 }
 
 #endif //IOC_CLIENT_H

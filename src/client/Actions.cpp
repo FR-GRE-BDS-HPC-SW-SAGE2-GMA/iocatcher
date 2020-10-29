@@ -17,7 +17,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
 	//rma
 	char * buffer = new char[TEST_RDMA_SIZE];
 	memset(buffer, 0, TEST_RDMA_SIZE);
-	Iov iov = domain.registerSegment(buffer, TEST_RDMA_SIZE);
+	Iov iov = domain.registerSegment(buffer, TEST_RDMA_SIZE, true, true);
 
 	//send open
 	LibfabricMessage msg;
@@ -62,7 +62,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
 ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low, void* buffer, size_t size, size_t offset)
 {
 	//register
-	Iov iov = connection.getDomain().registerSegment(buffer, size);
+	Iov iov = connection.getDomain().registerSegment(buffer, size, true, true);
 
 	//setup message request
 	LibfabricMessage msg;
@@ -76,7 +76,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LG_MSG_OBJ_READ_WRITE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
@@ -105,7 +105,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset)
 {
 	//register
-	Iov iov = connection.getDomain().registerSegment((char*)buffer, size);
+	Iov iov = connection.getDomain().registerSegment((char*)buffer, size, true, false);
 
 	//setup message request
 	LibfabricMessage msg;
@@ -119,7 +119,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LG_MSG_OBJ_READ_WRITE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
@@ -136,6 +136,40 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 
 	//unregister
 	connection.getDomain().unregisterSegment((char*)buffer, size);
+
+	//check status
+	if (ackMsg.data.status != 0)
+		printf("Invalid status : %d\n", ackMsg.data.status);
+	
+	return ackMsg.data.status;
+}
+
+/****************************************************/
+int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low)
+{
+	//setup message request
+	LibfabricMessage msg;
+	msg.header.type = IOC_LF_MSG_OBJ_FLUSH;
+	msg.header.clientId = connection.getClientId();
+	msg.data.objFlush.low = low;
+	msg.data.objFlush.high = high;
+
+	//register hook for reception
+	LibfabricMessage ackMsg;
+	connection.registerHook(IOC_LF_MSG_OBJ_FLUSH_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+		ackMsg = *(LibfabricMessage *)buffer;
+		//printf("get 11 %d\n", clientId);
+		connection.repostRecive(id);
+		return true;
+	});
+
+	//send message
+	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		return false;
+	}));
+
+	//poll
+	connection.poll(true);
 
 	//check status
 	if (ackMsg.data.status != 0)

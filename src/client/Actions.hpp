@@ -20,6 +20,7 @@ namespace IOC
 void ping_pong(LibfabricDomain & domain, LibfabricConnection &connection);
 ssize_t obj_read(LibfabricConnection &connection, int64_t high, int64_t low, void* buffer, size_t size, size_t offset);
 ssize_t obj_write(LibfabricConnection &connection, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset);
+int obj_flush(LibfabricConnection &connection, int64_t high, int64_t low);
 
 }
 

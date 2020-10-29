@@ -107,8 +107,8 @@ static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t siz
 			last_index += data_units_size;
 		}
 
-		cout << "[Pending] Send MERO write ops, object ID=" << m_object_id;
-		cout << ", size=" << block_size << ", bs=" << data_units_size << endl;
+		//cout << "[Pending] Send MERO write ops, object ID=" << m_object_id;
+		//cout << ", size=" << block_size << ", bs=" << data_units_size << endl;
 		
 		// Send the write ops to MERO and wait for completion 
 		ret = write_data_to_object(m_object_id, &ext, &data, &attr);
@@ -126,8 +126,8 @@ static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t siz
 	};
 
 	if (ret == 0) {
-		cout << "[Success] Executing the MERO pwrite op, object ID="<< m_object_id << ", size=" << size
-					<< ", offset=" << offset << endl;
+		//cout << "[Success] Executing the MERO pwrite op, object ID="<< m_object_id << ", size=" << size
+		//			<< ", offset=" << offset << endl;
 		return size;
 	} else {
 		cerr << "[Failed] Error executing the MERO pwrite op, object ID=" << m_object_id << " , size=" << size
@@ -284,12 +284,23 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size)
 	segment.size = size;
 	segment.ptr = (char*)malloc(size);
 	if (this->domain != NULL)
-		this->domain->registerSegment(segment.ptr, segment.size);
+		this->domain->registerSegment(segment.ptr, segment.size, true, true);
 	size_t status = pread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+	assume(status == size, "Fail to pread from object !");
 	if (status != size)
 		status = pwrite(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
-	assume(status == size, "Fail to pread from object !");
+	assume(status == size, "Fail to write from object !");
 	return segment;
+}
+
+/****************************************************/
+int Object::flush(void)
+{
+	int ret = 0;
+	for (auto it : this->segmentMap)
+		if (pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != it.second.size)
+			ret = -1;
+	return ret;
 }
 
 /****************************************************/
