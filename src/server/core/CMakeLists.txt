@@ -6,11 +6,12 @@
 ######################################################
 
 ######################################################
-set(SERVER_CORE_SRC Object.cpp Container.cpp)
+set(SERVER_CORE_SRC Object.cpp Container.cpp clovis_api.c)
 
 ######################################################
 add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC})
 SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
 
 ######################################################
 if (ENABLE_TESTS)

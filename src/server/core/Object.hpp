@@ -13,6 +13,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <cstdlib>
 #include <list>
 #include <map>
+#include <ostream>
 #include "../../base/network/LibfabricDomain.hpp"
 
 /****************************************************/

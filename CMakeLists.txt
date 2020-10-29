@@ -27,6 +27,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/unittest-macros.cmake)
 ######################################################
 find_package(LibFabric REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Mero REQUIRED)
 
 ######################################################
 setup_internal_gmock_and_gtest()
@@ -34,6 +35,9 @@ enable_cxx_11()
 
 ######################################################
 include_directories(${LIBFABRIC_INCLUDE_DIRS})
+include_directories(${MERO_INCLUDE_DIRS})
+
+######################################################
 add_executable(poc main.cpp)
 target_link_libraries(poc ${LIBFABRIC_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 

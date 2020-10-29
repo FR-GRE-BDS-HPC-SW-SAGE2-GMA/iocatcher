@@ -11,6 +11,7 @@
 #include <cassert>
 //local
 #include "core/Container.hpp"
+#include "core/clovis_api.h"
 #include "../base/network/LibfabricDomain.hpp"
 #include "../base/network/LibfabricConnection.hpp"
 
@@ -182,6 +183,10 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
+	//init mero
+	c0appz_init(0, "mero_ressource_file.rc");
+
+	//init domain & conn
 	LibfabricDomain domain(argv[1], "8556", true);
 	LibfabricConnection connection(&domain, false);
 	connection.postRecives(1024*1024, 64);
@@ -203,4 +208,7 @@ int main(int argc, char ** argv)
 	for(;;) {
 		connection.poll(false);
 	}
+
+	//close clovis
+	c0appz_free();
 }
