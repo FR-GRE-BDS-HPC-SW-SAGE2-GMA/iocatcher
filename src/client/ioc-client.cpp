@@ -9,6 +9,9 @@
 #define IOC_CLIENT_H
 
 /****************************************************/
+#include <vector>
+#include <mutex>
+#include <cassert>
 #include "Actions.hpp"
 
 /****************************************************/
@@ -21,21 +24,56 @@ extern "C"
 struct ioc_client_t
 {
 	LibfabricDomain * domain;
-	LibfabricConnection * connection;
+	std::mutex connections_mutex;
+	std::vector<LibfabricConnection *> connections;
 };
+
+/****************************************************/
+static void ioc_client_ret_connection(ioc_client_t * client, LibfabricConnection * connection)
+{
+	//check
+	assert(client != NULL);
+	assert(connection != NULL);
+
+	//setup
+	connection->setUsed(false);
+}
+
+/****************************************************/
+static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
+{
+	//check
+	assert(client != NULL);
+
+	//lock
+	std::lock_guard<std::mutex> take_lock(client->connections_mutex);
+
+	//search one available
+	for (auto it : client->connections) {
+		if (it->getUsed() == false) {
+			it->setUsed(true);
+			return it;
+		}
+	}
+
+	//setup connection
+	LibfabricConnection * connection = new LibfabricConnection(client->domain, false);
+	connection->postRecives(2*4096, 2);
+	connection->joinServer();
+	connection->setUsed(true);
+
+	//add
+	client->connections.push_back(connection);
+
+	//ret
+	return connection;
+}
 
 /****************************************************/
 struct ioc_client_t * ioc_client_init(const char * ip, const char * port)
 {
 	ioc_client_t * client = new ioc_client_t;
 	client->domain = new LibfabricDomain(ip, port, false);
-	client->connection = new LibfabricConnection(client->domain, false);
-
-	//post recive buffers
-	client->connection->postRecives(1024*1024, 2);
-
-	//join server
-	client->connection->joinServer();
 
 	//return
 	return client;
@@ -44,7 +82,9 @@ struct ioc_client_t * ioc_client_init(const char * ip, const char * port)
 /****************************************************/
 void ioc_client_fini(ioc_client_t * client)
 {
-	delete client->connection;
+	client->connections_mutex.lock();
+	for (auto it : client->connections)
+		delete it;
 	delete client->domain;
 	delete client;
 }
@@ -52,25 +92,36 @@ void ioc_client_fini(ioc_client_t * client)
 /****************************************************/
 ssize_t ioc_client_obj_read(struct ioc_client_t * client, int64_t high, int64_t low, void* buffer, size_t size, size_t offset)
 {
-	return obj_read(*client->connection, high, low, buffer, size, offset);
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	ssize_t ret = obj_read(*connection, high, low, buffer, size, offset);
+	ioc_client_ret_connection(client, connection);
+	return ret;
 }
 
 /****************************************************/
 ssize_t ioc_client_obj_write(struct ioc_client_t * client, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset)
 {
-	return obj_write(*client->connection, high, low, buffer, size, offset);
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	ssize_t ret = obj_write(*connection, high, low, buffer, size, offset);
+	ioc_client_ret_connection(client, connection);
+	return ret;
 }
 
 /****************************************************/
 void ioc_client_ping_pong(ioc_client_t * client)
 {
-	ping_pong(*client->domain, *client->connection);
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	ping_pong(*client->domain, *connection);
+	ioc_client_ret_connection(client, connection);
 }
 
 /****************************************************/
 int ioc_client_obj_flush(struct ioc_client_t * client, int64_t high, int64_t low)
 {
-	return obj_flush(*client->connection, high, low);
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	int ret = obj_flush(*connection, high, low);
+	ioc_client_ret_connection(client, connection);
+	return ret;
 }
 
 }

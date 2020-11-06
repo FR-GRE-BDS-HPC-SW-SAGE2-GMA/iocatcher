@@ -75,6 +75,8 @@ class LibfabricConnection
 		void unregisterHook(int messageType);
 		int getClientId(void) { return clientId;};
 		LibfabricDomain & getDomain(void) {return *lfDomain;};
+		void setUsed(bool used) {this->used = used;};
+		bool getUsed(void) {return this->used;}
 	private:
 		bool pollRx(void);
 		bool pollTx(void);
@@ -101,6 +103,7 @@ class LibfabricConnection
 		std::function<void(int)> hookOnEndpointConnect;
 		int clientId;
 		std::map<size_t, std::function<bool(int, size_t, void*)>> hooks;
+		bool used;
 };
 
 }

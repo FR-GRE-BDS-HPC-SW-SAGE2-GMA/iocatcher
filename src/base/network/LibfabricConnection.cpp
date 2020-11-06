@@ -41,6 +41,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	assert(lfDomain != NULL);
 
 	//set
+	this->used = false;
 	this->clientId = -1;
 	this->lfDomain = lfDomain;
 	this->wait = wait;
