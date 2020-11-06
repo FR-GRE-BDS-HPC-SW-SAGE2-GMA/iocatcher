@@ -23,7 +23,7 @@ void setupPingPong(LibfabricConnection & connection)
 {
 	//rma
 	char * rmaBuffer = new char[TEST_RDMA_SIZE];
-	connection.getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true);
+	connection.getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true, false);
 
 	//register hook
 	connection.registerHook(IOC_LF_MSG_PING, [&connection, rmaBuffer](int clientId, size_t id, void * buffer) {
@@ -175,7 +175,7 @@ void setupObjWrite(LibfabricConnection & connection, Container & container)
 		//get buffers from object
 		Object & object = container.getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
 		ObjectSegmentList segments;
-		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, false);
 
 		//build iovec
 		iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
@@ -220,7 +220,7 @@ int main(int argc, char ** argv)
 
 	//init domain & conn
 	LibfabricDomain domain(argv[1], "8556", true);
-	LibfabricConnection connection(&domain, true);
+	LibfabricConnection connection(&domain, false);
 	connection.postRecives(1024*1024, 64);
 
 	// client lobby

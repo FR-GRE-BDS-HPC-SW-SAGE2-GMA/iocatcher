@@ -8,6 +8,10 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 #include <cassert>
 #include <iostream>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "Object.hpp"
 #include "../../base/common/Debug.hpp"
 extern "C" {
@@ -244,7 +248,7 @@ const ObjectId & Object::getObjectId(void)
 }
 
 /****************************************************/
-void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size)
+void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load)
 {
 	//extract
 	for (auto it : this->segmentMap) {
@@ -259,7 +263,7 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size)
 	ObjectSegmentList tmp;
 	for (auto it : segments) {
 		if (it.offset > lastOffset) {
-			tmp.push_back(this->loadSegment(lastOffset, it.offset - lastOffset));
+			tmp.push_back(this->loadSegment(lastOffset, it.offset - lastOffset, load));
 		}
 		lastOffset = it.offset + it.size;
 	}
@@ -270,26 +274,58 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size)
 
 	//load last
 	if (lastOffset < base + size)
-		segments.push_back(this->loadSegment(lastOffset, base + size - lastOffset));
+		segments.push_back(this->loadSegment(lastOffset, base + size - lastOffset, load));
 
 	//sort
 	segments.sort();
 }
 
 /****************************************************/
-ObjectSegment Object::loadSegment(size_t offset, size_t size)
+char * allocateNvdimm(size_t size)
+{
+	//vars
+	static int cnt = 0;
+
+	//open
+	char fname[1024];
+	sprintf(fname, "/mnt/pmem/ioc/ioc-%d.raw", cnt++);
+	int fd = open(fname, O_CREAT|O_RDWR);
+	assume(fd >= 0, "Fail to open nvdimm file !");
+
+	//truncate
+	printf("%d %lu\n", fd, size);
+	int status = ftruncate(fd, size);
+	assumeArg(status == 0, "Fail to ftruncate: %1").argStrErrno().end();
+
+	//mmap
+	void * ptr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	assumeArg(ptr != MAP_FAILED, "Fail to mmap : %1").argStrErrno().end();
+	memset(ptr, 0, size);
+
+	//madvie
+	//status = madvise(ptr, size, MADV_DONTFORK);
+	//assumeArg(status != 0, "Fail to madvise: %1").argStrErrno().end();
+
+	return (char*)ptr;
+}
+
+/****************************************************/
+ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 {
 	ObjectSegment & segment = this->segmentMap[offset];
 	segment.offset = offset;
 	segment.size = size;
 	segment.ptr = (char*)malloc(size);
+	//segment.ptr = allocateNvdimm(size);
 	if (this->domain != NULL)
-		this->domain->registerSegment(segment.ptr, segment.size, true, true);
-	size_t status = pread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
-	assume(status == size, "Fail to pread from object !");
-	if (status != size)
-		status = pwrite(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
-	assume(status == size, "Fail to write from object !");
+		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
+	if (load) {
+		size_t status = pread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+		assume(status == size, "Fail to pread from object !");
+		if (status != size)
+			status = pwrite(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+		assume(status == size, "Fail to write from object !");
+	}
 	return segment;
 }
 

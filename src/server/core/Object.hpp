@@ -46,10 +46,10 @@ class Object
 	public:
 		Object(LibfabricDomain * domain, int64_t low, int64_t high);
 		const ObjectId & getObjectId(void);
-		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size);
+		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
 		int flush(void);
 	private:
-		ObjectSegment loadSegment(size_t offset, size_t size);
+		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
 	private:
 		LibfabricDomain * domain;
 		ObjectId objectId;

@@ -587,7 +587,8 @@ void handle_connection(const Options & options, struct fi_info *fi, struct fid_d
 	double result = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1e9;    // in microseconds
 	double rate = (double)cnt / result / 1000.0;
 	double bandwidth = 8.0 * (double)cnt * (double)options.msgSize / result / 1000.0 / 1000.0 / 1000.0;
-	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, size: %zu\n", result, rate, bandwidth, options.msgSize);
+	double bandwidth2 = (double)cnt * (double)options.msgSize / result / 1024.0 / 1024.0 / 1024.0;
+	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, %g Gbytes/s, size: %zu\n", result, rate, bandwidth, bandwidth2, options.msgSize);
 
 	//free buffers
 	for (int i = 0 ; i < options.clients ; i++) {

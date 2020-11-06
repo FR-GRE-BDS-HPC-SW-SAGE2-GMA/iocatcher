@@ -5,7 +5,7 @@
 
 # config
 MESSAGES=500000
-CLIENTS=2
+CLIENTS=1
 IP=10.1.3.26
 SIZES="40 64 128 256 512 1024 $((1024*2)) $((1024*4)) $((1024*8)) $((1024*16)) $((1024*32)) $((1024*64)) $((1024*128)) $((1024*256)) $((1024*512)) $((1024*1024)) $((1024*2048)) $((1024*4096))"
 DIVIDE_AT=$((64*1024))
@@ -16,7 +16,7 @@ EXTRA_TITLE=
 
 set -e
 
-function gen_chart()
+function gen_chart1()
 {
 	# grep driver mode
 	mode="$(cat client.log | egrep '^NET:' | head -n 1 | cut -d ' ' -f 2 | sed -e 's/_/-/g')"
@@ -32,10 +32,32 @@ function gen_chart()
 	set y2label 'Bandwidth (Gbits/s)' tc lt 2
 	set title "Libfaric ping pong (${mode})${EXTRA_TITLE}"
 	set grid
-	plot 'result.log' u (\$11/1024):5 w lp title "Message rate", '' u (\$11/1024):8 axes x1y2 w lp title "Bandwidth"
+	plot 'result.log' u (\$13/1024):5 w lp title "Message rate", '' u (\$13/1024):8 axes x1y2 w lp title "Bandwidth"
 	EOF
 	# plot
 	gnuplot 'result.gnuplot'
+}
+
+function gen_chart2()
+{
+	# grep driver mode
+	mode="$(cat client.log | egrep '^NET:' | head -n 1 | cut -d ' ' -f 2 | sed -e 's/_/-/g')"
+	# gen plot cmd
+	cat > 'result2.gnuplot' <<-EOF
+	set term pdf
+	set output 'result2.pdf'
+	set logscale x 2
+	set xlabel 'Message size (kBytes)'
+	set ylabel 'Rate (kMsg/s)'
+	set ytics tc lt 1
+	set y2tics tc lt 2
+	set y2label 'Bandwidth (Gbytes/s)' tc lt 2
+	set title "Libfaric ping pong (${mode})${EXTRA_TITLE}"
+	set grid
+	plot 'result.log' u (\$13/1024):5 w lp title "Message rate", '' u (\$13/1024):10 axes x1y2 w lp title "Bandwidth"
+	EOF
+	# plot
+	gnuplot 'result2.gnuplot'
 }
 
 # run server in loop
@@ -50,7 +72,8 @@ function run_server()
 		if [ ${size} == $DIVIDE_AT2 ]; then MESSAGES=$(($MESSAGES/10)); fi
 		hwloc-bind --cpubind core:${CLIENTS} -- ./poc ${SERVER_OPTS} -m ${MESSAGES} -S ${size} -C ${CLIENTS} -s ${IP} | egrep '^Time' | tee -a result.log
 	done
-	gen_chart
+	gen_chart1
+	gen_chart2
 }
 
 # run client in loop
@@ -69,7 +92,7 @@ function run_client()
 		else
 			hwloc-bind --cpubind core:$((${CLIENTS}-1)) -- ./poc ${CLIENT_OPTS} -m ${MESSAGES} -S ${size} -t ${CLIENTS} -C ${CLIENTS} -c ${IP} | tee -a client.log
 		fi
-		sleep 2
+		sleep 10
 	done
 }
 

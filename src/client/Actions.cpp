@@ -17,7 +17,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
 	//rma
 	char * buffer = new char[TEST_RDMA_SIZE];
 	memset(buffer, 0, TEST_RDMA_SIZE);
-	Iov iov = domain.registerSegment(buffer, TEST_RDMA_SIZE, true, true);
+	Iov iov = domain.registerSegment(buffer, TEST_RDMA_SIZE, true, true, false);
 
 	//send open
 	LibfabricMessage msg;
@@ -62,7 +62,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
 ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low, void* buffer, size_t size, size_t offset)
 {
 	//register
-	Iov iov = connection.getDomain().registerSegment(buffer, size, true, true);
+	Iov iov = connection.getDomain().registerSegment(buffer, size, true, true, false);
 
 	//setup message request
 	LibfabricMessage msg;
@@ -105,7 +105,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset)
 {
 	//register
-	Iov iov = connection.getDomain().registerSegment((char*)buffer, size, true, false);
+	Iov iov = connection.getDomain().registerSegment((char*)buffer, size, true, false, false);
 
 	//setup message request
 	LibfabricMessage msg;

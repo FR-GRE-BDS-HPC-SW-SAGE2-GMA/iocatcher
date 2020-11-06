@@ -32,7 +32,7 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 		printf("fi_allocinfo failed\n");
 		exit(1);
 	}
-	hints->caps = FI_MSG; //|FI_RMA;
+	hints->caps = FI_MSG; // | FI_RMA_PMEM; //|FI_RMA;
 	//hints->caps = FI_MSG;
 	//hints->mode = FI_CONTEXT | FI_RX_CQ_DATA;
 	//hints->mode = FI_LOCAL_MR;
@@ -46,8 +46,9 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	else
 		err = fi_getinfo(FI_VERSION(1,11), serverIp.c_str(), port.c_str(), 0, hints, &this->fi);
 	LIBFABRIC_CHECK_STATUS("fi_getinfo",err);
-	printf("%d\n", this->fi->caps & FI_MSG);
-	printf("%d\n", this->fi->caps & FI_RMA);
+	printf("MSG: %d\n", this->fi->caps & FI_MSG);
+	printf("RMA: %d\n", this->fi->caps & FI_RMA);
+	printf("RMA_PMEM: %d\n", this->fi->caps & FI_RMA_PMEM);
 
 	//display
 	IOC_INFO_ARG("NET: %1").arg(fi->fabric_attr->prov_name).end();
@@ -93,23 +94,28 @@ struct fid_domain * LibfabricDomain::getDomain(void)
 }
 
 /****************************************************/
-Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool write)
+Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool write, bool pmem)
 {
 	MemoryRegion region;
 	region.ptr = ptr;
 	region.size = size;
 	region.mr = nullptr;
 
-	//flag
+	//access
 	int accessFlag = 0;
 	if (read)
 		accessFlag |= FI_REMOTE_READ;
 	if (write)
 		accessFlag |= FI_REMOTE_WRITE;
 
+	//flag
+	int flags = 0;
+	if (pmem)
+		flags |= FI_RMA_PMEM;
+
 	//reg into OFI
 	static int cnt = 0;
-	int ret = fi_mr_reg(domain, ptr, size, accessFlag, 0, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
+	int ret = fi_mr_reg(domain, ptr, size, accessFlag, flags, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
 
 	segments.push_back(region);
