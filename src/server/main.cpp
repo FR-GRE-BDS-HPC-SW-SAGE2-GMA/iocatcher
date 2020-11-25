@@ -11,7 +11,9 @@
 #include <cassert>
 //local
 #include "core/Container.hpp"
-#include "core/clovis_api.h"
+#ifndef NOMERO
+	#include "core/clovis_api.h"
+#endif
 #include "../base/network/LibfabricDomain.hpp"
 #include "../base/network/LibfabricConnection.hpp"
 
@@ -216,7 +218,9 @@ int main(int argc, char ** argv)
 	}
 
 	//init mero
-	c0appz_init(0, "mero_ressource_file.rc");
+	#ifndef NOMERO
+		c0appz_init(0, "mero_ressource_file.rc");
+	#endif
 
 	//init domain & conn
 	LibfabricDomain domain(argv[1], "8556", true);
@@ -243,5 +247,7 @@ int main(int argc, char ** argv)
 	}
 
 	//close clovis
-	c0appz_free();
+	#ifndef NOMERO
+		c0appz_free();
+	#endif
 }

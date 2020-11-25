@@ -19,6 +19,19 @@ set(IOC_SERVER_INTERNAL_CODE
 )
 
 ######################################################
+set(IOC_SERVER_INTERNAL_CODE_NOMERO
+	#extern deps
+#	$<TARGET_OBJECTS:daqpipe-common>
+	#internal
+	$<TARGET_OBJECTS:ioc-server-core-no-mero>
+#	$<TARGET_OBJECTS:ioc-network>
+	#we should keep an eye on portability of this
+#	$<TARGET_OBJECTS:ioc-portability>
+	#optional
+#	${OPTIONAL_EXTRA}
+)
+
+######################################################
 set(MERO_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
 set(MERO_COMPILE_FLAGS "${MERO_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
 
@@ -34,6 +47,12 @@ target_link_libraries(iocatcher-server iocatcher-base)
 target_link_libraries(iocatcher-server ${MERO_LIBRARIES})
 install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
 SET_TARGET_PROPERTIES(iocatcher-server PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
+
+######################################################
+add_definitions(-DNOMERO)
+add_executable(iocatcher-server-no-mero ${IOC_SERVER_INTERNAL_CODE_NOMERO} main.cpp)
+target_link_libraries(iocatcher-server-no-mero iocatcher-base)
+install(TARGETS iocatcher-server-no-mero DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ######################################################
 add_subdirectory(core)
