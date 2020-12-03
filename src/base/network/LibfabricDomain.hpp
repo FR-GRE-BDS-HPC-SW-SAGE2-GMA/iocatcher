@@ -12,6 +12,7 @@
 //std
 #include <string>
 #include <list>
+#include <mutex>
 //libfabric
 #include <rdma/fabric.h>
 #include <rdma/fi_errno.h>
@@ -59,6 +60,7 @@ class LibfabricDomain
 		fid_domain *domain;
 		std::list<MemoryRegion> segments;
 		bool virtMrMode;
+		std::mutex segmentMutex;
 };
 
 }

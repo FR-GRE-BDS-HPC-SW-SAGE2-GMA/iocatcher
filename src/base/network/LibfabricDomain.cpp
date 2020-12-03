@@ -8,6 +8,9 @@
 /****************************************************/
 //std
 #include <cassert>
+//tmp
+#include <unistd.h>
+#include <sys/mman.h>
 //local
 #include "LibfabricDomain.hpp"
 #include "../common/Debug.hpp"
@@ -113,12 +116,18 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	if (pmem)
 		flags |= FI_RMA_PMEM;
 
-	//reg into OFI
+	//keep key tracking
 	static int cnt = 0;
+
+	//lock
+	segmentMutex.lock();
+
+	//reg into ofi
 	int ret = fi_mr_reg(domain, ptr, size, accessFlag, flags, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
 
 	segments.push_back(region);
+	segmentMutex.unlock();
 
 	Iov iov;
 	iov.addr = (virtMrMode) ? ptr : 0;
@@ -134,6 +143,7 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 	fi_close(&mr->fid);
 
 	//remove from list
+	segmentMutex.lock();
 	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
 		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
 		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
@@ -141,6 +151,7 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 			break;
 		}
 	}
+	segmentMutex.unlock();
 }
 
 /****************************************************/
@@ -158,6 +169,7 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 {
 	//search
 	MemoryRegion * mr = nullptr;
+	segmentMutex.lock();
 	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
 		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
 		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
@@ -167,6 +179,7 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 			break;
 		}
 	}
+	segmentMutex.unlock();
 	return mr;
 }
 

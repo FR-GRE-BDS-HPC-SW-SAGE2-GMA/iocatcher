@@ -9,6 +9,8 @@
 //std
 #include <cstdio>
 #include <cassert>
+#include <thread>
+#include <unistd.h>
 //local
 #include "core/Container.hpp"
 #ifndef NOMERO
@@ -19,6 +21,10 @@
 
 /****************************************************/
 using namespace IOC;
+
+/****************************************************/
+static size_t readSize = 0;
+static size_t writeSize = 0;
 
 /****************************************************/
 void setupPingPong(LibfabricConnection & connection)
@@ -64,11 +70,11 @@ void setupObjFlush(LibfabricConnection & connection, Container & container)
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
 		//printf
-		printf("Get flush object %ld:%ld\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
+		printf("Get flush object %ld:%ld %lu->%lu\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low, clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 		//flush object
 		Object & object = container.getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
-		int ret = object.flush();
+		int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
@@ -135,14 +141,18 @@ void setupObjRead(LibfabricConnection & connection, Container & container)
 
 		//build iovec
 		iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+		size_t size = clientMessage->data.objReadWrite.size;
 
 		//emit rdma write vec & implement callback
-		connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
+		connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([size, &connection, clientId](LibfabricPostAction*action){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
 			msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 			msg->header.clientId = 0;
 			msg->data.status = 0;
+
+			//stats
+			readSize += size;
 
 			//send ack message
 			connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
@@ -181,14 +191,18 @@ void setupObjWrite(LibfabricConnection & connection, Container & container)
 
 		//build iovec
 		iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+		size_t size = clientMessage->data.objReadWrite.size;
 
 		//emit rdma write vec & implement callback
-		connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([&connection, clientId, iov](LibfabricPostAction*action){
+		connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([size, &connection, clientId, iov](LibfabricPostAction*action){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
 			msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 			msg->header.clientId = 0;
 			msg->data.status = 0;
+
+			//stats
+			writeSize += size;
 
 			//send ack message
 			connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
@@ -222,6 +236,17 @@ int main(int argc, char ** argv)
 		c0appz_init(0, "mero_ressource_file.rc");
 	#endif
 
+	//stats thread
+	bool run = true;
+	std::thread statThread = std::thread([&run]{
+		while (run) {
+			sleep(1);
+			printf("Read: %g GB/s, Write: %g GB/s\n", (double)readSize/1.0/1024.0/1024.0/1024.0, (double) writeSize/1.0/1024.0/1024.0/1024.0);
+			readSize = 0;
+			writeSize = 0;
+		}
+	});
+
 	//init domain & conn
 	LibfabricDomain domain(argv[1], "8556", true);
 	LibfabricConnection connection(&domain, false);
@@ -245,6 +270,10 @@ int main(int argc, char ** argv)
 	for(;;) {
 		connection.poll(false);
 	}
+
+	//status thread
+	run = false;
+	statThread.join();
 
 	//close clovis
 	#ifndef NOMERO

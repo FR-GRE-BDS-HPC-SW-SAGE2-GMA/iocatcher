@@ -145,7 +145,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 }
 
 /****************************************************/
-int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low)
+int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size)
 {
 	//setup message request
 	LibfabricMessage msg;
@@ -153,6 +153,8 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low)
 	msg.header.clientId = connection.getClientId();
 	msg.data.objFlush.low = low;
 	msg.data.objFlush.high = high;
+	msg.data.objFlush.offset = offset;
+	msg.data.objFlush.size = size;
 
 	//register hook for reception
 	LibfabricMessage ackMsg;

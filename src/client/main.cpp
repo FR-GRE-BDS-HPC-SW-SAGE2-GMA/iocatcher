@@ -40,7 +40,7 @@ int main(int argc, char ** argv)
 
 	//flush
 	printf("Flush object\n");
-	ioc_client_obj_flush(client, 10, 20);
+	ioc_client_obj_flush(client, 10, 20, 0, 0);
 
 	//clear
 	ioc_client_fini(client);

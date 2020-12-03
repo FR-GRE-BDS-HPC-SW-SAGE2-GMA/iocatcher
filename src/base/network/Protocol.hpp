@@ -60,6 +60,8 @@ struct LibfabricObjFlushInfos
 {
 	int64_t low;
 	int64_t high;
+	uint64_t offset;
+	uint64_t size;
 };
 
 /****************************************************/

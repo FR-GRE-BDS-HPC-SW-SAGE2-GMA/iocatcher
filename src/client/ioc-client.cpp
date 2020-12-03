@@ -116,10 +116,10 @@ void ioc_client_ping_pong(ioc_client_t * client)
 }
 
 /****************************************************/
-int ioc_client_obj_flush(struct ioc_client_t * client, int64_t high, int64_t low)
+int ioc_client_obj_flush(struct ioc_client_t * client, int64_t high, int64_t low, uint64_t offset, uint64_t size)
 {
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_flush(*connection, high, low);
+	int ret = obj_flush(*connection, high, low, offset, size);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }

@@ -263,6 +263,12 @@ const ObjectId & Object::getObjectId(void)
 /****************************************************/
 void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load)
 {
+	//align
+	size_t align = 8*1024*1024;
+	size += base % align;
+	base -= base % align;
+	size += align - (size % align);
+
 	//extract
 	for (auto it : this->segmentMap) {
 		//if overlap
@@ -294,14 +300,12 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 }
 
 /****************************************************/
-char * allocateNvdimm(size_t size)
+char * allocateNvdimm(int64_t high, int64_t low, size_t offset, size_t size)
 {
-	//vars
-	static int cnt = 0;
-
 	//open
 	char fname[1024];
-	sprintf(fname, "/mnt/pmem1/valats/ioc/ioc-%d.raw", cnt++);
+	sprintf(fname, "/mnt/pmem1/valats/ioc/ioc-%ld:%ld-%lu.raw", high, low, offset);
+	unlink(fname);
 	int fd = open(fname, O_CREAT|O_RDWR);
 	assume(fd >= 0, "Fail to open nvdimm file !");
 
@@ -329,7 +333,7 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	segment.offset = offset;
 	segment.size = size;
 	//segment.ptr = (char*)malloc(size);
-	segment.ptr = allocateNvdimm(size);
+	segment.ptr = allocateNvdimm(this->objectId.high, this->objectId.low, offset, size);
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
 	if (load) {
@@ -343,12 +347,13 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 }
 
 /****************************************************/
-int Object::flush(void)
+int Object::flush(size_t offset, size_t size)
 {
 	int ret = 0;
 	for (auto it : this->segmentMap)
-		if (pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
-			ret = -1;
+		if (size == 0 || it.second.overlap(offset, size))
+			if (pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
+				ret = -1;
 	return ret;
 }
 
