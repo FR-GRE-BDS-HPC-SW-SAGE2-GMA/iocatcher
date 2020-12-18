@@ -11,6 +11,7 @@
 #include <cassert>
 #include <thread>
 #include <unistd.h>
+#include <sys/mman.h>
 //local
 #include "core/Container.hpp"
 #ifndef NOMERO
@@ -251,6 +252,14 @@ int main(int argc, char ** argv)
 	LibfabricDomain domain(argv[1], "8556", true);
 	LibfabricConnection connection(&domain, false);
 	connection.postRecives(1024*1024, 64);
+
+	//test readonly registration
+	/*printf("test\n");
+	void * ptr = mmap(NULL, 16*1024*1024, PROT_READ, MAP_ANON | MAP_PRIVATE, 0, 0);
+	domain.registerSegment(ptr, 16*1024*1024, true, false, false);
+	domain.unregisterSegment(ptr, 16*1024*1024);
+	munmap(ptr, 16*1024*1024);
+	printf("ok\n");*/
 
 	// client lobby
 	connection.setHooks([](int id) {

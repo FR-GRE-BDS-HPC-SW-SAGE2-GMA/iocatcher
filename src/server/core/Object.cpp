@@ -261,6 +261,18 @@ const ObjectId & Object::getObjectId(void)
 }
 
 /****************************************************/
+void Object::markDirty(size_t base, size_t size)
+{
+	//extract
+	for (auto it : this->segmentMap) {
+		//if overlap
+		if (it.second.overlap(base, size)) {
+			it.second.dirty = true;
+		}
+	}
+}
+
+/****************************************************/
 void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load)
 {
 	//align
@@ -332,8 +344,9 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	ObjectSegment & segment = this->segmentMap[offset];
 	segment.offset = offset;
 	segment.size = size;
-	//segment.ptr = (char*)malloc(size);
-	segment.ptr = allocateNvdimm(this->objectId.high, this->objectId.low, offset, size);
+	segment.ptr = (char*)malloc(size);
+	segment.dirty = false;
+	//segment.ptr = allocateNvdimm(this->objectId.high, this->objectId.low, offset, size);
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
 	if (load) {
@@ -350,10 +363,15 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 int Object::flush(size_t offset, size_t size)
 {
 	int ret = 0;
-	for (auto it : this->segmentMap)
-		if (size == 0 || it.second.overlap(offset, size))
-			if (pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
-				ret = -1;
+	for (auto it : this->segmentMap) {
+		if (it.second.dirty) {
+			if (size == 0 || it.second.overlap(offset, size)) {
+				if (pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
+					ret = -1;
+				it.second.dirty = false;
+			}
+		}
+	}
 	return ret;
 }
 

@@ -39,6 +39,8 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	//hints->caps = FI_MSG;
 	//hints->mode = FI_CONTEXT | FI_RX_CQ_DATA;
 	//hints->mode = FI_LOCAL_MR;
+	hints->mode = FI_MR_MMU_NOTIFY;
+	//hints->domain_attr->mr_mode = FI_MR_LOCAL;
 	hints->ep_attr->type = FI_EP_RDM;
 	//hints->fabric_attr->prov_name = strdup("verbs;ofi_rxm");
 
@@ -105,14 +107,14 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	region.mr = nullptr;
 
 	//access
-	int accessFlag = 0;
+	uint64_t accessFlag = 0;
 	if (read)
 		accessFlag |= FI_REMOTE_READ;
 	if (write)
 		accessFlag |= FI_REMOTE_WRITE;
 
 	//flag
-	int flags = 0;
+	uint64_t flags = 0;
 	if (pmem)
 		flags |= FI_RMA_PMEM;
 
@@ -125,6 +127,13 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	//reg into ofi
 	int ret = fi_mr_reg(domain, ptr, size, accessFlag, flags, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
 	LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
+
+	//update page table
+	/*struct iovec iov2;
+	iov2.iov_base = ptr;
+	iov2.iov_len = size;
+	ret = fi_mr_refresh(region.mr, &iov2, 1, 0);
+	LIBFABRIC_CHECK_STATUS("fi_mr_refresh",ret);*/
 
 	segments.push_back(region);
 	segmentMutex.unlock();

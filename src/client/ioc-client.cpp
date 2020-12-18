@@ -12,6 +12,7 @@
 #include <vector>
 #include <mutex>
 #include <cassert>
+#include <cstdlib>
 #include "Actions.hpp"
 
 /****************************************************/
@@ -72,6 +73,11 @@ static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
 /****************************************************/
 struct ioc_client_t * ioc_client_init(const char * ip, const char * port)
 {
+	//disable insternal cache which make a leak with ummap-io
+	int status = setenv("FI_MR_CACHE_MONITOR", "disabled", 1);
+	assume(status == 0, "Fail to set FI_MR_CACHE_MONITOR variable !");
+
+	//init client
 	ioc_client_t * client = new ioc_client_t;
 	client->domain = new LibfabricDomain(ip, port, false);
 
