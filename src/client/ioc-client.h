@@ -26,6 +26,7 @@ void ioc_client_fini(struct ioc_client_t * client);
 ssize_t ioc_client_obj_read(struct ioc_client_t * client, int64_t high, int64_t low, void* buffer, size_t size, size_t offset);
 ssize_t ioc_client_obj_write(struct ioc_client_t * client, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset);
 int ioc_client_obj_flush(struct ioc_client_t * client, int64_t high, int64_t low, uint64_t offset, uint64_t size);
+int ioc_client_obj_create(struct ioc_client_t * client, int64_t high, int64_t low);
 void ioc_client_ping_pong(struct ioc_client_t * client);
 
 /****************************************************/

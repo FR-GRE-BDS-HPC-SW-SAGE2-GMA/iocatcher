@@ -26,6 +26,11 @@ int main(int argc, char ** argv)
 	printf("Run ping pong\n");
 	ioc_client_ping_pong(client);
 
+	//create object
+	printf("Create obj\n");
+	int status = ioc_client_obj_create(client, 10, 20);
+	printf("  - Create : %d\n", status);
+
 	//do obj write
 	printf("Run obj write\n");
 	char * buffer = new char[1024*1024];

@@ -376,6 +376,19 @@ int Object::flush(size_t offset, size_t size)
 }
 
 /****************************************************/
+int Object::create(void)
+{
+	#ifndef NOMERO
+		struct m0_uint128 id;
+		id.u_hi = this->objectId.high;
+		id.u_lo = this->objectId.low;
+		return create_object(id);
+	#else
+		return 0;
+	#endif
+}
+
+/****************************************************/
 bool IOC::operator< (const ObjectSegment & seg1, const ObjectSegment & seg2)
 {
 	return seg1.offset < seg2.offset;

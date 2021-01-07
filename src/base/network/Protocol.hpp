@@ -36,6 +36,8 @@ enum LibfabricMessageType
 	IOC_LF_MSG_OBJ_READ_WRITE_ACK,
 	IOC_LF_MSG_OBJ_FLUSH,
 	IOC_LF_MSG_OBJ_FLUSH_ACK,
+	IOC_LF_MSG_OBJ_CREATE,
+	IOC_LF_MSG_OBJ_CREATE_ACK,
 };
 
 /****************************************************/
@@ -65,6 +67,13 @@ struct LibfabricObjFlushInfos
 };
 
 /****************************************************/
+struct LibfabricObjCreateInfos
+{
+	int64_t low;
+	int64_t high;
+};
+
+/****************************************************/
 struct LibfabricMessage
 {
 	LibfabricMessageHeader header;
@@ -75,6 +84,7 @@ struct LibfabricMessage
 		int status;
 		LibfabricObjReadWriteInfos objReadWrite;
 		LibfabricObjFlushInfos objFlush;
+		LibfabricObjCreateInfos objCreate;
 	} data;
 };
 

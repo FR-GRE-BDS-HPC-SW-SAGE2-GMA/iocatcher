@@ -50,6 +50,7 @@ class Object
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
 		void markDirty(size_t base, size_t size);
 		int flush(size_t offset, size_t size);
+		int create(void);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
 	private:

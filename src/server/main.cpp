@@ -96,6 +96,39 @@ void setupObjFlush(LibfabricConnection & connection, Container & container)
 }
 
 /****************************************************/
+void setupObjCreate(LibfabricConnection & connection, Container & container)
+{
+	//register hook
+	connection.registerHook(IOC_LF_MSG_OBJ_CREATE, [&connection, &container](int clientId, size_t id, void * buffer) {
+		//infos
+		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
+
+		//printf
+		printf("Get create object %ld:%ld %lu->%lu\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
+
+		//create object
+		Object & object = container.getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
+		int ret = object.create();
+
+		//send open
+		LibfabricMessage * msg = new LibfabricMessage;
+		msg->header.type = IOC_LF_MSG_OBJ_CREATE_ACK;
+		msg->header.clientId = clientId;
+		msg->data.status = ret;
+
+		connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+			delete msg;
+			return false;
+		}));
+
+		//republish
+		connection.repostRecive(id);
+
+		return false;
+	});
+}
+
+/****************************************************/
 iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
 {
 	//compute intersection
@@ -274,6 +307,7 @@ int main(int argc, char ** argv)
 	setupObjRead(connection, container);
 	setupObjWrite(connection, container);
 	setupObjFlush(connection, container);
+	setupObjCreate(connection, container);
 
 	// poll
 	for(;;) {

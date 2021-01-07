@@ -131,6 +131,15 @@ int ioc_client_obj_flush(struct ioc_client_t * client, int64_t high, int64_t low
 	return ret;
 }
 
+/****************************************************/
+int ioc_client_obj_create(struct ioc_client_t * client, int64_t high, int64_t low)
+{
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	int ret = obj_create(*connection, high, low);
+	ioc_client_ret_connection(client, connection);
+	return ret;
+}
+
 }
 
 #endif //IOC_CLIENT_H
