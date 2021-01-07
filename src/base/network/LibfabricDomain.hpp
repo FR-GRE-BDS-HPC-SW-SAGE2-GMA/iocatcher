@@ -54,12 +54,18 @@ class LibfabricDomain
 		fid_domain * getDomain(void);
 		fid_mr* getFidMR ( void* ptr, size_t size );
 		MemoryRegion* getMR ( void* ptr, size_t size );
+		void setMsgBuffeSize(size_t size);
+		void * getMsgBuffer(void);
+		void retMsgBuffer(void * buffer);
 	private:
 		fi_info *fi;
 		fid_fabric *fabric;
 		fid_domain *domain;
 		std::list<MemoryRegion> segments;
 		bool virtMrMode;
+		size_t msgBufferSize;
+		std::list<void *> msgBuffers;
+		std::mutex msgBuffersMutex;
 		std::mutex segmentMutex;
 };
 

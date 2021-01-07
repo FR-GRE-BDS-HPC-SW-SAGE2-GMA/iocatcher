@@ -65,14 +65,14 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 	Iov iov = connection.getDomain().registerSegment(buffer, size, true, true, false);
 
 	//setup message request
-	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_OBJ_READ;
-	msg.header.clientId = connection.getClientId();
-	msg.data.objReadWrite.low = low;
-	msg.data.objReadWrite.high = high;
-	msg.data.objReadWrite.iov = iov;
-	msg.data.objReadWrite.offset = offset;
-	msg.data.objReadWrite.size = size;
+	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
+	msg->header.type = IOC_LF_MSG_OBJ_READ;
+	msg->header.clientId = connection.getClientId();
+	msg->data.objReadWrite.low = low;
+	msg->data.objReadWrite.high = high;
+	msg->data.objReadWrite.iov = iov;
+	msg->data.objReadWrite.offset = offset;
+	msg->data.objReadWrite.size = size;
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
@@ -84,7 +84,8 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 	});
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg, &connection](LibfabricPostAction*action){
+		connection.getDomain().retMsgBuffer(msg);
 		return false;
 	}));
 
@@ -108,14 +109,14 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 	Iov iov = connection.getDomain().registerSegment((char*)buffer, size, true, false, false);
 
 	//setup message request
-	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_OBJ_WRITE;
-	msg.header.clientId = connection.getClientId();
-	msg.data.objReadWrite.low = low;
-	msg.data.objReadWrite.high = high;
-	msg.data.objReadWrite.iov = iov;
-	msg.data.objReadWrite.offset = offset;
-	msg.data.objReadWrite.size = size;
+	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
+	msg->header.type = IOC_LF_MSG_OBJ_WRITE;
+	msg->header.clientId = connection.getClientId();
+	msg->data.objReadWrite.low = low;
+	msg->data.objReadWrite.high = high;
+	msg->data.objReadWrite.iov = iov;
+	msg->data.objReadWrite.offset = offset;
+	msg->data.objReadWrite.size = size;
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
@@ -127,7 +128,8 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 	});
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg, &connection](LibfabricPostAction*action){
+		connection.getDomain().retMsgBuffer(msg);
 		return false;
 	}));
 

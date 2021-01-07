@@ -75,6 +75,15 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 /****************************************************/
 LibfabricDomain::~LibfabricDomain(void)
 {
+	//free msg buffers
+	this->msgBuffersMutex.lock();
+	for (auto it : this->msgBuffers) {
+		this->unregisterSegment(it, this->msgBufferSize);
+		free(it);
+	}
+	this->msgBuffers.clear();
+	this->msgBuffersMutex.unlock();
+
 	fi_close(&domain->fid);
 	fi_close(&fabric->fid);
 	fi_freeinfo(fi);
@@ -190,6 +199,60 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 	}
 	segmentMutex.unlock();
 	return mr;
+}
+
+/****************************************************/
+void LibfabricDomain::setMsgBuffeSize(size_t size)
+{
+	this->msgBufferSize = size;
+}
+
+/****************************************************/
+void * LibfabricDomain::getMsgBuffer(void)
+{
+	//vars
+	void * res = NULL;
+
+	//critical section
+	{
+		//lock
+		msgBuffersMutex.lock();
+
+		//check if need to allocate one
+		if (this->msgBuffers.empty()) {
+			assume(this->msgBufferSize != 0, "You need to configure message buffer size of libfabric domain !");
+			res = malloc(this->msgBufferSize);
+			this->registerSegment(res, this->msgBufferSize, true, false, false);
+		} else {
+			res = this->msgBuffers.back();
+			this->msgBuffers.pop_back();
+		}
+
+		//unlock
+		msgBuffersMutex.unlock();
+	}
+
+	//ret
+	return res;
+}
+
+/****************************************************/
+void LibfabricDomain::retMsgBuffer(void * buffer)
+{
+	//check
+	assume(buffer != NULL, "Fail to return NULL buffer !");
+
+	//critical section
+	{
+		//lock
+		msgBuffersMutex.lock();
+
+		//append
+		this->msgBuffers.push_back(buffer);
+
+		//unlock
+		msgBuffersMutex.unlock();
+	}
 }
 
 }

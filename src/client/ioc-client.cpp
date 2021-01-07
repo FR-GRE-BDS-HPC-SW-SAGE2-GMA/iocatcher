@@ -80,6 +80,7 @@ struct ioc_client_t * ioc_client_init(const char * ip, const char * port)
 	//init client
 	ioc_client_t * client = new ioc_client_t;
 	client->domain = new LibfabricDomain(ip, port, false);
+	client->domain->setMsgBuffeSize(sizeof(LibfabricMessage));
 
 	//return
 	return client;
