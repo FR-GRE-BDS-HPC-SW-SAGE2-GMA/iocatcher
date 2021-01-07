@@ -104,7 +104,7 @@ void setupObjCreate(LibfabricConnection & connection, Container & container)
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
 		//printf
-		printf("Get create object %ld:%ld %lu->%lu\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
+		printf("Get create object %ld:%ld\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
 
 		//create object
 		Object & object = container.getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
