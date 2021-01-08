@@ -20,7 +20,7 @@ int main(int argc, char ** argv)
 	}
 
 	//setup
-	struct ioc_client_t * client = ioc_client_init(argv[1], "8556");
+	ioc_client_t * client = ioc_client_init(argv[1], "8556");
 
 	//do ping pong
 	printf("Run ping pong\n");
