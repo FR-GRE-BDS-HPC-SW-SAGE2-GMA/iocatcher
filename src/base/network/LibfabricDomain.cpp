@@ -51,12 +51,12 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	else
 		err = fi_getinfo(FI_VERSION(1,11), serverIp.c_str(), port.c_str(), 0, hints, &this->fi);
 	LIBFABRIC_CHECK_STATUS("fi_getinfo",err);
-	printf("MSG: %d\n", this->fi->caps & FI_MSG);
-	printf("RMA: %d\n", this->fi->caps & FI_RMA);
-	printf("RMA_PMEM: %d\n", this->fi->caps & FI_RMA_PMEM);
+	//printf("MSG: %d\n", this->fi->caps & FI_MSG);
+	//printf("RMA: %d\n", this->fi->caps & FI_RMA);
+	//printf("RMA_PMEM: %d\n", this->fi->caps & FI_RMA_PMEM);
 
 	//display
-	IOC_INFO_ARG("NET: %1").arg(fi->fabric_attr->prov_name).end();
+	//IOC_INFO_ARG("NET: %1").arg(fi->fabric_attr->prov_name).end();
 
 	//IOC_
 	err = fi_fabric(fi->fabric_attr, &this->fabric, nullptr);
@@ -87,6 +87,12 @@ LibfabricDomain::~LibfabricDomain(void)
 	fi_close(&domain->fid);
 	fi_close(&fabric->fid);
 	fi_freeinfo(fi);
+}
+
+/****************************************************/
+const char * LibfabricDomain::getLFProviderName(void) const
+{
+	return this->fi->fabric_attr->prov_name;
 }
 
 /****************************************************/

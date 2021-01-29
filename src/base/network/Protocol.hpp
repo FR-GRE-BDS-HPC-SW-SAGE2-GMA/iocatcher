@@ -22,6 +22,8 @@ namespace IOC
 //TMP
 //#define TEST_RDMA_SIZE (4*1024*1024)
 #define TEST_RDMA_SIZE (4096)
+#define IOC_EAGER_MAX_WRITE (0*256*1024)
+#define IOC_EAGER_MAX_READ (0*256*1024)
 
 /****************************************************/
 enum LibfabricMessageType
@@ -55,6 +57,7 @@ struct LibfabricObjReadWriteInfos
 	Iov iov;
 	uint64_t offset;
 	uint64_t size;
+	bool msgHasData;
 };
 
 /****************************************************/
@@ -74,6 +77,14 @@ struct LibfabricObjCreateInfos
 };
 
 /****************************************************/
+struct LibfabricResponse
+{
+	int64_t msgDataSize;
+	int status;
+	bool msgHasData;
+};
+
+/****************************************************/
 struct LibfabricMessage
 {
 	LibfabricMessageHeader header;
@@ -81,7 +92,7 @@ struct LibfabricMessage
 		/** Client to address to be send to the server on MSG_CONN_INIT **/
 		char addr[IOC_LF_MAX_ADDR_LEN];
 		Iov iov;
-		int status;
+		LibfabricResponse response;
 		LibfabricObjReadWriteInfos objReadWrite;
 		LibfabricObjFlushInfos objFlush;
 		LibfabricObjCreateInfos objCreate;

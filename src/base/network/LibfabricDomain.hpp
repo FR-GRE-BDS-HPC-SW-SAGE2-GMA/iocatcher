@@ -57,6 +57,7 @@ class LibfabricDomain
 		void setMsgBuffeSize(size_t size);
 		void * getMsgBuffer(void);
 		void retMsgBuffer(void * buffer);
+		const char * getLFProviderName(void) const;
 	private:
 		fi_info *fi;
 		fid_fabric *fabric;

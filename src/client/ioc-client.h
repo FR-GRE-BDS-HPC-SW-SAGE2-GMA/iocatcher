@@ -28,6 +28,8 @@ ssize_t ioc_client_obj_write(ioc_client_t * client, int64_t high, int64_t low, c
 int ioc_client_obj_flush(ioc_client_t * client, int64_t high, int64_t low, uint64_t offset, uint64_t size);
 int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low);
 void ioc_client_ping_pong(ioc_client_t * client);
+const char * ioc_client_provider_name(ioc_client_t * client);
+void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
 
 /****************************************************/
 #ifdef __cplusplus

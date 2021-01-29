@@ -51,12 +51,14 @@ class Object
 		void markDirty(size_t base, size_t size);
 		int flush(size_t offset, size_t size);
 		int create(void);
+		static void setNvdimm(const char * path);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
 	private:
 		LibfabricDomain * domain;
 		ObjectId objectId;
 		ObjectSegmentMap segmentMap;
+		static const char * nvdimmPath;
 };
 
 /****************************************************/

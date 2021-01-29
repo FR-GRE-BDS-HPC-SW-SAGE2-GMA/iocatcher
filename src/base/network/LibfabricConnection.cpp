@@ -169,7 +169,7 @@ void LibfabricConnection::joinServer(void)
 
 	//register hook
 	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](int clientId, size_t id, void * buffer) {
-		printf("get clientID %d\n", clientId);
+		//printf("get clientID %d\n", clientId);
 		this->clientId = clientId;
 		this->repostRecive(id);
 		return true;

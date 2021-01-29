@@ -27,6 +27,7 @@ struct ioc_client_s
 	LibfabricDomain * domain;
 	std::mutex connections_mutex;
 	std::vector<LibfabricConnection *> connections;
+	bool passive_wait;
 };
 typedef ioc_client_s ioc_client_t;
 
@@ -59,8 +60,8 @@ static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
 	}
 
 	//setup connection
-	LibfabricConnection * connection = new LibfabricConnection(client->domain, false);
-	connection->postRecives(2*4096, 2);
+	LibfabricConnection * connection = new LibfabricConnection(client->domain, client->passive_wait);
+	connection->postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 	connection->joinServer();
 	connection->setUsed(true);
 
@@ -81,7 +82,9 @@ ioc_client_t * ioc_client_init(const char * ip, const char * port)
 	//init client
 	ioc_client_t * client = new ioc_client_t;
 	client->domain = new LibfabricDomain(ip, port, false);
-	client->domain->setMsgBuffeSize(sizeof(LibfabricMessage));
+	//client->domain->setMsgBuffeSize(sizeof(LibfabricMessage));
+	client->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
+	client->passive_wait = true;
 
 	//return
 	return client;
@@ -139,6 +142,18 @@ int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low)
 	int ret = obj_create(*connection, high, low);
 	ioc_client_ret_connection(client, connection);
 	return ret;
+}
+
+/****************************************************/
+const char * ioc_client_provider_name(ioc_client_t * client)
+{
+	return client->domain->getLFProviderName();
+}
+
+/****************************************************/
+void ioc_client_set_passive_wait(ioc_client_t * client, bool value)
+{
+	client->passive_wait = value;
 }
 
 }

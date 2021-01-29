@@ -44,6 +44,9 @@ using namespace IOC;
 using namespace std;
 
 /****************************************************/
+const char * IOC::Object::nvdimmPath;
+
+/****************************************************/
 #ifndef NOMERO
 	inline std::ostream&
 	operator<<(std::ostream& out, struct m0_uint128 object_id)
@@ -117,8 +120,8 @@ static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t siz
 				last_index += data_units_size;
 			}
 
-			//cout << "[Pending] Send MERO write ops, object ID=" << m_object_id;
-			//cout << ", size=" << block_size << ", bs=" << data_units_size << endl;
+			cout << "[Pending] Send MERO write ops, object ID=" << m_object_id;
+			cout << ", size=" << block_size << ", bs=" << data_units_size << endl;
 			
 			// Send the write ops to MERO and wait for completion 
 			ret = write_data_to_object(m_object_id, &ext, &data, &attr);
@@ -153,6 +156,7 @@ static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t siz
 /****************************************************/
 static ssize_t pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
 {
+	return size;
 	#ifndef NOMERO
 		//check
 		assert(buffer != NULL);
@@ -264,7 +268,7 @@ const ObjectId & Object::getObjectId(void)
 void Object::markDirty(size_t base, size_t size)
 {
 	//extract
-	for (auto it : this->segmentMap) {
+	for (auto & it : this->segmentMap) {
 		//if overlap
 		if (it.second.overlap(base, size)) {
 			it.second.dirty = true;
@@ -304,25 +308,26 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 		segments.push_back(it);
 
 	//load last
-	if (lastOffset < base + size)
+	if (lastOffset < base + size) {
 		segments.push_back(this->loadSegment(lastOffset, base + size - lastOffset, load));
+	}
 
 	//sort
 	segments.sort();
 }
 
 /****************************************************/
-char * allocateNvdimm(int64_t high, int64_t low, size_t offset, size_t size)
+char * allocateNvdimm(const char * nvdimmPath, int64_t high, int64_t low, size_t offset, size_t size)
 {
 	//open
 	char fname[1024];
-	sprintf(fname, "/mnt/pmem1/valats/ioc/ioc-%ld:%ld-%lu.raw", high, low, offset);
+	sprintf(fname, "%s/ioc-%ld:%ld-%lu.raw", nvdimmPath, high, low, offset);
 	unlink(fname);
 	int fd = open(fname, O_CREAT|O_RDWR);
 	assume(fd >= 0, "Fail to open nvdimm file !");
 
 	//truncate
-	printf("%d %lu\n", fd, size);
+	//printf("%d %lu\n", fd, size);
 	int status = ftruncate(fd, size);
 	assumeArg(status == 0, "Fail to ftruncate: %1").argStrErrno().end();
 
@@ -344,9 +349,11 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	ObjectSegment & segment = this->segmentMap[offset];
 	segment.offset = offset;
 	segment.size = size;
-	segment.ptr = (char*)malloc(size);
 	segment.dirty = false;
-	//segment.ptr = allocateNvdimm(this->objectId.high, this->objectId.low, offset, size);
+	if (this->nvdimmPath == NULL)
+		segment.ptr = (char*)malloc(size);
+	else
+		segment.ptr = allocateNvdimm(this->nvdimmPath, this->objectId.high, this->objectId.low, offset, size);
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
 	if (load) {
@@ -403,4 +410,10 @@ bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
 		return objId1.low < objId2.low;
 	else
 		return false;
+}
+
+/****************************************************/
+void IOC::Object::setNvdimm(const char * path)
+{
+	Object::nvdimmPath = path;
 }

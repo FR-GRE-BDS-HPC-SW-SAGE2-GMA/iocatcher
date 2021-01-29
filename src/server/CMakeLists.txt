@@ -49,8 +49,8 @@ install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
 SET_TARGET_PROPERTIES(iocatcher-server PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
 
 ######################################################
-add_definitions(-DNOMERO)
 add_executable(iocatcher-server-no-mero ${IOC_SERVER_INTERNAL_CODE_NOMERO} main.cpp)
+target_compile_definitions(iocatcher-server-no-mero PUBLIC -DNOMERO)
 target_link_libraries(iocatcher-server-no-mero iocatcher-base)
 install(TARGETS iocatcher-server-no-mero DESTINATION ${CMAKE_INSTALL_BINDIR})
 
