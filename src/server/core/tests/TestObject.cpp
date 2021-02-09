@@ -83,3 +83,31 @@ TEST(TestObject, getBuffers_4)
 	object.getBuffers(lst, 800,1800);
 	EXPECT_EQ(3, lst.size());
 }
+
+/****************************************************/
+TEST(TestObject, getBuffers_5_alignement)
+{
+	Object object(NULL, 10, 10, 1000);
+
+	ObjectSegmentList lst;
+	object.getBuffers(lst, 1000,500);
+	EXPECT_EQ(1, lst.size());
+
+	lst.clear();
+	object.getBuffers(lst, 1000,1000);
+	EXPECT_EQ(1, lst.size());
+}
+
+/****************************************************/
+TEST(TestObject, getBuffers_6_alignement)
+{
+	Object object(NULL, 10, 10, 1000);
+
+	ObjectSegmentList lst;
+	object.getBuffers(lst, 1000,500);
+	EXPECT_EQ(1, lst.size());
+
+	lst.clear();
+	object.getBuffers(lst, 1000,1500);
+	EXPECT_EQ(2, lst.size());
+}

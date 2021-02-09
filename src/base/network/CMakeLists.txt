@@ -13,6 +13,6 @@ add_library(ioc-network OBJECT ${NETWORK_SRC})
 SET_TARGET_PROPERTIES(ioc-network PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 ######################################################
-#if (ENABLE_TESTS)
-#	add_subdirectory(tests)
-#endif (ENABLE_TESTS)
+if (ENABLE_TESTS)
+	add_subdirectory(tests)
+endif (ENABLE_TESTS)

@@ -485,7 +485,7 @@ int main(int argc, char ** argv)
 	});
 	
 	//register read hooks
-	Container container(&domain);
+	Container container(&domain, 8*1024*1024);
 
 	//register hooks
 	setupPingPong(connection);

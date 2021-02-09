@@ -251,8 +251,9 @@ bool ObjectSegment::overlap(size_t segBase, size_t segSize)
 }
 
 /****************************************************/
-Object::Object(LibfabricDomain * domain, int64_t low, int64_t high)
+Object::Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement)
 {
+	this->alignement = alignement;
 	this->domain = domain;
 	this->objectId.low = low;
 	this->objectId.high = high;
@@ -277,13 +278,21 @@ void Object::markDirty(size_t base, size_t size)
 }
 
 /****************************************************/
+void Object::forceAlignement(size_t alignment)
+{
+	this->alignement = alignement;
+}
+
+/****************************************************/
 void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load)
 {
 	//align
-	size_t align = 8*1024*1024;
-	size += base % align;
-	base -= base % align;
-	size += align - (size % align);
+	if (this->alignement > 0)  {
+		size += base % alignement;
+		base -= base % alignement;
+		if (size % alignement > 0)
+			size += alignement - (size % alignement);
+	}
 
 	//extract
 	for (auto it : this->segmentMap) {

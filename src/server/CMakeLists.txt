@@ -32,21 +32,31 @@ set(IOC_SERVER_INTERNAL_CODE_NOMERO
 )
 
 ######################################################
-set(MERO_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
-set(MERO_COMPILE_FLAGS "${MERO_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
+if (MERO_FOUND)
+	set(MERO_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
+	set(MERO_COMPILE_FLAGS "${MERO_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
+else (MERO_FOUND)
+	set(MERO_COMPILE_FLAGS "-DNOMERO")
+endif (MERO_FOUND)
 
 ######################################################
-add_library(serverlib SHARED ${IOC_SERVER_INTERNAL_CODE})
+if (MERO_FOUND)
+	add_library(serverlib SHARED ${IOC_SERVER_INTERNAL_CODE})
+	target_link_libraries(serverlib ${MERO_LIBRARIES})
+else (MERO_FOUND)
+	add_library(serverlib SHARED ${IOC_SERVER_INTERNAL_CODE_NOMERO})
+endif (MERO_FOUND)
 target_link_libraries(serverlib iocatcher-base)
-target_link_libraries(serverlib ${MERO_LIBRARIES})
 SET_TARGET_PROPERTIES(serverlib PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
 
 ######################################################
-add_executable(iocatcher-server ${IOC_SERVER_INTERNAL_CODE} main.cpp)
-target_link_libraries(iocatcher-server iocatcher-base)
-target_link_libraries(iocatcher-server ${MERO_LIBRARIES})
-install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
-SET_TARGET_PROPERTIES(iocatcher-server PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
+if (MERO_FOUND)
+	add_executable(iocatcher-server ${IOC_SERVER_INTERNAL_CODE} main.cpp)
+	target_link_libraries(iocatcher-server iocatcher-base)
+	target_link_libraries(iocatcher-server ${MERO_LIBRARIES})
+	install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
+	SET_TARGET_PROPERTIES(iocatcher-server PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
+endif (MERO_FOUND)
 
 ######################################################
 add_executable(iocatcher-server-no-mero ${IOC_SERVER_INTERNAL_CODE_NOMERO} main.cpp)

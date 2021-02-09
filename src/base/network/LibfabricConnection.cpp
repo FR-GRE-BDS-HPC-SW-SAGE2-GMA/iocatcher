@@ -192,7 +192,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 	int err;
 
 	//checks
-	assert(size < recvBuffersSize);
+	assert(size <= recvBuffersSize);
 
 	//search
 	auto it = this->remoteLiAddr.find(destinationEpId);

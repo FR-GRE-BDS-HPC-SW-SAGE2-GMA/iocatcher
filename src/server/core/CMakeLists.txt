@@ -9,9 +9,11 @@
 set(SERVER_CORE_SRC Object.cpp Container.cpp)
 
 ######################################################
-add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC} clovis_api.c)
-SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
+if (MERO_FOUND)
+	add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC} clovis_api.c)
+	SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+	SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
+endif(MERO_FOUND)
 
 ######################################################
 add_library(ioc-server-core-no-mero OBJECT ${SERVER_CORE_SRC})

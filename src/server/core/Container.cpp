@@ -12,9 +12,10 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
-Container::Container(LibfabricDomain * lfDomain)
+Container::Container(LibfabricDomain * lfDomain, size_t objectSegmentsAlignement)
 {
 	this->lfDomain = lfDomain;
+	this->objectSegmentsAlignement = objectSegmentsAlignement;
 }
 
 /****************************************************/
@@ -36,7 +37,7 @@ Object & Container::getObject(int64_t low, int64_t high)
 
 	//if not found or found
 	if (it == objects.end()) {
-		Object * obj = new Object(lfDomain, low, high);
+		Object * obj = new Object(lfDomain, low, high, objectSegmentsAlignement);
 		objects.emplace(id, obj);
 		return *obj;
 	} else {

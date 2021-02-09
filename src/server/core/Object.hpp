@@ -45,12 +45,13 @@ typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 class Object
 {
 	public:
-		Object(LibfabricDomain * domain, int64_t low, int64_t high);
+		Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
 		void markDirty(size_t base, size_t size);
 		int flush(size_t offset, size_t size);
 		int create(void);
+		void forceAlignement(size_t alignment);
 		static void setNvdimm(const char * path);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
@@ -59,6 +60,7 @@ class Object
 		ObjectId objectId;
 		ObjectSegmentMap segmentMap;
 		static const char * nvdimmPath;
+		size_t alignement;
 };
 
 /****************************************************/
