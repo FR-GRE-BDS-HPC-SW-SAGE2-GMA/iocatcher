@@ -176,17 +176,17 @@ void LibfabricConnection::joinServer(void)
 	});
 
 	//send
-	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, [msg](LibfabricPostAction*action){
 		delete [] msg;
 		return false;
-	}));
+	});
 
 	//wait send
 	this->poll(true);
 }
 
 /****************************************************/
-void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction)
+void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<bool(LibfabricPostAction*)> postAction)
 {
 	//vars
 	int err;
@@ -202,13 +202,13 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 
 	//send
 	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, postAction);
+		err = fi_send(this->ep, buffer, size, NULL, it->second, new LibfabricPostActionFunction(postAction));
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
 }
 
 /****************************************************/
-void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction)
+void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(LibfabricPostAction*)> postAction)
 {
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
 	void * mrDesc = fi_mr_desc(mr);
@@ -219,12 +219,12 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_read(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	int ret = fi_read(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
 	LIBFABRIC_CHECK_STATUS("fi_read", ret);
 }
 
 /****************************************************/
-void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, LibfabricPostAction * postAction)
+void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(LibfabricPostAction*)> postAction)
 {
 	void ** mrDesc = new void*[count];
 	for (int i = 0 ; i < count ; i++) {
@@ -238,7 +238,7 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_readv(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	int ret = fi_readv(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
 	LIBFABRIC_CHECK_STATUS("fi_read", ret);
 
 	//clear tmp
@@ -246,7 +246,7 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 }
 
 /****************************************************/
-void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, LibfabricPostAction * postAction)
+void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(LibfabricPostAction*)> postAction)
 {
 	void ** mrDesc = new void*[count];
 	for (int i = 0 ; i < count ; i++) {
@@ -260,7 +260,7 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_writev(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	int ret = fi_writev(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
 	LIBFABRIC_CHECK_STATUS("fi_read", ret);
 
 	//clear tmp
@@ -268,7 +268,7 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 }
 
 /****************************************************/
-void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, LibfabricPostAction * postAction)
+void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(LibfabricPostAction*)> postAction)
 {
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
 	void * mrDesc = fi_mr_desc(mr);
@@ -279,7 +279,7 @@ void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void 
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_write(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, postAction);
+	int ret = fi_write(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
 	LIBFABRIC_CHECK_STATUS("fi_write", ret);
 }
 
@@ -416,10 +416,10 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	msg->header.type = IOC_LF_MSG_ASSIGN_ID;
 	msg->header.clientId = epId;
 
-	this->sendMessage(msg, sizeof (*msg), epId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+	this->sendMessage(msg, sizeof (*msg), epId, [msg](LibfabricPostAction*action){
 		delete msg;
 		return false;
-	}));
+	});
 
 	//notify
 	this->hookOnEndpointConnect(epId);

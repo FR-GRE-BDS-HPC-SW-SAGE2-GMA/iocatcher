@@ -95,10 +95,10 @@ void setupPingPong(LibfabricConnection & connection)
 			msg->header.type = IOC_LF_MSG_PONG;
 			msg->header.clientId = 0;
 
-			connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+			connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
 				delete msg;
 				return false;
-			}));
+			});
 			
 		//	return false;
 		//}));
@@ -131,10 +131,10 @@ void setupObjFlush(LibfabricConnection & connection, Container & container)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
 			delete msg;
 			return false;
-		}));
+		});
 
 		//republish
 		connection.repostRecive(id);
@@ -164,10 +164,10 @@ void setupObjCreate(LibfabricConnection & connection, Container & container)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
 			delete msg;
 			return false;
-		}));
+		});
 
 		//republish
 		connection.repostRecive(id);
@@ -221,7 +221,7 @@ void objRdmaPushToClient(LibfabricConnection & connection, int clientId, Libfabr
 	//	printf("-> %p %zu %zu (%p %zu)\n", it.ptr, it.offset, it.size, iov[cnt].iov_base, iov[cnt++].iov_len);
 
 	//emit rdma write vec & implement callback
-	connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([size, &connection, clientId](LibfabricPostAction*action){
+	connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId](LibfabricPostAction*action){
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
 		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
@@ -234,13 +234,13 @@ void objRdmaPushToClient(LibfabricConnection & connection, int clientId, Libfabr
 		readSize += size;
 
 		//send ack message
-		connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
 			delete msg;
 			return false;
-		}));
+		});
 		
 		return false;
-	}));
+	});
 
 	//remove temp
 	delete [] iov;
@@ -284,10 +284,10 @@ void objEagerPushToClient(LibfabricConnection & connection, int clientId, Libfab
 	readSize += dataSize;
 
 	//send ack message
-	connection.sendMessage(msg, sizeof (*msg) + dataSize, clientId, new LibfabricPostActionFunction([&connection, msg](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg) + dataSize, clientId, [&connection, msg](LibfabricPostAction*action){
 		connection.getDomain().retMsgBuffer(msg);
 		return false;
-	}));
+	});
 }
 
 /****************************************************/
@@ -328,7 +328,7 @@ void objRdmaFetchFromClient(LibfabricConnection & connection, int clientId, Libf
 	size_t size = clientMessage->data.objReadWrite.size;
 
 	//emit rdma write vec & implement callback
-	connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, new LibfabricPostActionFunction([size, &connection, clientId, iov](LibfabricPostAction*action){
+	connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId, iov](LibfabricPostAction*action){
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
 		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
@@ -341,13 +341,13 @@ void objRdmaFetchFromClient(LibfabricConnection & connection, int clientId, Libf
 		writeSize += size;
 
 		//send ack message
-		connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
 			delete msg;
 			return false;
-		}));
+		});
 		
 		return false;
-	}));
+	});
 
 	//remove temp
 	delete [] iov;
@@ -385,10 +385,10 @@ void objEagerExtractFromMessage(LibfabricConnection & connection, int clientId, 
 	writeSize += cur;
 
 	//send ack message
-	connection.sendMessage(msg, sizeof (*msg), clientId, new LibfabricPostActionFunction([msg](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
 		delete msg;
 		return false;
-	}));
+	});
 }
 
 /****************************************************/
