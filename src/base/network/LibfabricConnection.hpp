@@ -49,10 +49,10 @@ class LibfabricPostAction
 class LibfabricPostActionFunction : public LibfabricPostAction
 {
 	public:
-		LibfabricPostActionFunction(std::function<bool(LibfabricPostAction*)> function) {this->function = function;};
+		LibfabricPostActionFunction(std::function<bool(void)> function) {this->function = function;};
 		virtual bool runPostAction(void);
 	private:
-		std::function<bool(LibfabricPostAction*)> function;
+		std::function<bool(void)> function;
 };
 
 /****************************************************/
@@ -65,11 +65,11 @@ class LibfabricConnection
 		void joinServer(void);
 		void poll(bool waitMsg);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
-		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<bool(LibfabricPostAction*)> postAction);
-		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(LibfabricPostAction*)> postAction);
-		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(LibfabricPostAction*)> postAction);
-		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(LibfabricPostAction*)> postAction);
-		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(LibfabricPostAction*)> postAction);
+		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<bool(void)> postAction);
+		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(void)> postAction);
+		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(void)> postAction);
+		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(void)> postAction);
+		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(void)> postAction);
 		void repostRecive(size_t id);
 		void registerHook(int messageType, std::function<bool(int, size_t, void*)> function);
 		void unregisterHook(int messageType);

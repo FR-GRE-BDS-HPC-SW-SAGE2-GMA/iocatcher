@@ -99,13 +99,13 @@ void setupPingPong(LibfabricConnection & connection)
 
 		//do rdma read
 		//LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
-		//connection.rdmaWrite(clientId, rmaBuffer, clientMessage->data.iov.addr, clientMessage->data.iov.key, TEST_RDMA_SIZE, new LibfabricPostActionFunction([&connection, clientId](LibfabricPostAction*action){
+		//connection.rdmaWrite(clientId, rmaBuffer, clientMessage->data.iov.addr, clientMessage->data.iov.key, TEST_RDMA_SIZE, new LibfabricPostActionFunction([&connection, clientId](void){
 			//send open
 			LibfabricMessage * msg = new LibfabricMessage;
 			msg->header.type = IOC_LF_MSG_PONG;
 			msg->header.clientId = 0;
 
-			connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+			connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 				delete msg;
 				return false;
 			});
@@ -141,7 +141,7 @@ void setupObjFlush(LibfabricConnection & connection, Container & container)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
@@ -181,7 +181,7 @@ void setupObjRegisterRange(LibfabricConnection & connection, Container & contain
 		msg->data.response.status = status;
 		msg->data.response.msgHasData = false;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
 			return false;
 		});
@@ -215,7 +215,7 @@ void setupObjCreate(LibfabricConnection & connection, Container & container)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
@@ -272,7 +272,7 @@ void objRdmaPushToClient(LibfabricConnection & connection, int clientId, Libfabr
 	//	printf("-> %p %zu %zu (%p %zu)\n", it.ptr, it.offset, it.size, iov[cnt].iov_base, iov[cnt++].iov_len);
 
 	//emit rdma write vec & implement callback
-	connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId](LibfabricPostAction*action){
+	connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId](void){
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
 		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
@@ -285,7 +285,7 @@ void objRdmaPushToClient(LibfabricConnection & connection, int clientId, Libfabr
 		readSize += size;
 
 		//send ack message
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
@@ -335,7 +335,7 @@ void objEagerPushToClient(LibfabricConnection & connection, int clientId, Libfab
 	readSize += dataSize;
 
 	//send ack message
-	connection.sendMessage(msg, sizeof (*msg) + dataSize, clientId, [&connection, msg](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg) + dataSize, clientId, [&connection, msg](void){
 		connection.getDomain().retMsgBuffer(msg);
 		return false;
 	});
@@ -379,7 +379,7 @@ void objRdmaFetchFromClient(LibfabricConnection & connection, int clientId, Libf
 	size_t size = clientMessage->data.objReadWrite.size;
 
 	//emit rdma write vec & implement callback
-	connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId, iov](LibfabricPostAction*action){
+	connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId, iov](void){
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
 		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
@@ -392,7 +392,7 @@ void objRdmaFetchFromClient(LibfabricConnection & connection, int clientId, Libf
 		writeSize += size;
 
 		//send ack message
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
@@ -436,7 +436,7 @@ void objEagerExtractFromMessage(LibfabricConnection & connection, int clientId, 
 	writeSize += cur;
 
 	//send ack message
-	connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 		delete msg;
 		return false;
 	});

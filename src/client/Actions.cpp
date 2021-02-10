@@ -40,7 +40,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
 	//send
 	int cnt = 100000;
 	for (int i = 0 ; i < cnt ; i++) {
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](LibfabricPostAction*action){
+		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 			return false;
 		});
 
@@ -101,7 +101,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 	});
 
 	//send message
-	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, [msg, &connection](LibfabricPostAction*action){
+	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, [msg, &connection](){
 		connection.getDomain().retMsgBuffer(msg);
 		return false;
 	});
@@ -160,7 +160,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 	});
 
 	//send message
-	connection.sendMessage(msg, toSend, IOC_LF_SERVER_ID, [msg, &connection](LibfabricPostAction*action){
+	connection.sendMessage(msg, toSend, IOC_LF_SERVER_ID, [msg, &connection](){
 		connection.getDomain().retMsgBuffer(msg);
 		return false;
 	});
@@ -201,7 +201,7 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 	});
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](LibfabricPostAction*action){
+	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 		return false;
 	});
 
@@ -235,7 +235,7 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 	});
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](LibfabricPostAction*action){
+	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 		return false;
 	});
 

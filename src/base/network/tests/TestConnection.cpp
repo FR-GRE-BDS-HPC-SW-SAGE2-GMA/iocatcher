@@ -75,7 +75,7 @@ TEST(TestConnection, message)
 		LibfabricMessage msg;
 		msg.header.type = IOC_LF_MSG_PING;
 		msg.header.clientId = connection.getClientId();
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](LibfabricPostAction*action){
+		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
 			return true;
 		});
@@ -132,14 +132,14 @@ TEST(TestConnection, rdma)
 		while(!ready){};
 
 		//do write
-		connection.rdmaWrite(clientId, ptrServer1, iov.addr, iov.key, size, [&gotRdmaWrite](LibfabricPostAction*action){
+		connection.rdmaWrite(clientId, ptrServer1, iov.addr, iov.key, size, [&gotRdmaWrite](){
 			gotRdmaWrite = true;
 			return true;
 		});
 		connection.poll(true);
 
 		//do read
-		connection.rdmaRead(clientId, ptrServer2, iov.addr, iov.key, size, [&gotRdmaRead](LibfabricPostAction*action){
+		connection.rdmaRead(clientId, ptrServer2, iov.addr, iov.key, size, [&gotRdmaRead](){
 			gotRdmaRead = true;
 			return true;
 		});
