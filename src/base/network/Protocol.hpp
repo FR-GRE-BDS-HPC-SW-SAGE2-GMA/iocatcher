@@ -40,6 +40,8 @@ enum LibfabricMessageType
 	IOC_LF_MSG_OBJ_FLUSH_ACK,
 	IOC_LF_MSG_OBJ_CREATE,
 	IOC_LF_MSG_OBJ_CREATE_ACK,
+	IOC_LF_MSG_OBJ_RANGE_REGISTER,
+	IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK,
 };
 
 /****************************************************/
@@ -74,6 +76,16 @@ struct LibfabricObjCreateInfos
 {
 	int64_t low;
 	int64_t high;
+};
+
+/****************************************************/
+struct LibfabricRegisterRange
+{
+	int64_t low;
+	int64_t high;
+	uint64_t offset;
+	uint64_t size;
+	bool write;
 };
 
 /****************************************************/
