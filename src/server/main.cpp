@@ -147,6 +147,46 @@ void setupObjFlush(LibfabricConnection & connection, Container & container)
 }
 
 /****************************************************/
+void setupObjRegisterRange(LibfabricConnection & connection, Container & container)
+{
+	//register hook
+	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, [&connection, &container](int clientId, size_t id, void * buffer) {
+		//infos
+		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
+
+		//get object
+		Object & object = container.getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
+		ConsistencyTracker & tracker = object.getConsistencyTracker();
+
+		//check
+		int status = 0;
+		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
+		if (clientMessage->data.registerRange.write)
+			mode = CONSIST_ACCESS_MODE_WRITE;
+		if (!tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode))
+			status = -1;
+
+		//return message
+		LibfabricMessage * msg = new LibfabricMessage;
+		msg->header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
+		msg->header.clientId = clientId;
+		msg->data.response.status = status;
+		msg->data.response.msgHasData = false;
+
+		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](LibfabricPostAction*action){
+			delete msg;
+			return false;
+		});
+
+		//republish
+		connection.repostRecive(id);
+
+		//
+		return false;
+	});
+}
+
+/****************************************************/
 void setupObjCreate(LibfabricConnection & connection, Container & container)
 {
 	//register hook
@@ -496,6 +536,7 @@ int main(int argc, char ** argv)
 	setupObjWrite(connection, container);
 	setupObjFlush(connection, container);
 	setupObjCreate(connection, container);
+	setupObjRegisterRange(connection, container);
 
 	// poll
 	for(;;) {

@@ -92,7 +92,7 @@ struct LibfabricRegisterRange
 struct LibfabricResponse
 {
 	int64_t msgDataSize;
-	int status;
+	int32_t status;
 	bool msgHasData;
 };
 
@@ -108,6 +108,7 @@ struct LibfabricMessage
 		LibfabricObjReadWriteInfos objReadWrite;
 		LibfabricObjFlushInfos objFlush;
 		LibfabricObjCreateInfos objCreate;
+		LibfabricRegisterRange registerRange;
 	} data;
 };
 
