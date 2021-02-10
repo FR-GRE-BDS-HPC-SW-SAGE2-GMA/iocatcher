@@ -40,8 +40,12 @@ static char args_doc[] = "LISTEN_IP";
 static struct argp_option options[] = { 
 	{ "nvdimm", 'n', "PATH", 0, "Store data in nvdimm at the given PATH."},
 	{ "merofile", 'm', "PATH", 0, "Mero ressource file to use."},
+	{ "no-consistency-check", 'c', 0, 0, "Disable consistency check."},
 	{ 0 } 
 };
+
+/****************************************************/
+static bool gblConsistencyCheck = true;
 
 /****************************************************/
 struct Arguments
@@ -50,6 +54,7 @@ struct Arguments
 	const char * listen;
 	const char * nvdimm;
 	const char * merofile;
+	bool consistencyCheck;
 };
 
 /****************************************************/
@@ -58,6 +63,7 @@ Arguments::Arguments(void)
 	this->listen = NULL;
 	this->nvdimm = NULL;
 	this->merofile = "mero_ressource_file.rc";
+	this->consistencyCheck = true;
 }
 
 /****************************************************/
@@ -66,6 +72,7 @@ error_t parseOptions(int key, char *arg, struct argp_state *state) {
 	switch (key) {
 		case 'n': arguments->nvdimm = arg; break;
 		case 'l': arguments->listen = arg; break;
+		case 'c': arguments->consistencyCheck = false; break;
 		case ARGP_KEY_NO_ARGS: argp_usage (state); break;
 		case ARGP_KEY_ARG: 
 			if (arguments->listen == NULL)
@@ -163,8 +170,9 @@ void setupObjRegisterRange(LibfabricConnection & connection, Container & contain
 		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
-		if (!tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode))
-			status = -1;
+		if (gblConsistencyCheck)
+			if (!tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode))
+				status = -1;
 
 		//return message
 		LibfabricMessage * msg = new LibfabricMessage;
@@ -496,6 +504,9 @@ int main(int argc, char ** argv)
 	#else
 		printf("NOT USING MERO\n");
 	#endif
+
+	//dispatch
+	gblConsistencyCheck = arguments.consistencyCheck;
 
 	//stats thread
 	bool run = true;
