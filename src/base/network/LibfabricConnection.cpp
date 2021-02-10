@@ -12,6 +12,8 @@
 //libfabric
 #include "rdma/fi_cm.h"
 #include "rdma/fi_rma.h"
+//linux
+#include <sys/uio.h>
 //local
 #include "LibfabricConnection.hpp"
 #include "../common/Debug.hpp"

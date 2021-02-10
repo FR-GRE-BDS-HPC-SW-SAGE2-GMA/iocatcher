@@ -9,11 +9,14 @@
 //std
 #include <cstdio>
 #include <cassert>
+#include <cstring>
 #include <thread>
+#include <argp.h>
+//linux
 #include <unistd.h>
 #include <sys/mman.h>
 #include <cstdlib>
-#include <argp.h>
+#include <sys/uio.h>
 //local
 #include "core/Container.hpp"
 #ifndef NOMERO

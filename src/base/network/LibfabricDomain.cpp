@@ -8,6 +8,7 @@
 /****************************************************/
 //std
 #include <cassert>
+#include <cstring>
 //tmp
 #include <unistd.h>
 #include <sys/mman.h>
