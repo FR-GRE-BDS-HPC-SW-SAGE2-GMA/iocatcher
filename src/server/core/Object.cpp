@@ -430,3 +430,9 @@ void IOC::Object::setNvdimm(const char * path)
 {
 	Object::nvdimmPath = path;
 }
+
+/****************************************************/
+ConsistencyTracker & Object::getConsistencyTracker(void)
+{
+	return this->consistencyTracker;
+}

@@ -14,6 +14,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <list>
 #include <map>
 #include <ostream>
+#include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 
 /****************************************************/
@@ -53,6 +54,7 @@ class Object
 		int create(void);
 		void forceAlignement(size_t alignment);
 		static void setNvdimm(const char * path);
+		ConsistencyTracker & getConsistencyTracker(void);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
 	private:
@@ -61,6 +63,7 @@ class Object
 		ObjectSegmentMap segmentMap;
 		static const char * nvdimmPath;
 		size_t alignement;
+		ConsistencyTracker consistencyTracker;
 };
 
 /****************************************************/
