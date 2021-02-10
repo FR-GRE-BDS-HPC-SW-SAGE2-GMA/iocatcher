@@ -13,16 +13,21 @@ cfg_set_projet "MALT"
 
 ######################################################
 #test
-#cfg_add_enable_option --name='test' \
-#						--on='-DENABLE_TESTS=${ON}' \
-#						--doc='Disable unit tests' \
-#						--invert-help
+cfg_add_enable_option --name='test' \
+                      --on='-DENABLE_TESTS=${ON}' \
+                      --doc='Disable unit tests' \
+                      --invert-help
+
+#coverage
+cfg_add_enable_option --name='coverage' \
+                      --on='-DENABLE_COVERAGE=${ON}' \
+                      --doc='Enable coverage report'
 
 ######################################################
 #libunwind
 cfg_add_with_option --name='libfabric' \
-						--doc='Define prefix to find libfabric [/usr]' \
-						--var='LIBFABRIC_PREFIX'
+                    --doc='Define prefix to find libfabric [/usr]' \
+                    --var='LIBFABRIC_PREFIX'
 
 ######################################################
 #If we want to document extra options

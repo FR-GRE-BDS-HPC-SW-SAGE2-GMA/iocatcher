@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
 	printf("Run obj read\n");
 	ioc_client_obj_read(client, 10, 20, buffer, 1024*1024, 0);
 	ioc_client_obj_read(client, 10, 20, buffer, 1024*1024, 512*1024);
-	delete buffer;
+	delete [] buffer;
 
 	//flush
 	printf("Flush object\n");

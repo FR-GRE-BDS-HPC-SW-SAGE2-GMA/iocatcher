@@ -13,7 +13,9 @@ project(libfabric-poc)
 ######################################################
 #global setup
 set(ENABLE_TESTS ON CACHE BOOL "Enable unit tests requiring build of googletest and googlmock")
-enable_testing()
+if (ENABLE_TESTS)
+	enable_testing()
+endif(ENABLE_TESTS)
 
 ######################################################
 #Add internal search path for scripts
@@ -32,6 +34,12 @@ find_package(Mero QUIET)
 ######################################################
 setup_internal_gmock_and_gtest()
 enable_cxx_11()
+
+######################################################
+set(ENABLE_COVERAGE OFF CACHE BOOL "Enable coverage profiling.")
+if (ENABLE_COVERAGE)
+	enable_gcc_coverage()
+endif (ENABLE_COVERAGE)
 
 ######################################################
 include_directories(${LIBFABRIC_INCLUDE_DIRS})

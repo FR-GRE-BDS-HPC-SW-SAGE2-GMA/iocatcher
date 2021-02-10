@@ -14,7 +14,7 @@
 using namespace IOC;
 
 /****************************************************/
-TEST(TestConnection, connect)
+TEST(TestLibfabricConnection, connect)
 {
 	bool gotConnection = false;
 	std::thread server([&gotConnection]{
@@ -41,7 +41,7 @@ TEST(TestConnection, connect)
 }
 
 /****************************************************/
-TEST(TestConnection, message)
+TEST(TestLibfabricConnection, message)
 {
 	bool gotConnection = false;
 	bool gotMessage = false;
@@ -93,7 +93,7 @@ TEST(TestConnection, message)
 }
 
 /****************************************************/
-TEST(TestConnection, rdma)
+TEST(TestLibfabricConnection, rdma)
 {
 	bool gotConnection = false;
 	bool gotRdmaRead = false;
@@ -140,6 +140,107 @@ TEST(TestConnection, rdma)
 
 		//do read
 		connection.rdmaRead(clientId, ptrServer2, iov.addr, iov.key, size, [&gotRdmaRead](){
+			gotRdmaRead = true;
+			return true;
+		});
+		connection.poll(true);
+
+		//clear
+		domain.unregisterSegment(ptrServer1, size);
+		domain.unregisterSegment(ptrServer2, size);
+
+		//exxit
+		canExit = true;
+	});
+
+	//client
+	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
+		LibfabricDomain domain("127.0.0.1", "8448", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		
+		//register memory
+		iov = domain.registerSegment(ptrClient, size, true, true, false);
+		ready = true;
+
+		//wait
+		while (!canExit)
+			connection.poll(false);
+
+		//clean
+		domain.unregisterSegment(ptrClient, size);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	ASSERT_TRUE(gotConnection);
+	ASSERT_TRUE(gotRdmaRead);
+	ASSERT_TRUE(gotRdmaWrite);
+
+	//check
+	for (int i = 0 ; i < size ; i++) {
+		ASSERT_EQ(1, ((char*)ptrClient)[i]) << i;
+		ASSERT_EQ(1, ((char*)ptrServer1)[i]) << i;
+		ASSERT_EQ(1, ((char*)ptrServer2)[i]) << i;
+	}
+}
+
+/****************************************************/
+TEST(TestLibfabricConnection, rdmav)
+{
+	bool gotConnection = false;
+	bool gotRdmaRead = false;
+	bool gotRdmaWrite = false;
+	bool ready = false;
+	bool canExit = false;
+	Iov iov;
+
+	//alloc
+	const size_t size = 1024*1024;
+	void * ptrServer1 = malloc(size);
+	void * ptrServer2 = malloc(size);
+	void * ptrClient = malloc(size);
+
+	//ini
+	memset(ptrServer1, 1, size);
+
+	//server
+	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2, ptrClient]{
+		int clientId = -1;
+		LibfabricDomain domain("127.0.0.1", "8448", true);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&clientId, &gotConnection](int id) {
+			gotConnection = true;
+			clientId = id;
+		});
+
+		//register
+		Iov iovLocal1 = domain.registerSegment(ptrServer1, size, true, true, false);
+		Iov iovLocal2 = domain.registerSegment(ptrServer2, size, true, true, false);
+
+		//iocs
+		struct iovec iov1[2] = {{ptrServer1, size/2},{(char*)ptrServer1+size/2, size/2}};
+		struct iovec iov2[2] = {{ptrServer2, size/2},{(char*)ptrServer2+size/2, size/2}};
+
+		//ready
+		while(!gotConnection)
+			connection.poll(false);
+		while(!ready){};
+
+		//do write
+		connection.rdmaWritev(clientId, iov1, 2, iov.addr, iov.key, [&gotRdmaWrite](){
+			gotRdmaWrite = true;
+			return true;
+		});
+		connection.poll(true);
+
+		//do read
+		connection.rdmaReadv(clientId, iov2, 2, iov.addr, iov.key, [&gotRdmaRead](){
 			gotRdmaRead = true;
 			return true;
 		});

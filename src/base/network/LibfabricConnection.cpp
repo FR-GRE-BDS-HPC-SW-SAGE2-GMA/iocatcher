@@ -179,7 +179,7 @@ void LibfabricConnection::joinServer(void)
 
 	//send
 	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, [msg](){
-		delete [] msg;
+		delete msg;
 		return false;
 	});
 
@@ -320,7 +320,7 @@ bool LibfabricConnection::pollRx(void)
 	//poll
 	int status = pollForCompletion(this->cq, &entry, this->wait);
 	if (status == 1) {
-		printf("ENTRY RECV FLAG: %d == %d == %d\n", entry.flags, FI_RECV, FI_SEND);
+		printf("ENTRY RECV FLAG: %lu == %llu == %llu\n", entry.flags, FI_RECV, FI_SEND);
 		this->onRecv((size_t)entry.op_context);
 		return true;
 	} else {
@@ -334,7 +334,7 @@ bool LibfabricConnection::pollTx(void)
 	fi_cq_msg_entry entry;
 	int status = pollForCompletion(this->cq, &entry, this->wait);
 	if (status == 1) {
-		printf("ENTRY SENT FLAG: %d\n", entry.flags);
+		printf("ENTRY SENT FLAG: %lu\n", entry.flags);
 		this->onSent((void*)entry.op_context);
 		return true;
 	} else {

@@ -284,7 +284,7 @@ void Object::markDirty(size_t base, size_t size)
 /****************************************************/
 void Object::forceAlignement(size_t alignment)
 {
-	this->alignement = alignement;
+	this->alignement = alignment;
 }
 
 /****************************************************/
