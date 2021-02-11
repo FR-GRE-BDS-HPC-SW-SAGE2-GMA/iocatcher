@@ -63,8 +63,6 @@ TEST(TestTcpClientServer, constructor)
 	//stop server & join loop thread
 	server.stop();
 
-	//detach
-	//Remark: don't know why stop does not play its role and the thread does not
-	//exit. Ideally here we should tcpThread.join(). But it block.
+	//join
 	tcpThread.join();
 }
