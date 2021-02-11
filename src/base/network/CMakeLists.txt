@@ -6,7 +6,7 @@
 ######################################################
 
 ######################################################
-set(NETWORK_SRC LibfabricDomain.cpp LibfabricConnection.cpp)
+set(NETWORK_SRC LibfabricDomain.cpp LibfabricConnection.cpp TcpClient.cpp TcpServer.cpp)
 
 ######################################################
 add_library(ioc-network OBJECT ${NETWORK_SRC})

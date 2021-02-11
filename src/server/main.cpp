@@ -107,58 +107,6 @@ int main(int argc, char ** argv)
 		printf("NOT USING MERO\n");
 	#endif
 
-	//dispatch
-	//gblConsistencyCheck = arguments.consistencyCheck;
-
-	//stats thread
-	/*bool run = true;
-	std::thread statThread = std::thread([&run]{
-		while (run) {
-			sleep(1);
-			printf("Read: %g GB/s, Write: %g GB/s\n", (double)gblReadSize/1.0/1024.0/1024.0/1024.0, (double) gblWriteSize/1.0/1024.0/1024.0/1024.0);
-			gblReadSize = 0;
-			gblWriteSize = 0;
-		}
-	});*/
-
-	//init domain & conn
-	/**LibfabricDomain domain(arguments.listen, "8556", true);
-	domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
-	LibfabricConnection connection(&domain, false);
-	connection.postRecives(1024*1024, 64);*/
-
-	//test readonly registration
-	/*printf("test\n");
-	void * ptr = mmap(NULL, 16*1024*1024, PROT_READ, MAP_ANON | MAP_PRIVATE, 0, 0);
-	domain.registerSegment(ptr, 16*1024*1024, true, false, false);
-	domain.unregisterSegment(ptr, 16*1024*1024);
-	munmap(ptr, 16*1024*1024);
-	printf("ok\n");*/
-
-	// client lobby
-	
-	
-	//register read hooks
-	//Container container(&domain, 8*1024*1024);
-
-	//register hooks
-	//setupPingPong(connection);
-	/*setupObjRead(connection, container);
-	setupObjWrite(connection, container);
-	setupObjFlush(connection, container);
-	setupObjCreate(connection, container);
-	setupObjRangeRegister(connection, container);
-	setupObjUnregisterRange(connection, container);*/
-
-	// poll
-	/*for(;;) {
-		connection.poll(false);
-	}*/
-
-	//status thread
-	//run = false;
-	//statThread.join();
-
 	//run server
 	Server server(arguments.listen, "8556", true, arguments.consistencyCheck);
 

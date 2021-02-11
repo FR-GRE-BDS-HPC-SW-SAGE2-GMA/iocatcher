@@ -12,7 +12,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
 include_directories(../)
 
 ######################################################
-set(TEST_NAMES TestLibfabricConnection TestLibfabricDomain)
+set(TEST_NAMES TestLibfabricConnection TestLibfabricDomain TestTcpClientServer)
 
 ######################################################
 FOREACH(test_name ${TEST_NAMES})
