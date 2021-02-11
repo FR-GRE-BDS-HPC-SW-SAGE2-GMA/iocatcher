@@ -7,25 +7,22 @@
 
 ######################################################
 set(IOC_CLIENT_INTERNAL_CODE
-	#extern deps
-#	$<TARGET_OBJECTS:daqpipe-common>
-	#internal
-#	$<TARGET_OBJECTS:ioc-common>
-#	$<TARGET_OBJECTS:ioc-network>
-	#we should keep an eye on portability of this
-#	$<TARGET_OBJECTS:ioc-portability>
-	#optional
-#	${OPTIONAL_EXTRA}
-	main.cpp
+	# extern deps
+	$<TARGET_OBJECTS:daqpipe-common>
+	# internal deps
+	$<TARGET_OBJECTS:ioc-network>
+	# source code
+	Actions.cpp
+	ioc-client.cpp
 )
 
 ######################################################
-add_executable(iocatcher-client main.cpp Actions.cpp ioc-client.cpp)
-target_link_libraries(iocatcher-client iocatcher-base)
+add_executable(iocatcher-client main.cpp ${IOC_CLIENT_INTERNAL_CODE})
 install(TARGETS iocatcher-client DESTINATION ${CMAKE_INSTALL_BINDIR})
+target_link_libraries(iocatcher-client ${LIBFABRIC_LIBRARIES})
 
 ######################################################
-add_library(ioc-client SHARED Actions.cpp ioc-client.cpp)
-target_link_libraries(ioc-client iocatcher-base)
+add_library(ioc-client SHARED ${IOC_CLIENT_INTERNAL_CODE})
 install(TARGETS ioc-client DESTINATION lib)
 install(FILES ioc-client.h DESTINATION include)
+target_link_libraries(ioc-client ${LIBFABRIC_LIBRARIES})

@@ -263,7 +263,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 	msg.data.unregisterRange.high = high;
 	msg.data.unregisterRange.offset = offset;
 	msg.data.unregisterRange.size = size;
-	msg.data.unregisterRange.write = false;
+	msg.data.unregisterRange.write = write;
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
