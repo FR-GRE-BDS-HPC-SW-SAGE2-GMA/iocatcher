@@ -26,6 +26,7 @@ class Container
 		Container(LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
 		~Container(void);
 		Object & getObject(int64_t low, int64_t high);
+		bool hasObject(int64_t low, int64_t high);
 	private:
 		std::map<ObjectId, Object*> objects;
 		LibfabricDomain * lfDomain;

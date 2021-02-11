@@ -153,7 +153,7 @@ void Server::setupObjFlush(void)
 		//printf("Get flush object %ld:%ld %lu->%lu\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low, clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 		//flush object
-		Object & object = this->container->getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
+		Object & object = this->container->getObject(clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
 		int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 		//send open
@@ -183,7 +183,7 @@ void Server::setupObjRangeRegister(void)
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
 		//get object
-		Object & object = this->container->getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
+		Object & object = this->container->getObject(clientMessage->data.registerRange.high, clientMessage->data.registerRange.low);
 		ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 		//check
@@ -224,7 +224,7 @@ void Server::setupObjUnregisterRange(void)
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
 		//get object
-		Object & object = this->container->getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
+		Object & object = this->container->getObject(clientMessage->data.registerRange.high, clientMessage->data.registerRange.low);
 		ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 		//check
@@ -289,7 +289,7 @@ void Server::setupObjCreate(void)
 		printf("Get create object %ld:%ld\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
 
 		//create object
-		Object & object = this->container->getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
+		Object & object = this->container->getObject(clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
 		int ret = object.create();
 
 		//send open
@@ -436,7 +436,7 @@ void Server::setupObjRead(void)
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
 
 		//get buffers from object
-		Object & object = this->container->getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
+		Object & object = this->container->getObject(clientMessage->data.objReadWrite.high, clientMessage->data.objReadWrite.low);
 		ObjectSegmentList segments;
 		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
@@ -537,7 +537,7 @@ void Server::setupObjWrite(void)
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
 
 		//get buffers from object
-		Object & object = this->container->getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
+		Object & object = this->container->getObject(clientMessage->data.objReadWrite.high, clientMessage->data.objReadWrite.low);
 		ObjectSegmentList segments;
 		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, false);
 

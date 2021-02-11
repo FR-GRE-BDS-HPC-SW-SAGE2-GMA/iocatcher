@@ -24,7 +24,7 @@ int main(int argc, char ** argv)
 
 	//do ping pong
 	printf("Run ping pong\n");
-	ioc_client_ping_pong(client);
+	ioc_client_ping_pong(client, 100000);
 
 	//create object
 	printf("Create obj\n");

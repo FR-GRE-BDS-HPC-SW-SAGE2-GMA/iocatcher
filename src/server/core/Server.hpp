@@ -40,6 +40,7 @@ class Server
 		void startStatsThread(void);
 		void stop(void);
 		void setOnClientConnect(std::function<void(int id)> handler);
+		Container & getContainer(void) {return *this->container;};
 	private:
 		//setups
 		void setupPingPong(void);

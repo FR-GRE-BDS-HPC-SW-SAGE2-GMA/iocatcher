@@ -424,7 +424,8 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	});
 
 	//notify
-	this->hookOnEndpointConnect(epId);
+	if (this->hookOnEndpointConnect)
+		this->hookOnEndpointConnect(epId);
 }
 
 /****************************************************/

@@ -28,7 +28,7 @@ ssize_t ioc_client_obj_read(ioc_client_t * client, int64_t high, int64_t low, vo
 ssize_t ioc_client_obj_write(ioc_client_t * client, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset);
 int ioc_client_obj_flush(ioc_client_t * client, int64_t high, int64_t low, uint64_t offset, uint64_t size);
 int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low);
-void ioc_client_ping_pong(ioc_client_t * client);
+void ioc_client_ping_pong(ioc_client_t * client, int cnt);
 const char * ioc_client_provider_name(ioc_client_t * client);
 void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
 int ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size, bool write);

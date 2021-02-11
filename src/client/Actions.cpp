@@ -13,7 +13,7 @@
 using namespace IOC;
 
 /****************************************************/
-void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
+void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, int cnt)
 {
 	//rma
 	char * buffer = new char[TEST_RDMA_SIZE];
@@ -38,7 +38,6 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection)
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	//send
-	int cnt = 100000;
 	for (int i = 0 ; i < cnt ; i++) {
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 			return false;

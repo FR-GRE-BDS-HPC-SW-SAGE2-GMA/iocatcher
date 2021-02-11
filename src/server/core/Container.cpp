@@ -25,7 +25,7 @@ Container::~Container(void)
 }
 
 /****************************************************/
-Object & Container::getObject(int64_t low, int64_t high)
+Object & Container::getObject(int64_t high, int64_t low)
 {
 	//build id
 	ObjectId id;
@@ -45,3 +45,17 @@ Object & Container::getObject(int64_t low, int64_t high)
 	}
 }
 
+/****************************************************/
+bool Container::hasObject(int64_t high, int64_t low)
+{
+	//build id
+	ObjectId id;
+	id.low = low;
+	id.high = high;
+
+	//search
+	auto it = objects.find(id);
+
+	//ret
+	return it != objects.end();
+}

@@ -29,3 +29,13 @@ TEST(TestContainer, getObject)
 	EXPECT_NE(&obj1, &obj2);
 	EXPECT_EQ(&obj1, &obj3);
 }
+
+/****************************************************/
+TEST(TestContainer, hasObject)
+{
+	Container container(NULL);
+	ASSERT_FALSE(container.hasObject(10, 20));
+	container.getObject(10, 20);
+	ASSERT_TRUE(container.hasObject(10, 20));
+
+}
