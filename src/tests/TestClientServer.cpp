@@ -115,5 +115,5 @@ TEST_F(TestClientServer, obj_register)
 	EXPECT_TRUE(object.getConsistencyTracker().hasCollision(0, 1024, CONSIST_ACCESS_MODE_WRITE));
 
 	//unregister
-	ASSERT_TRUE(ioc_client_obj_range_unregister(this->client, id, 10, 20, 0, 1024, true));
+	ASSERT_EQ(0, ioc_client_obj_range_unregister(this->client, id, 10, 20, 0, 1024, true));
 }
