@@ -156,6 +156,24 @@ void ioc_client_set_passive_wait(ioc_client_t * client, bool value)
 	client->passive_wait = value;
 }
 
+/****************************************************/
+int ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size, bool write)
+{
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	int ret = obj_range_register(*connection, high, low, offset, size, write);
+	ioc_client_ret_connection(client, connection);
+	return ret;
+}
+
+/****************************************************/
+int ioc_client_obj_range_unregister(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size)
+{
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	int ret = obj_range_unregister(*connection, high, low, offset, size);
+	ioc_client_ret_connection(client, connection);
+	return ret;
+}
+
 }
 
 #endif //IOC_CLIENT_H

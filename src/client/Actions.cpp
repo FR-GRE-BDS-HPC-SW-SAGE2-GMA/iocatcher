@@ -216,6 +216,80 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 }
 
 /****************************************************/
+int IOC::obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write)
+{
+	//setup message request
+	LibfabricMessage msg;
+	msg.header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER;
+	msg.header.clientId = connection.getClientId();
+	msg.data.registerRange.low = low;
+	msg.data.registerRange.high = high;
+	msg.data.registerRange.offset = offset;
+	msg.data.registerRange.size = size;
+	msg.data.registerRange.write = write;
+
+	//register hook for reception
+	LibfabricMessage ackMsg;
+	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+		ackMsg = *(LibfabricMessage *)buffer;
+		//printf("get 11 %d\n", clientId);
+		connection.repostRecive(id);
+		return true;
+	});
+
+	//send message
+	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
+		return false;
+	});
+
+	//poll
+	connection.poll(true);
+
+	//check status
+	//if (ackMsg.data.response.status != 0)
+	//	printf("Invalid status create : %d\n", ackMsg.data.response.status);
+	
+	return ackMsg.data.response.status;
+}
+
+/****************************************************/
+int IOC::obj_range_unregister(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size)
+{
+	//setup message request
+	LibfabricMessage msg;
+	msg.header.type = IOC_LF_MSG_OBJ_RANGE_UNREGISTER;
+	msg.header.clientId = connection.getClientId();
+	msg.data.registerRange.low = low;
+	msg.data.registerRange.high = high;
+	msg.data.registerRange.offset = offset;
+	msg.data.registerRange.size = size;
+	msg.data.registerRange.write = false;
+
+	//register hook for reception
+	LibfabricMessage ackMsg;
+	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+		ackMsg = *(LibfabricMessage *)buffer;
+		//printf("get 11 %d\n", clientId);
+		connection.repostRecive(id);
+		return true;
+	});
+
+	//send message
+	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
+		return false;
+	});
+
+	//poll
+	connection.poll(true);
+
+	//check status
+	//if (ackMsg.data.response.status != 0)
+	//	printf("Invalid status create : %d\n", ackMsg.data.response.status);
+	
+	return ackMsg.data.response.status;
+}
+
+/****************************************************/
 int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 {
 	//setup message request

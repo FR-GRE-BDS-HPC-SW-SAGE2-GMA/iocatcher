@@ -5,9 +5,14 @@
 *****************************************************/
 
 /****************************************************/
+//gtest
 #include <gtest/gtest.h>
+//std
 #include <thread>
 #include <cstring>
+//linux
+#include <sys/uio.h>
+//local
 #include "../LibfabricConnection.hpp"
 
 /****************************************************/

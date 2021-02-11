@@ -42,6 +42,8 @@ enum LibfabricMessageType
 	IOC_LF_MSG_OBJ_CREATE_ACK,
 	IOC_LF_MSG_OBJ_RANGE_REGISTER,
 	IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK,
+	IOC_LF_MSG_OBJ_RANGE_UNREGISTER,
+	IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK,
 };
 
 /****************************************************/
