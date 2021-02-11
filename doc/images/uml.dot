@@ -1,0 +1,82 @@
+digraph IOCATCHER
+{
+	//Some fonts
+	fontname = "Bitstream Vera Sans"
+	fontsize = 8
+	
+	//configure node
+	node [
+		fontname = "Bitstream Vera Sans"
+		fontsize = 8
+		shape = "record"
+	]
+	
+	//configure edge
+	edge [
+		arrowtail = "empty"
+		dir=back
+	]
+	
+	//classes
+	Server [
+		label = "{Server|\l|\l}"
+	]
+
+	Container [
+		label = "{Container|\l|\l}"
+	]
+
+	Object [
+		label = "{Object|\l|\l}"
+	]
+
+	ConsistencyTracker [
+		label = "{ConsistencyTracker|\l|\l}"
+	]
+
+	LibfabricConnection [
+		label = "{LibfabricConnection|\l|\l}"
+	]
+
+	LibfabricDomain [
+		label = "{LibfabricDomain|\l|\l}"
+	]
+
+	TcpServer [
+		label = "{TcpServer|\l|\l}"
+	]
+
+	TcpClient [
+		label = "{TcpClient|\l|\l}"
+	]
+
+	ioc_client_t [
+		label = "{ioc_client_t|\l|\l}"
+	]
+
+	ConsistencyRange [
+		label = "{ConsistencyRange|\l|\l}"
+	]
+
+	ObjectSegment [
+		label = "{ObjectSegment|\l|\l}"
+	]
+
+	//inheritance links
+	//Policy -> FifoWindowPolicy
+
+	//composition
+	//Mapping -> Policy[arrowtail=odiamond]
+	Server -> Container[arrowtail=odiamond]
+	Server -> TcpServer[arrowtail=odiamond]
+	Server -> LibfabricDomain[arrowtail=odiamond]
+	Server -> LibfabricConnection[arrowtail=odiamond]
+	LibfabricConnection -> LibfabricDomain[arrowtail=odiamond]
+	Container -> Object[arrowtail=odiamond]
+	Object -> ObjectSegment[arrowtail=odiamond]
+	Object -> ConsistencyTracker[arrowtail=odiamond]
+	ConsistencyTracker -> ConsistencyRange[arrowtail=odiamond]
+	ioc_client_t -> TcpClient[arrowtail=odiamond]
+	ioc_client_t -> LibfabricDomain[arrowtail=odiamond]
+	ioc_client_t -> LibfabricConnection[arrowtail=odiamond]
+}
