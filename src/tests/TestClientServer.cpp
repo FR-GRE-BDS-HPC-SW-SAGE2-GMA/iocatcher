@@ -23,12 +23,16 @@ class TestClientServer : public ::testing::Test
 		std::thread thread;
 		virtual void SetUp()
 		{
-			this->server = new Server("127.0.0.1", "8666", true, true);
+			static int port = 8666;
+			char p[16];
+			sprintf(p, "%d", port);
+			port += 4;
+			this->server = new Server("127.0.0.1", p, true, true);
 			this->thread = std::thread([this](){
 				this->server->poll();
 			});
 			this->server->setOnClientConnect([](int){});
-			this->client = ioc_client_init("127.0.0.1", "8666");
+			this->client = ioc_client_init("127.0.0.1", p);
 		}
 
 		virtual void TearDown()

@@ -14,6 +14,8 @@
 #include <cassert>
 #include <cstdlib>
 #include "Actions.hpp"
+#include "../base/network/TcpClient.hpp"
+#include "ioc-client.h"
 
 /****************************************************/
 using namespace IOC;
@@ -25,6 +27,8 @@ extern "C"
 struct ioc_client_s
 {
 	LibfabricDomain * domain;
+	TcpClient * tcpClient;
+	TcpConnInfo clientConnInfo;
 	std::mutex connections_mutex;
 	std::vector<LibfabricConnection *> connections;
 	bool passive_wait;
@@ -81,6 +85,14 @@ ioc_client_t * ioc_client_init(const char * ip, const char * port)
 
 	//init client
 	ioc_client_t * client = new ioc_client_t;
+
+	//establish tcp connection
+	char tcpPort[16];
+	sprintf(tcpPort, "%d", atoi(port) + 1);
+	client->tcpClient = new TcpClient(ip, tcpPort);
+	client->clientConnInfo = client->tcpClient->getConnectionInfos();
+
+	//setup domain
 	client->domain = new LibfabricDomain(ip, port, false);
 	//client->domain->setMsgBuffeSize(sizeof(LibfabricMessage));
 	client->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
@@ -97,6 +109,7 @@ void ioc_client_fini(ioc_client_t * client)
 	for (auto it : client->connections)
 		delete it;
 	delete client->domain;
+	delete client->tcpClient;
 	delete client;
 }
 

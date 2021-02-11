@@ -20,11 +20,11 @@ set(IOC_CLIENT_INTERNAL_CODE
 add_executable(iocatcher-client main.cpp ${IOC_CLIENT_INTERNAL_CODE})
 install(TARGETS iocatcher-client DESTINATION ${CMAKE_INSTALL_BINDIR})
 target_link_libraries(iocatcher-client ${LIBFABRIC_LIBRARIES})
-target_link_libraries(iocatcher-client ${LIBEVENT_LIBRARIES})
+target_link_libraries(iocatcher-client ${LIBEVENT_LIBRARIES} ${LIBEVENT_PTHREADS_LIBRARIES})
 
 ######################################################
 add_library(ioc-client SHARED ${IOC_CLIENT_INTERNAL_CODE})
 install(TARGETS ioc-client DESTINATION lib)
 install(FILES ioc-client.h DESTINATION include)
 target_link_libraries(ioc-client ${LIBFABRIC_LIBRARIES})
-target_link_libraries(ioc-client ${LIBEVENT_LIBRARIES})
+target_link_libraries(ioc-client ${LIBEVENT_LIBRARIES} ${LIBEVENT_PTHREADS_LIBRARIES})

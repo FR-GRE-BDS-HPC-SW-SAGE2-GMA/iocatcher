@@ -8,6 +8,7 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 #include <unistd.h>
 #include <cstring>
+#include <random>
 #include "Server.hpp"
 
 /****************************************************/
@@ -28,6 +29,11 @@ Server::Server(const std::string & address, const std::string & port, bool activ
 	this->pollRunning = false;
 	this->statsRunning = false;
 	//this->setOnClientConnect([](int id){});
+
+	//setup tcp server
+	int tcpPort = atoi(port.c_str()) + 1;
+	printf("Server on port %s/%d\n", port.c_str(), tcpPort);
+	this->setupTcpServer(tcpPort, tcpPort);
 
 	//setup domain
 	this->domain = new LibfabricDomain(address, port, activePooling);
@@ -58,6 +64,35 @@ Server::~Server(void)
 	delete this->container;
 	delete this->connection;
 	delete this->domain;
+	delete this->tcpServer;
+}
+
+/****************************************************/
+void Server::setupTcpServer(int port, int maxport)
+{
+	//create server
+	this->tcpServer = new TcpServer(port, maxport, "unused");
+
+	//server loop
+	this->tcpServerThread = std::thread([this](){
+		//vars
+		int cntConnections = 0;
+
+		//random generator
+		std::random_device rd;
+		std::mt19937_64 rdGenerator(rd());
+		std::uniform_int_distribution<uint64_t> distribution;
+
+		//start loop
+		this->tcpServer->loop([this, &distribution, &rdGenerator, &cntConnections](uint64_t* id, uint64_t* key, TcpClientInfo* client){
+			*id = cntConnections++;
+			*key = distribution(rdGenerator);
+			//printf("=======> ID=%lu, KEY=%lu\n", *id, *key);
+			this->onClientConnect(*id, *key);
+		},[this](TcpClientInfo* client){
+			this->onClientDisconnect(client->id);
+		});
+	});
 }
 
 /****************************************************/
@@ -103,6 +138,13 @@ void Server::stop(void)
 	if (this->statsRunning) {
 		this->statsRunning = false;
 		this->statThread.join();
+	}
+
+	//stop tcp server
+	if (this->tcpServer != NULL) {
+		this->tcpServer->stop();
+		this->tcpServer = NULL;
+		this->tcpServerThread.join();
 	}
 }
 
@@ -558,4 +600,16 @@ void Server::setupObjWrite(void)
 
 		return false;
 	});
+}
+
+/****************************************************/
+void Server::onClientConnect(uint64_t id, uint64_t key)
+{
+	printf("Client connect ID=%lu, key=%lu\n", id, key);
+}
+
+/****************************************************/
+void Server::onClientDisconnect(uint64_t id)
+{
+	printf("Client disconnect ID=%lu\n", id);
 }

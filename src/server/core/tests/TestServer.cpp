@@ -22,7 +22,7 @@ TEST(TestServer, constructor)
 /****************************************************/
 TEST(TestServer, run_poll)
 {
-	Server server("127.0.0.1", "8667", true, true);
+	Server server("127.0.0.1", "8668", true, true);
 	std::thread runner([&server]{
 		server.poll();
 	});
@@ -34,7 +34,7 @@ TEST(TestServer, run_poll)
 /****************************************************/
 TEST(TestServer, run_stats)
 {
-	Server server("127.0.0.1", "8668", true, true);
+	Server server("127.0.0.1", "8670", true, true);
 	server.startStatsThread();
 	usleep(4000);
 	server.stop();

@@ -17,6 +17,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "Container.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 #include "../../base/network/LibfabricConnection.hpp"
+#include "../../base/network/TcpServer.hpp"
 
 /****************************************************/
 namespace IOC
@@ -43,6 +44,7 @@ class Server
 		Container & getContainer(void) {return *this->container;};
 	private:
 		//setups
+		void setupTcpServer(int port, int maxport);
 		void setupPingPong(void);
 		void setupObjFlush(void);
 		void setupObjRangeRegister(void);
@@ -56,6 +58,9 @@ class Server
 		void objEagerPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		void objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		void objEagerExtractFromMessage(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
+		//conn tracking
+		void onClientConnect(uint64_t id, uint64_t key);
+		void onClientDisconnect(uint64_t id);
 	private:
 		LibfabricDomain * domain;
 		LibfabricConnection * connection;
@@ -63,8 +68,10 @@ class Server
 		ServerStats stats;
 		bool consistencyCheck;
 		std::thread statThread;
+		std::thread tcpServerThread;
 		volatile bool pollRunning;
 		volatile bool statsRunning;
+		TcpServer * tcpServer;
 };
 
 /****************************************************/

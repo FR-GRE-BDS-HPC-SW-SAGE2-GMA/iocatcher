@@ -30,6 +30,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/unittest-macros.cmake)
 find_package(LibFabric REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libevent REQUIRED)
+find_package(LibeventPthreads REQUIRED)
 find_package(Mero QUIET)
 
 ######################################################

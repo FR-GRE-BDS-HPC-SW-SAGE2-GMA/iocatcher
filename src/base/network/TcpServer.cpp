@@ -32,6 +32,14 @@ using namespace IOC;
 /****************************************************/
 TcpServer::TcpServer(int port, int portRange, const std::string & hgConnectInfo)
 {
+	//pthread init
+	static bool eventPthreadInit = false;
+	if (!eventPthreadInit) {
+		evthread_use_pthreads();
+		eventPthreadInit = true;
+	}
+
+	//spawn
 	int res = createSocketV4(port, port + portRange, NULL);
 	assumeArg(res >= 0, "Failed to open socket : %1").arg(res).end();
 	this->listenFd = res;
