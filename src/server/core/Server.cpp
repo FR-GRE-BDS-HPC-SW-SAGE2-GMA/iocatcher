@@ -192,8 +192,7 @@ void Server::setupObjRangeRegister(void)
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
 		if (this->consistencyCheck)
-			if (!tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode))
-				status = -1;
+			status = tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
 
 		//return message
 		LibfabricMessage * msg = new LibfabricMessage;
@@ -227,13 +226,16 @@ void Server::setupObjUnregisterRange(void)
 		Object & object = this->container->getObject(clientMessage->data.registerRange.high, clientMessage->data.registerRange.low);
 		ConsistencyTracker & tracker = object.getConsistencyTracker();
 
+		//extract
+		LibfabricUnregisterRange &data = clientMessage->data.unregisterRange;
+
 		//check
 		int status = 0;
 		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-		if (clientMessage->data.registerRange.write)
+		if (data.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
 		if (this->consistencyCheck)
-			if (!tracker.unregisterRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size))
+			if (!tracker.unregisterRange(data.id, data.offset, data.size, mode))
 				status = -1;
 
 		//return message

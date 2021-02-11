@@ -9,7 +9,7 @@
 ######################################################
 #Use gtest
 include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
-include_directories(../server/core ../client)
+include_directories(../)
 
 ######################################################
 set(TEST_NAMES TestClientServer)

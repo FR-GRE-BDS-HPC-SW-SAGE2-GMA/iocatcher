@@ -14,6 +14,7 @@ using namespace IOC;
 /****************************************************/
 ConsistencyTracker::ConsistencyTracker(void)
 {
+	this->nextId = 1;
 }
 
 /****************************************************/
@@ -35,30 +36,31 @@ bool ConsistencyTracker::hasCollision(size_t offset, size_t size, ConsistencyAcc
 }
 
 /****************************************************/
-bool ConsistencyTracker::registerRange(size_t offset, size_t size, ConsistencyAccessMode accessMode)
+int32_t ConsistencyTracker::registerRange(size_t offset, size_t size, ConsistencyAccessMode accessMode)
 {
 	//check collision
 	if (this->hasCollision(offset, size, accessMode))
-		return false;
+		return -1;
 
 	//register
 	struct ConsistencyRange range = {
+		.id = this->nextId++,
 		.offset = offset,
 		.size = size,
-		.accessMode = accessMode,
+		.accessMode = accessMode
 	};
 	this->ranges.push_back(range);
 
 	//ok
-	return true;
+	return range.id;
 }
 
 /****************************************************/
-bool ConsistencyTracker::unregisterRange(size_t offset, size_t size)
+bool ConsistencyTracker::unregisterRange(int32_t id, size_t offset, size_t size, ConsistencyAccessMode accessMode)
 {
 	//loop to find overlap
 	for (auto it = ranges.begin(); it != ranges.end(); ++it) {
-		if (it->offset >= offset && it->offset + it->size <= offset + size) {
+		if (it->offset == offset && it->size == size && it->accessMode == accessMode && it->id == id) {
 			ranges.erase(it);
 			return true;
 		}

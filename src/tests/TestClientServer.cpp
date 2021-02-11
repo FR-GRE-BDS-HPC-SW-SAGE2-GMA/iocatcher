@@ -8,8 +8,8 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 #include <gtest/gtest.h>
 #include <unistd.h>
-#include "Server.hpp"
-#include "ioc-client.h"
+#include "server/core/Server.hpp"
+#include "client/ioc-client.h"
 
 /****************************************************/
 using namespace IOC;
@@ -106,10 +106,14 @@ TEST_F(TestClientServer, obj_read)
 TEST_F(TestClientServer, obj_register)
 {
 	//read object
-	ASSERT_EQ(0,ioc_client_obj_range_register(this->client, 10, 20, 0, 1024, true));
+	int id = ioc_client_obj_range_register(this->client, 10, 20, 0, 1024, true);
+	ASSERT_EQ(1,id);
 	ASSERT_EQ(-1,ioc_client_obj_range_register(this->client, 10, 20, 0, 1024, true));
 
 	//check server state
 	Object & object = this->server->getContainer().getObject(10,20);
 	EXPECT_TRUE(object.getConsistencyTracker().hasCollision(0, 1024, CONSIST_ACCESS_MODE_WRITE));
+
+	//unregister
+	ASSERT_TRUE(ioc_client_obj_range_unregister(this->client, id, 10, 20, 0, 1024, true));
 }

@@ -91,6 +91,17 @@ struct LibfabricRegisterRange
 };
 
 /****************************************************/
+struct LibfabricUnregisterRange
+{
+	int64_t low;
+	int64_t high;
+	uint64_t offset;
+	uint64_t size;
+	int32_t id;
+	bool write;
+};
+
+/****************************************************/
 struct LibfabricResponse
 {
 	int64_t msgDataSize;
@@ -111,6 +122,7 @@ struct LibfabricMessage
 		LibfabricObjFlushInfos objFlush;
 		LibfabricObjCreateInfos objCreate;
 		LibfabricRegisterRange registerRange;
+		LibfabricUnregisterRange unregisterRange;
 	} data;
 };
 

@@ -166,10 +166,10 @@ int ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t l
 }
 
 /****************************************************/
-int ioc_client_obj_range_unregister(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size)
+int ioc_client_obj_range_unregister(ioc_client_t * client, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write)
 {
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_range_unregister(*connection, high, low, offset, size);
+	int ret = obj_range_unregister(*connection, id, high, low, offset, size, write);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }

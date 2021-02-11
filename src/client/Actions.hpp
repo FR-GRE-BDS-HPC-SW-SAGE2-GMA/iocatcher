@@ -23,7 +23,7 @@ ssize_t obj_write(LibfabricConnection &connection, int64_t high, int64_t low, co
 int obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size);
 int obj_create(LibfabricConnection &connection, int64_t high, int64_t low);
 int obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write);
-int obj_range_unregister(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size);
+int obj_range_unregister(LibfabricConnection &connection, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write);
 
 }
 
