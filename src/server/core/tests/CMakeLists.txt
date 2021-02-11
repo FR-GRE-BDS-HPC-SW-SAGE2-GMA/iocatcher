@@ -12,7 +12,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
 include_directories(../)
 
 ######################################################
-set(TEST_NAMES TestObject TestConsistencyTracker TestContainer)
+set(TEST_NAMES TestObject TestConsistencyTracker TestContainer TestServer)
 
 ######################################################
 FOREACH(test_name ${TEST_NAMES})

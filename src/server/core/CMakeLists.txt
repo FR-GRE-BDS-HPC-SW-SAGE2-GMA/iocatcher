@@ -6,7 +6,7 @@
 ######################################################
 
 ######################################################
-set(SERVER_CORE_SRC Object.cpp Container.cpp ConsistencyTracker.cpp ServerActions.cpp)
+set(SERVER_CORE_SRC Object.cpp Container.cpp ConsistencyTracker.cpp Server.cpp)
 
 ######################################################
 if (MERO_FOUND)

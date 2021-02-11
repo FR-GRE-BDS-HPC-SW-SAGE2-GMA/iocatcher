@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <sys/uio.h>
 //local
+#include "core/Server.hpp"
 #include "core/Container.hpp"
 #include "core/ServerActions.hpp"
 #ifndef NOMERO
@@ -108,10 +109,10 @@ int main(int argc, char ** argv)
 	#endif
 
 	//dispatch
-	gblConsistencyCheck = arguments.consistencyCheck;
+	//gblConsistencyCheck = arguments.consistencyCheck;
 
 	//stats thread
-	bool run = true;
+	/*bool run = true;
 	std::thread statThread = std::thread([&run]{
 		while (run) {
 			sleep(1);
@@ -119,13 +120,13 @@ int main(int argc, char ** argv)
 			gblReadSize = 0;
 			gblWriteSize = 0;
 		}
-	});
+	});*/
 
 	//init domain & conn
-	LibfabricDomain domain(arguments.listen, "8556", true);
+	/**LibfabricDomain domain(arguments.listen, "8556", true);
 	domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 	LibfabricConnection connection(&domain, false);
-	connection.postRecives(1024*1024, 64);
+	connection.postRecives(1024*1024, 64);*/
 
 	//test readonly registration
 	/*printf("test\n");
@@ -136,30 +137,40 @@ int main(int argc, char ** argv)
 	printf("ok\n");*/
 
 	// client lobby
-	connection.setHooks([](int id) {
-		printf("Get client %d\n", id);
-	});
+	
 	
 	//register read hooks
-	Container container(&domain, 8*1024*1024);
+	//Container container(&domain, 8*1024*1024);
 
 	//register hooks
-	setupPingPong(connection);
-	setupObjRead(connection, container);
+	//setupPingPong(connection);
+	/*setupObjRead(connection, container);
 	setupObjWrite(connection, container);
 	setupObjFlush(connection, container);
 	setupObjCreate(connection, container);
 	setupObjRangeRegister(connection, container);
-	setupObjUnregisterRange(connection, container);
+	setupObjUnregisterRange(connection, container);*/
 
 	// poll
-	for(;;) {
+	/*for(;;) {
 		connection.poll(false);
-	}
+	}*/
 
 	//status thread
-	run = false;
-	statThread.join();
+	//run = false;
+	//statThread.join();
+
+	//run server
+	Server server(arguments.listen, "8556", true, arguments.consistencyCheck);
+
+	//setup hook
+	server.setOnClientConnect([](int id) {
+		printf("Get client %d\n", id);
+	});
+
+	//run
+	server.startStatsThread();
+	server.poll();
 
 	//close clovis
 	#ifndef NOMERO

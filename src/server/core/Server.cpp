@@ -6,27 +6,115 @@ COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
 /****************************************************/
-#include "../../base/network/LibfabricConnection.hpp"
-#include "ServerActions.hpp"
+#include <unistd.h>
+#include <cstring>
+#include "Server.hpp"
 
 /****************************************************/
 using namespace IOC;
 
 /****************************************************/
-//TODO make a global config object
-bool IOC::gblConsistencyCheck = true;
-size_t IOC::gblReadSize = 0;
-size_t IOC::gblWriteSize = 0;
+ServerStats::ServerStats(void)
+{
+	this->readSize = 0;
+	this->writeSize = 0;
+}
 
 /****************************************************/
-void IOC::setupPingPong(LibfabricConnection & connection)
+Server::Server(const std::string & address, const std::string & port, bool activePooling, bool consistencyCheck)
+{
+	//setup
+	this->consistencyCheck = consistencyCheck;
+	this->pollRunning = false;
+	this->statsRunning = false;
+	//this->setOnClientConnect([](int id){});
+
+	//setup domain
+	this->domain = new LibfabricDomain(address, port, activePooling);
+	this->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
+
+	//establish connections
+	this->connection = new LibfabricConnection(this->domain, false);
+	this->connection->postRecives(1024*1024, 64);
+
+	//create container
+	this->container = new Container(domain, 8*1024*1024);
+	
+	//register actions
+	this->setupPingPong();
+	this->setupObjFlush();
+	this->setupObjRead();
+	this->setupObjWrite();
+	this->setupObjFlush();
+	this->setupObjCreate();
+	this->setupObjRangeRegister();
+	this->setupObjUnregisterRange();
+}
+
+/****************************************************/
+Server::~Server(void)
+{
+	this->stop();
+	delete this->container;
+	delete this->connection;
+	delete this->domain;
+}
+
+/****************************************************/
+void Server::setOnClientConnect(std::function<void(int id)> handler)
+{
+	this->connection->setHooks(handler);
+}
+
+/****************************************************/
+void Server::poll(void)
+{
+	this->pollRunning = true;
+	while(this->pollRunning)
+		this->connection->poll(false);
+	this->pollRunning = true;
+}
+
+/****************************************************/
+void Server::startStatsThread(void)
+{
+	this->statsRunning = true;
+	this->statThread = std::thread([this]{
+		while (this->statsRunning) {
+			sleep(1);
+			printf("Read: %g GB/s, Write: %g GB/s\n", (double)this->stats.readSize/1.0/1024.0/1024.0/1024.0, (double) this->stats.writeSize/1.0/1024.0/1024.0/1024.0);
+			this->stats.readSize = 0;
+			this->stats.writeSize = 0;
+		}
+	});
+}
+
+/****************************************************/
+void Server::stop(void)
+{
+	//wait poll
+	if (this->pollRunning) {
+		this->pollRunning = false;
+		while(this->pollRunning == false) {};
+		this->pollRunning = false;
+	}
+
+	//stop stats thread
+	if (this->statsRunning) {
+		this->statsRunning = false;
+		this->statThread.join();
+	}
+}
+
+/****************************************************/
+void Server::setupPingPong(void)
 {
 	//rma
 	char * rmaBuffer = new char[TEST_RDMA_SIZE];
-	connection.getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true, false);
+	connection->getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true, false);
 
 	//register hook
-	connection.registerHook(IOC_LF_MSG_PING, [&connection, rmaBuffer](int clientId, size_t id, void * buffer) {
+	connection->registerHook(IOC_LF_MSG_PING, [this, rmaBuffer](int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get 10 %d\n", clientId);
 
@@ -38,7 +126,7 @@ void IOC::setupPingPong(LibfabricConnection & connection)
 			msg->header.type = IOC_LF_MSG_PONG;
 			msg->header.clientId = 0;
 
-			connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+			this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 				delete msg;
 				return false;
 			});
@@ -47,17 +135,17 @@ void IOC::setupPingPong(LibfabricConnection & connection)
 		//}));
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		return false;
 	});
 }
 
 /****************************************************/
-void IOC::setupObjFlush(LibfabricConnection & connection, Container & container)
+void Server::setupObjFlush(void)
 {
 	//register hook
-	connection.registerHook(IOC_LF_MSG_OBJ_FLUSH, [&connection, &container](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, [this](int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
@@ -65,7 +153,7 @@ void IOC::setupObjFlush(LibfabricConnection & connection, Container & container)
 		//printf("Get flush object %ld:%ld %lu->%lu\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low, clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 		//flush object
-		Object & object = container.getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
+		Object & object = this->container->getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
 		int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 		//send open
@@ -74,28 +162,28 @@ void IOC::setupObjFlush(LibfabricConnection & connection, Container & container)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		return false;
 	});
 }
 
 /****************************************************/
-void IOC::setupObjRangeRegister(LibfabricConnection & connection, Container & container)
+void Server::setupObjRangeRegister(void)
 {
 	//register hook
-	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, [&connection, &container](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, [this](int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
 		//get object
-		Object & object = container.getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
+		Object & object = this->container->getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
 		ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 		//check
@@ -103,7 +191,7 @@ void IOC::setupObjRangeRegister(LibfabricConnection & connection, Container & co
 		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
-		if (gblConsistencyCheck)
+		if (this->consistencyCheck)
 			if (!tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode))
 				status = -1;
 
@@ -114,13 +202,13 @@ void IOC::setupObjRangeRegister(LibfabricConnection & connection, Container & co
 		msg->data.response.status = status;
 		msg->data.response.msgHasData = false;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](){
+		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
 			return false;
 		});
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		//
 		return false;
@@ -128,15 +216,15 @@ void IOC::setupObjRangeRegister(LibfabricConnection & connection, Container & co
 }
 
 /****************************************************/
-void IOC::setupObjUnregisterRange(LibfabricConnection & connection, Container & container)
+void Server::setupObjUnregisterRange(void)
 {
 	//register hook
-	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, [&connection, &container](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, [this](int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
 		//get object
-		Object & object = container.getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
+		Object & object = this->container->getObject(clientMessage->data.registerRange.low, clientMessage->data.registerRange.high);
 		ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 		//check
@@ -144,7 +232,7 @@ void IOC::setupObjUnregisterRange(LibfabricConnection & connection, Container & 
 		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
-		if (gblConsistencyCheck)
+		if (this->consistencyCheck)
 			if (!tracker.unregisterRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size))
 				status = -1;
 
@@ -155,24 +243,45 @@ void IOC::setupObjUnregisterRange(LibfabricConnection & connection, Container & 
 		msg->data.response.status = status;
 		msg->data.response.msgHasData = false;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](){
+		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
 			return false;
 		});
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		//
 		return false;
 	});
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /****************************************************/
-void IOC::setupObjCreate(LibfabricConnection & connection, Container & container)
+void Server::setupObjCreate(void)
 {
 	//register hook
-	connection.registerHook(IOC_LF_MSG_OBJ_CREATE, [&connection, &container](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, [this](int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
@@ -180,7 +289,7 @@ void IOC::setupObjCreate(LibfabricConnection & connection, Container & container
 		printf("Get create object %ld:%ld\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
 
 		//create object
-		Object & object = container.getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
+		Object & object = this->container->getObject(clientMessage->data.objFlush.low, clientMessage->data.objFlush.high);
 		int ret = object.create();
 
 		//send open
@@ -189,20 +298,20 @@ void IOC::setupObjCreate(LibfabricConnection & connection, Container & container
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		return false;
 	});
 }
 
 /****************************************************/
-iovec * IOC::buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
+iovec * Server::buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
 {
 	//compute intersection
 	for (auto & it : segments) {
@@ -231,7 +340,7 @@ iovec * IOC::buildIovec(ObjectSegmentList & segments, size_t offset, size_t size
 }
 
 /****************************************************/
-void IOC::objRdmaPushToClient(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void Server::objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	if (segments.size() == 2)
 		segments.pop_back();
@@ -246,7 +355,7 @@ void IOC::objRdmaPushToClient(LibfabricConnection & connection, int clientId, Li
 	//	printf("-> %p %zu %zu (%p %zu)\n", it.ptr, it.offset, it.size, iov[cnt].iov_base, iov[cnt++].iov_len);
 
 	//emit rdma write vec & implement callback
-	connection.rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId](void){
+	this->connection->rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, this, clientId](void){
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
 		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
@@ -256,10 +365,10 @@ void IOC::objRdmaPushToClient(LibfabricConnection & connection, int clientId, Li
 		msg->data.response.status = 0;
 
 		//stats
-		gblReadSize += size;
+		this->stats.readSize += size;
 
 		//send ack message
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
@@ -272,14 +381,14 @@ void IOC::objRdmaPushToClient(LibfabricConnection & connection, int clientId, Li
 }
 
 /****************************************************/
-void IOC::objEagerPushToClient(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//size
 	size_t dataSize = clientMessage->data.objReadWrite.size;
 
 	//send open
 	//char * buffer = new char[sizeof(LibfabricMessage) + dataSize];
-	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
+	LibfabricMessage * msg = (LibfabricMessage *)this->connection->getDomain().getMsgBuffer();
 	//LibfabricMessage * msg = (LibfabricMessage*)buffer;
 	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 	msg->header.clientId = 0;
@@ -306,20 +415,20 @@ void IOC::objEagerPushToClient(LibfabricConnection & connection, int clientId, L
 	}
 
 	//stats
-	gblReadSize += dataSize;
+	this->stats.readSize += dataSize;
 
 	//send ack message
-	connection.sendMessage(msg, sizeof (*msg) + dataSize, clientId, [&connection, msg](void){
-		connection.getDomain().retMsgBuffer(msg);
+	this->connection->sendMessage(msg, sizeof (*msg) + dataSize, clientId, [this, msg](void){
+		this->connection->getDomain().retMsgBuffer(msg);
 		return false;
 	});
 }
 
 /****************************************************/
-void IOC::setupObjRead(LibfabricConnection & connection, Container & container)
+void Server::setupObjRead(void)
 {
 	//register hook
-	connection.registerHook(IOC_LF_MSG_OBJ_READ, [&connection, &container](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, [this](int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get OBJ_READ %d\n", clientId);
 
@@ -327,33 +436,33 @@ void IOC::setupObjRead(LibfabricConnection & connection, Container & container)
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
 
 		//get buffers from object
-		Object & object = container.getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
+		Object & object = this->container->getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
 		ObjectSegmentList segments;
 		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
 		//eager or rdma
 		if (clientMessage->data.objReadWrite.size <= IOC_EAGER_MAX_READ) {
-			objEagerPushToClient(connection, clientId, clientMessage, segments);
+			objEagerPushToClient(clientId, clientMessage, segments);
 		} else {
-			objRdmaPushToClient(connection, clientId, clientMessage, segments);
+			objRdmaPushToClient(clientId, clientMessage, segments);
 		}
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		return false;
 	});
 }
 
 /****************************************************/
-void IOC::objRdmaFetchFromClient(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void Server::objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//build iovec
 	iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 	size_t size = clientMessage->data.objReadWrite.size;
 
 	//emit rdma write vec & implement callback
-	connection.rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, &connection, clientId, iov](void){
+	this->connection->rdmaReadv(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, this, clientId, iov](void){
 		//send open
 		LibfabricMessage * msg = new LibfabricMessage;
 		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
@@ -363,10 +472,10 @@ void IOC::objRdmaFetchFromClient(LibfabricConnection & connection, int clientId,
 		msg->data.response.status = 0;
 
 		//stats
-		gblWriteSize += size;
+		this->stats.writeSize += size;
 
 		//send ack message
-		connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return false;
 		});
@@ -379,7 +488,7 @@ void IOC::objRdmaFetchFromClient(LibfabricConnection & connection, int clientId,
 }
 
 /****************************************************/
-void IOC::objEagerExtractFromMessage(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void Server::objEagerExtractFromMessage(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//get base pointer
 	char * data = (char*)(clientMessage + 1);
@@ -407,20 +516,20 @@ void IOC::objEagerExtractFromMessage(LibfabricConnection & connection, int clien
 	msg->data.response.status = 0;
 
 	//stats
-	gblWriteSize += cur;
+	this->stats.writeSize += cur;
 
 	//send ack message
-	connection.sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+	this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 		delete msg;
 		return false;
 	});
 }
 
 /****************************************************/
-void IOC::setupObjWrite(LibfabricConnection & connection, Container & container)
+void Server::setupObjWrite(void)
 {
 	//register hook
-	connection.registerHook(IOC_LF_MSG_OBJ_WRITE, [&connection, &container](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_WRITE, [this](int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get OBJ_READ %d\n", clientId);
 
@@ -428,22 +537,22 @@ void IOC::setupObjWrite(LibfabricConnection & connection, Container & container)
 		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
 
 		//get buffers from object
-		Object & object = container.getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
+		Object & object = this->container->getObject(clientMessage->data.objReadWrite.low, clientMessage->data.objReadWrite.high);
 		ObjectSegmentList segments;
 		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, false);
 
 		//eager or rdma
 		if (clientMessage->data.objReadWrite.msgHasData) {
-			objEagerExtractFromMessage(connection, clientId, clientMessage, segments);
+			objEagerExtractFromMessage(clientId, clientMessage, segments);
 		} else {
-			objRdmaFetchFromClient(connection, clientId, clientMessage, segments);
+			objRdmaFetchFromClient(clientId, clientMessage, segments);
 		}
 
 		//mark dirty
 		object.markDirty(clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
 		//republish
-		connection.repostRecive(id);
+		this->connection->repostRecive(id);
 
 		return false;
 	});
