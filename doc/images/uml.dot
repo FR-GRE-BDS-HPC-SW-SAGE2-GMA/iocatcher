@@ -62,15 +62,25 @@ digraph IOCATCHER
 		label = "{ObjectSegment|\l|\l}"
 	]
 
+	Config [
+		label = "{Config|\l|\l}"
+	]
+
+	ClientRegistry [
+		label = "{ClientRegistry|\l|\l}"
+	]
+
 	//inheritance links
 	//Policy -> FifoWindowPolicy
 
 	//composition
 	//Mapping -> Policy[arrowtail=odiamond]
+	Server -> Config[arrowtail=odiamond]
 	Server -> Container[arrowtail=odiamond]
 	Server -> TcpServer[arrowtail=odiamond]
 	Server -> LibfabricDomain[arrowtail=odiamond]
 	Server -> LibfabricConnection[arrowtail=odiamond]
+	LibfabricConnection -> ClientRegistry[arrowtail=odiamond]
 	LibfabricConnection -> LibfabricDomain[arrowtail=odiamond]
 	Container -> Object[arrowtail=odiamond]
 	Object -> ObjectSegment[arrowtail=odiamond]
