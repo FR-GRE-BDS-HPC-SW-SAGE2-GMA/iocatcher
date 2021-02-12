@@ -36,7 +36,7 @@ bool ConsistencyTracker::hasCollision(size_t offset, size_t size, ConsistencyAcc
 }
 
 /****************************************************/
-int32_t ConsistencyTracker::registerRange(size_t offset, size_t size, ConsistencyAccessMode accessMode)
+int32_t ConsistencyTracker::registerRange(uint64_t clientId, size_t offset, size_t size, ConsistencyAccessMode accessMode)
 {
 	//check collision
 	if (this->hasCollision(offset, size, accessMode))
@@ -44,6 +44,7 @@ int32_t ConsistencyTracker::registerRange(size_t offset, size_t size, Consistenc
 
 	//register
 	struct ConsistencyRange range = {
+		.clientId = clientId,
 		.id = this->nextId++,
 		.offset = offset,
 		.size = size,
@@ -56,11 +57,11 @@ int32_t ConsistencyTracker::registerRange(size_t offset, size_t size, Consistenc
 }
 
 /****************************************************/
-bool ConsistencyTracker::unregisterRange(int32_t id, size_t offset, size_t size, ConsistencyAccessMode accessMode)
+bool ConsistencyTracker::unregisterRange(uint64_t clientId, int32_t id, size_t offset, size_t size, ConsistencyAccessMode accessMode)
 {
 	//loop to find overlap
 	for (auto it = ranges.begin(); it != ranges.end(); ++it) {
-		if (it->offset == offset && it->size == size && it->accessMode == accessMode && it->id == id) {
+		if (it->clientId == clientId && it->offset == offset && it->size == size && it->accessMode == accessMode && it->id == id) {
 			ranges.erase(it);
 			return true;
 		}
@@ -77,4 +78,15 @@ bool ConsistencyTracker::overlap(size_t offset1, size_t size1, size_t offset2, s
 	if (offset2 >= offset1 && offset2 < offset1 + size1)
 		return true;
 	return false;
+}
+
+/****************************************************/
+void ConsistencyTracker::clientDisconnect(uint64_t clientId)
+{
+	for (auto it = ranges.begin() ; it != ranges.end() ; ) {
+		if (it->clientId == clientId)
+			it = ranges.erase(it);
+		else
+			++it;
+	}
 }

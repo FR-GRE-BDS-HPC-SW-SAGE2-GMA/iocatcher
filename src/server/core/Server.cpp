@@ -234,7 +234,7 @@ void Server::setupObjRangeRegister(void)
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
 		if (this->consistencyCheck)
-			status = tracker.registerRange(clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+			status = tracker.registerRange(0, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
 
 		//return message
 		LibfabricMessage * msg = new LibfabricMessage;
@@ -277,7 +277,7 @@ void Server::setupObjUnregisterRange(void)
 		if (data.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
 		if (this->consistencyCheck)
-			if (!tracker.unregisterRange(data.id, data.offset, data.size, mode))
+			if (!tracker.unregisterRange(0, data.id, data.offset, data.size, mode))
 				status = -1;
 
 		//return message
@@ -606,10 +606,13 @@ void Server::setupObjWrite(void)
 void Server::onClientConnect(uint64_t id, uint64_t key)
 {
 	printf("Client connect ID=%lu, key=%lu\n", id, key);
+	tcpClientRegistry.registerClient(id, key);
 }
 
 /****************************************************/
 void Server::onClientDisconnect(uint64_t id)
 {
 	printf("Client disconnect ID=%lu\n", id);
+	tcpClientRegistry.disconnectClient(id);
+	container->onClientDisconnect(id);
 }

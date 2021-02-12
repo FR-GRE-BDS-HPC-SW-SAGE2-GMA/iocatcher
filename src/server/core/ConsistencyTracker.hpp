@@ -11,6 +11,7 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 #include <list>
 #include <cstdlib>
+#include <stdint.h>
 
 /****************************************************/
 namespace IOC
@@ -26,6 +27,7 @@ enum ConsistencyAccessMode
 /****************************************************/
 struct ConsistencyRange
 {
+	uint64_t clientId;
 	int32_t id;
 	size_t offset;
 	size_t size;
@@ -38,10 +40,11 @@ class ConsistencyTracker
 	public:
 		ConsistencyTracker(void);
 		~ConsistencyTracker(void);
-		int32_t registerRange(size_t offset, size_t size, ConsistencyAccessMode accessMode);
+		int32_t registerRange(uint64_t clientId, size_t offset, size_t size, ConsistencyAccessMode accessMode);
 		bool hasCollision(size_t offset, size_t size, ConsistencyAccessMode accessMode);
-		bool unregisterRange(int32_t id, size_t offset, size_t size,ConsistencyAccessMode accessMode);
+		bool unregisterRange(uint64_t clientId, int32_t id, size_t offset, size_t size,ConsistencyAccessMode accessMode);
 		static bool overlap(size_t offset1, size_t size1, size_t offset2, size_t size2);
+		void clientDisconnect(uint64_t clientId);
 	private:
 		std::list<ConsistencyRange> ranges;
 		int32_t nextId;

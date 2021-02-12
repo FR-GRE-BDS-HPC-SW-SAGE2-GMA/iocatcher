@@ -39,3 +39,34 @@ TEST(TestContainer, hasObject)
 	ASSERT_TRUE(container.hasObject(10, 20));
 
 }
+
+/****************************************************/
+TEST(TestContainer, onClientDisconnect)
+{
+	Container container(NULL);
+	Object & obj1 = container.getObject(10,20);
+	Object & obj2 = container.getObject(10,21);
+
+	//client on obj1
+	obj1.getConsistencyTracker().registerRange(0, 100, 100, CONSIST_ACCESS_MODE_WRITE);
+	obj1.getConsistencyTracker().registerRange(1, 200, 100, CONSIST_ACCESS_MODE_WRITE);
+	
+	//client on obj2
+	obj2.getConsistencyTracker().registerRange(0, 100, 100, CONSIST_ACCESS_MODE_WRITE);
+	obj2.getConsistencyTracker().registerRange(1, 200, 100, CONSIST_ACCESS_MODE_WRITE);
+
+	//check
+	ASSERT_TRUE(obj1.getConsistencyTracker().hasCollision(100, 100, CONSIST_ACCESS_MODE_WRITE));
+	ASSERT_TRUE(obj1.getConsistencyTracker().hasCollision(200, 100, CONSIST_ACCESS_MODE_WRITE));
+	ASSERT_TRUE(obj2.getConsistencyTracker().hasCollision(100, 100, CONSIST_ACCESS_MODE_WRITE));
+	ASSERT_TRUE(obj2.getConsistencyTracker().hasCollision(200, 100, CONSIST_ACCESS_MODE_WRITE));
+
+	//disconnect
+	container.onClientDisconnect(0);
+
+	//check
+	ASSERT_FALSE(obj1.getConsistencyTracker().hasCollision(100, 100, CONSIST_ACCESS_MODE_WRITE));
+	ASSERT_TRUE(obj1.getConsistencyTracker().hasCollision(200, 100, CONSIST_ACCESS_MODE_WRITE));
+	ASSERT_FALSE(obj2.getConsistencyTracker().hasCollision(100, 100, CONSIST_ACCESS_MODE_WRITE));
+	ASSERT_TRUE(obj2.getConsistencyTracker().hasCollision(200, 100, CONSIST_ACCESS_MODE_READ));
+}
