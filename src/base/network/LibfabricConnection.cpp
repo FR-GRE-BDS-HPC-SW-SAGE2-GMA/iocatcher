@@ -368,9 +368,6 @@ bool LibfabricConnection::checkAuth(LibfabricMessage * message, int clientId, in
 	//check
 	bool ok = this->clientRegistry.checkIdentification(message->header.tcpClientId, message->header.tcpClientKey);
 
-	//we can repost the buffer
-	repostRecive(id);
-
 	//handle cases
 	if (ok) {
 		return true;
