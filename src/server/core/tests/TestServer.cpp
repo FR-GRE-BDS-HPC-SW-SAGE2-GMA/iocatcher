@@ -16,13 +16,23 @@ using namespace IOC;
 /****************************************************/
 TEST(TestServer, constructor)
 {
-	Server server("127.0.0.1", "8666", true, true);
+	//config
+	Config config;
+	config.initForUnitTests();
+
+	//server
+	Server server(&config, "8666");
 }
 
 /****************************************************/
 TEST(TestServer, run_poll)
 {
-	Server server("127.0.0.1", "8668", true, true);
+	//config
+	Config config;
+	config.initForUnitTests();
+
+	//server
+	Server server(&config, "8668");
 	std::thread runner([&server]{
 		server.poll();
 	});
@@ -34,7 +44,12 @@ TEST(TestServer, run_poll)
 /****************************************************/
 TEST(TestServer, run_stats)
 {
-	Server server("127.0.0.1", "8670", true, true);
+	//config
+	Config config;
+	config.initForUnitTests();
+
+	//server
+	Server server(&config, "8670");
 	server.startStatsThread();
 	usleep(4000);
 	server.stop();

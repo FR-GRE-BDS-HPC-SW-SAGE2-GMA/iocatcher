@@ -42,7 +42,8 @@ TcpClient::TcpClient(const std::string & addr, const std::string & port)
 /*****************************************************/
 TcpClient::~TcpClient(void)
 {
-	close(this->connFd);
+	if (this->connFd != -1)
+		close(this->connFd);
 }
 
 /*****************************************************/
@@ -126,6 +127,12 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 	url[r] = '\0';
 	fprintf(stderr, "Got connect url %s\n", url);
 	infos.url = url;
+
+	//disconnect
+	if (strncmp("noauth", url, 7) == 0) {
+		close(connFd);
+		connFd = -1;
+	}
 
 	// ok
 	return infos;

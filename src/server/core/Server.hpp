@@ -14,6 +14,7 @@ COPYRIGHT: 2020 Bull SAS
 //linux
 #include <sys/uio.h>
 //local
+#include "Config.hpp"
 #include "Container.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 #include "../../base/network/LibfabricConnection.hpp"
@@ -35,7 +36,7 @@ struct ServerStats
 class Server
 {
 	public:
-		Server(const std::string & address, const std::string & port, bool activePooling, bool consistencyCheck);
+		Server(const Config * config, const std::string & port);
 		~Server(void);
 		void poll(void);
 		void startStatsThread(void);
@@ -66,7 +67,7 @@ class Server
 		LibfabricConnection * connection;
 		Container * container;
 		ServerStats stats;
-		bool consistencyCheck;
+		const Config * config;
 		std::thread statThread;
 		std::thread tcpServerThread;
 		volatile bool pollRunning;

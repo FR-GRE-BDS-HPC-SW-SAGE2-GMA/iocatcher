@@ -20,6 +20,7 @@ class TestClientServer : public ::testing::Test
 	protected:
 		Server * server;
 		ioc_client_t * client;
+		Config config;
 		std::thread thread;
 		virtual void SetUp()
 		{
@@ -27,7 +28,8 @@ class TestClientServer : public ::testing::Test
 			char p[16];
 			sprintf(p, "%d", port);
 			port += 4;
-			this->server = new Server("127.0.0.1", p, true, true);
+			config.initForUnitTests();
+			this->server = new Server(&config, p);
 			this->thread = std::thread([this](){
 				this->server->poll();
 			});

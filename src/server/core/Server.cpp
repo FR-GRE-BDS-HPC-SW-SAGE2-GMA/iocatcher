@@ -9,6 +9,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <unistd.h>
 #include <cstring>
 #include <random>
+#include <cassert>
 #include "Server.hpp"
 
 /****************************************************/
@@ -22,10 +23,13 @@ ServerStats::ServerStats(void)
 }
 
 /****************************************************/
-Server::Server(const std::string & address, const std::string & port, bool activePooling, bool consistencyCheck)
+Server::Server(const Config * config, const std::string & port)
 {
+	//check
+	assert(config != NULL);
+
 	//setup
-	this->consistencyCheck = consistencyCheck;
+	this->config = config;
 	this->pollRunning = false;
 	this->statsRunning = false;
 	//this->setOnClientConnect([](int id){});
@@ -36,13 +40,14 @@ Server::Server(const std::string & address, const std::string & port, bool activ
 	this->setupTcpServer(tcpPort, tcpPort);
 
 	//setup domain
-	this->domain = new LibfabricDomain(address, port, activePooling);
+	this->domain = new LibfabricDomain(config->listenIP, port, config->activePolling);
 	this->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, false);
 	this->connection->postRecives(1024*1024, 64);
-	this->connection->setCheckClientAuth(true);
+	if (config->clientAuth)
+		this->connection->setCheckClientAuth(true);
 
 	//create container
 	this->container = new Container(domain, 8*1024*1024);
@@ -72,7 +77,10 @@ Server::~Server(void)
 void Server::setupTcpServer(int port, int maxport)
 {
 	//create server
-	this->tcpServer = new TcpServer(port, maxport, "unused");
+	if (config->clientAuth)
+		this->tcpServer = new TcpServer(port, maxport, "conntrack");
+	else
+		this->tcpServer = new TcpServer(port, maxport, "noauth");
 
 	//server loop
 	this->tcpServerThread = std::thread([this](){
@@ -234,7 +242,7 @@ void Server::setupObjRangeRegister(void)
 		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
-		if (this->consistencyCheck)
+		if (this->config->consistencyCheck)
 			status = tracker.registerRange(0, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
 
 		//return message
@@ -277,7 +285,7 @@ void Server::setupObjUnregisterRange(void)
 		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
 		if (data.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
-		if (this->consistencyCheck)
+		if (this->config->consistencyCheck)
 			if (!tracker.unregisterRange(0, data.id, data.offset, data.size, mode))
 				status = -1;
 
