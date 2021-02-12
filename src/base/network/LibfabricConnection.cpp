@@ -411,7 +411,9 @@ bool LibfabricConnection::onRecv(size_t id)
 			break;
 		case IOC_LF_MSG_BAD_AUTH:
 			if (this->hookOnBadAuth) {
-				return this->hookOnBadAuth();
+				LibfabricActionResult res = this->hookOnBadAuth();
+				repostRecive(id);
+				return res;
 			} else {
 				IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
 					.arg(tcpClientId)
