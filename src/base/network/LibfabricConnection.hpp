@@ -77,6 +77,11 @@ class LibfabricConnection
 		LibfabricDomain & getDomain(void) {return *lfDomain;};
 		void setUsed(bool used) {this->used = used;};
 		bool getUsed(void) {return this->used;}
+		void setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpClientKey);
+		void fillProtocolHeader(LibfabricMessageHeader & header, int type);
+		ClientRegistry & getClientRegistry(void);
+		void setCheckClientAuth(bool value);
+		void setOnBadAuth(std::function<bool(void)> hookOnBadAuth);
 	private:
 		bool pollRx(void);
 		bool pollTx(void);
@@ -84,6 +89,7 @@ class LibfabricConnection
 		bool onRecv(size_t id);
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
+		bool checkAuth(LibfabricMessage * message, int clientId, int id);
 	private:
 		LibfabricDomain * lfDomain;
 		/** Completion queue. **/
@@ -101,9 +107,14 @@ class LibfabricConnection
 		std::map<int, fi_addr_t> remoteLiAddr;
 		int nextEndpointId;
 		std::function<void(int)> hookOnEndpointConnect;
+		std::function<bool(void)> hookOnBadAuth;
 		int clientId;
 		std::map<size_t, std::function<bool(int, size_t, void*)>> hooks;
 		bool used;
+		uint64_t tcpClientId;
+		uint64_t tcpClientKey;
+		ClientRegistry clientRegistry;
+		bool checkClientAuth;
 };
 
 }

@@ -17,6 +17,8 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_errno.h>
 #include <rdma/fi_domain.h>
+//local
+#include "ClientRegistry.hpp"
 
 //TMP
 //#define TEST_RDMA_SIZE (4*1024*1024)

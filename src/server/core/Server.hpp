@@ -15,7 +15,6 @@ COPYRIGHT: 2020 Bull SAS
 #include <sys/uio.h>
 //local
 #include "Container.hpp"
-#include "ClientRegistry.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 #include "../../base/network/LibfabricConnection.hpp"
 #include "../../base/network/TcpServer.hpp"
@@ -73,7 +72,6 @@ class Server
 		volatile bool pollRunning;
 		volatile bool statsRunning;
 		TcpServer * tcpServer;
-		ClientRegistry tcpClientRegistry;
 };
 
 /****************************************************/

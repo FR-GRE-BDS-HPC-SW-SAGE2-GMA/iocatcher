@@ -78,8 +78,7 @@ TEST(TestLibfabricConnection, message)
 		connection.joinServer();
 		//send message
 		LibfabricMessage msg;
-		msg.header.type = IOC_LF_MSG_PING;
-		msg.header.clientId = connection.getClientId();
+		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
 			return true;
@@ -293,4 +292,121 @@ TEST(TestLibfabricConnection, rdmav)
 		ASSERT_EQ(1, ((char*)ptrServer1)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer2)[i]) << i;
 	}
+}
+
+/****************************************************/
+TEST(TestLibfabricConnection, message_auth_ok)
+{
+	bool gotConnection = false;
+	bool gotMessage = false;
+	bool sendMessage = false;
+
+	//server
+	std::thread server([&gotConnection, &gotMessage]{
+		LibfabricDomain domain("127.0.0.1", "8455", true);
+		LibfabricConnection connection(&domain, false);
+		connection.getClientRegistry().registerClient(10, 123456789);
+		connection.setCheckClientAuth(true);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection = true;
+		});
+		while (!gotConnection) 
+			connection.poll(false);
+		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+			gotMessage = true;
+			connection.repostRecive(id);
+			return true;
+		});
+		connection.poll(true);
+	});
+
+	//client
+	std::thread client([&sendMessage]{
+		LibfabricDomain domain("127.0.0.1", "8455", false);
+		LibfabricConnection connection(&domain, false);
+		connection.setTcpClientInfos(10, 123456789);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		//send message
+		LibfabricMessage msg;
+		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
+		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+			sendMessage = true;
+			return true;
+		});
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	ASSERT_TRUE(gotConnection);
+	ASSERT_TRUE(gotMessage);
+	ASSERT_TRUE(sendMessage);
+}
+
+/****************************************************/
+TEST(TestLibfabricConnection, message_auth_not_ok)
+{
+	bool gotConnection = false;
+	bool gotMessage = false;
+	bool gotError = false;
+	bool sendMessage = false;
+
+	//server
+	std::thread server([&gotConnection, &gotMessage]{
+		LibfabricDomain domain("127.0.0.1", "8465", true);
+		LibfabricConnection connection(&domain, false);
+		connection.getClientRegistry().registerClient(10, 123456789);
+		connection.setCheckClientAuth(true);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection = true;
+		});
+		while (!gotConnection) 
+			connection.poll(false);
+		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+			gotMessage = true;
+			connection.repostRecive(id);
+			return true;
+		});
+		connection.poll(true);
+	});
+
+	//client
+	std::thread client([&sendMessage, &gotError]{
+		LibfabricDomain domain("127.0.0.1", "8465", false);
+		LibfabricConnection connection(&domain, false);
+		connection.setTcpClientInfos(10, 123);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		//on error
+		connection.setOnBadAuth([&gotError](){
+			gotError = true;
+			return true;
+		});
+		//send message
+		LibfabricMessage msg;
+		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
+		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+			sendMessage = true;
+			return true;
+		});
+		connection.poll(true);
+		//wait reception
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	EXPECT_TRUE(gotConnection);
+	EXPECT_FALSE(gotMessage);
+	EXPECT_TRUE(gotError);
+	EXPECT_TRUE(sendMessage);
 }

@@ -22,8 +22,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 
 	//send open
 	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_PING;
-	msg.header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 	msg.data.iov = iov;
 
 	//register hook
@@ -63,8 +62,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 {
 	//setup message request
 	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
-	msg->header.type = IOC_LF_MSG_OBJ_READ;
-	msg->header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg->header, IOC_LF_MSG_OBJ_READ);
 	msg->data.objReadWrite.low = low;
 	msg->data.objReadWrite.high = high;
 	msg->data.objReadWrite.offset = offset;
@@ -183,8 +181,7 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 {
 	//setup message request
 	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_OBJ_FLUSH;
-	msg.header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_FLUSH);
 	msg.data.objFlush.low = low;
 	msg.data.objFlush.high = high;
 	msg.data.objFlush.offset = offset;
@@ -219,8 +216,7 @@ int IOC::obj_range_register(LibfabricConnection &connection, int64_t high, int64
 {
 	//setup message request
 	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER;
-	msg.header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_REGISTER);
 	msg.data.registerRange.low = low;
 	msg.data.registerRange.high = high;
 	msg.data.registerRange.offset = offset;
@@ -256,8 +252,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 {
 	//setup message request
 	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_OBJ_RANGE_UNREGISTER;
-	msg.header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_UNREGISTER);
 	msg.data.unregisterRange.id = id;
 	msg.data.unregisterRange.low = low;
 	msg.data.unregisterRange.high = high;
@@ -294,8 +289,7 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 {
 	//setup message request
 	LibfabricMessage msg;
-	msg.header.type = IOC_LF_MSG_OBJ_CREATE;
-	msg.header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_CREATE);
 	msg.data.objFlush.low = low;
 	msg.data.objFlush.high = high;
 

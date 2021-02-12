@@ -51,6 +51,9 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	this->recvBuffers = NULL;
 	this->nextEndpointId = 0;
 	this->recvBuffersSize = 0;
+	this->tcpClientId = 0;
+	this->tcpClientKey = 0;
+	this->checkClientAuth = false;
 
 	//extract
 	fi_info *fi = lfDomain->getFiInfo();
@@ -356,6 +359,44 @@ void LibfabricConnection::onSent(void * buffer)
 }
 
 /****************************************************/
+bool LibfabricConnection::checkAuth(LibfabricMessage * message, int clientId, int id)
+{
+	//no auth
+	if (this->checkClientAuth == false)
+		return true;
+	
+	//check
+	bool ok = this->clientRegistry.checkIdentification(message->header.tcpClientId, message->header.tcpClientKey);
+
+	//we can repost the buffer
+	repostRecive(id);
+
+	//handle cases
+	if (ok) {
+		return true;
+	} else {
+		//info
+		IOC_WARNING_ARG("Encounter wrong auth: %1 => %2")
+					.arg(message->header.tcpClientId)
+					.arg(message->header.tcpClientKey)
+					.end();
+
+		//send message
+		LibfabricMessage * msg = new LibfabricMessage;
+		fillProtocolHeader(msg->header, IOC_LF_MSG_BAD_AUTH);
+
+		//send message
+		this->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+			delete msg;
+			return true;
+		});
+
+		//not good
+		return false;
+	}
+}
+
+/****************************************************/
 bool LibfabricConnection::onRecv(size_t id)
 {
 	//check
@@ -371,8 +412,25 @@ bool LibfabricConnection::onRecv(size_t id)
 			onConnInit(message);
 			repostRecive(id);
 			break;
+		case IOC_LF_MSG_BAD_AUTH:
+			if (this->hookOnBadAuth) {
+				return this->hookOnBadAuth();
+			} else {
+				IOC_FATAL_ARG("Invalid authentification while exchanging with server, got %1 => %2 !")
+					.arg(tcpClientId)
+					.arg(tcpClientKey)
+					.end();
+			}
+			break;
 		default:
+			//check auth
+			if (this->checkAuth(message, message->header.clientId, id) == false)
+				return true;
+
+			//find handler
 			auto it = this->hooks.find(message->header.type);
+
+			//handle
 			if (it != this->hooks.end())
 				return it->second(message->header.clientId, id, buffer);
 			else
@@ -466,6 +524,40 @@ int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_
 void LibfabricConnection::setHooks(std::function<void(int)> hookOnEndpointConnect)
 {
 	this->hookOnEndpointConnect = hookOnEndpointConnect;
+}
+
+/****************************************************/
+void LibfabricConnection::setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpClientKey)
+{
+	this->tcpClientId = tcpClientId;
+	this->tcpClientKey = tcpClientKey;
+}
+
+/****************************************************/
+void LibfabricConnection::fillProtocolHeader(LibfabricMessageHeader & header, int type)
+{
+	header.type = type;
+	header.clientId = this->clientId;
+	header.tcpClientId = this->tcpClientId;
+	header.tcpClientKey = this->tcpClientKey;
+}
+
+/****************************************************/
+ClientRegistry & LibfabricConnection::getClientRegistry(void)
+{
+	return clientRegistry;
+}
+
+/****************************************************/
+void LibfabricConnection::setCheckClientAuth(bool value)
+{
+	this->checkClientAuth = value;
+}
+
+/****************************************************/
+void LibfabricConnection::setOnBadAuth(std::function<bool(void)> hookOnBadAuth)
+{
+	this->hookOnBadAuth = hookOnBadAuth;
 }
 
 }

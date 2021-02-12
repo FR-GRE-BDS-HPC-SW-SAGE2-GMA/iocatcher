@@ -30,6 +30,7 @@ enum LibfabricMessageType
 {
 	IOC_LF_MSG_CONNECT_INIT,
 	IOC_LF_MSG_ASSIGN_ID,
+	IOC_LF_MSG_BAD_AUTH,
 	IOC_LF_MSG_MAX,
 	IOC_LF_MSG_PING = 10,
 	IOC_LF_MSG_PONG,
@@ -51,6 +52,8 @@ struct LibfabricMessageHeader
 {
 	int type;
 	int clientId;
+	uint64_t tcpClientId;
+	uint64_t tcpClientKey;
 };
 
 /****************************************************/

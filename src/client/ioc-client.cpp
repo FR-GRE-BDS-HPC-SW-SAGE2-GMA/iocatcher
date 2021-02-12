@@ -65,6 +65,7 @@ static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
 
 	//setup connection
 	LibfabricConnection * connection = new LibfabricConnection(client->domain, client->passive_wait);
+	connection->setTcpClientInfos(client->clientConnInfo.clientId, client->clientConnInfo.key);
 	connection->postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 	connection->joinServer();
 	connection->setUsed(true);

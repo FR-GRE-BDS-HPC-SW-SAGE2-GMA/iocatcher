@@ -42,6 +42,7 @@ Server::Server(const std::string & address, const std::string & port, bool activ
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, false);
 	this->connection->postRecives(1024*1024, 64);
+	this->connection->setCheckClientAuth(true);
 
 	//create container
 	this->container = new Container(domain, 8*1024*1024);
@@ -299,27 +300,6 @@ void Server::setupObjUnregisterRange(void)
 		return false;
 	});
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /****************************************************/
 void Server::setupObjCreate(void)
@@ -606,13 +586,13 @@ void Server::setupObjWrite(void)
 void Server::onClientConnect(uint64_t id, uint64_t key)
 {
 	printf("Client connect ID=%lu, key=%lu\n", id, key);
-	tcpClientRegistry.registerClient(id, key);
+	connection->getClientRegistry().registerClient(id, key);
 }
 
 /****************************************************/
 void Server::onClientDisconnect(uint64_t id)
 {
 	printf("Client disconnect ID=%lu\n", id);
-	tcpClientRegistry.disconnectClient(id);
+	connection->getClientRegistry().disconnectClient(id);
 	container->onClientDisconnect(id);
 }
