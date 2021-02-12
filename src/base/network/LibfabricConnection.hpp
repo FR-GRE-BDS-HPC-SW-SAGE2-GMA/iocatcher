@@ -114,7 +114,7 @@ class LibfabricConnection
 		std::map<int, fi_addr_t> remoteLiAddr;
 		int nextEndpointId;
 		std::function<void(int)> hookOnEndpointConnect;
-		std::function<bool(void)> hookOnBadAuth;
+		std::function<LibfabricActionResult(void)> hookOnBadAuth;
 		int clientId;
 		std::map<size_t, std::function<bool(int, size_t, void*)>> hooks;
 		bool used;
