@@ -37,8 +37,8 @@ class TestClientServer : public ::testing::Test
 
 		virtual void TearDown()
 		{
-			this->server->stop();
 			ioc_client_fini(this->client);
+			this->server->stop();
 			delete this->server;
 			this->thread.join();
 		}

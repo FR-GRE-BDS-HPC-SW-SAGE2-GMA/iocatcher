@@ -376,7 +376,7 @@ bool LibfabricConnection::checkAuth(LibfabricMessage * message, int clientId, in
 		return true;
 	} else {
 		//info
-		IOC_WARNING_ARG("Encounter wrong auth: %1 => %2")
+		IOC_WARNING_ARG("Encounter wrong auth: ID = %1, KEY = %2")
 					.arg(message->header.tcpClientId)
 					.arg(message->header.tcpClientKey)
 					.end();
@@ -416,7 +416,7 @@ bool LibfabricConnection::onRecv(size_t id)
 			if (this->hookOnBadAuth) {
 				return this->hookOnBadAuth();
 			} else {
-				IOC_FATAL_ARG("Invalid authentification while exchanging with server, got %1 => %2 !")
+				IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
 					.arg(tcpClientId)
 					.arg(tcpClientKey)
 					.end();

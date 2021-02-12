@@ -123,8 +123,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 {
 	//setup message request
 	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
-	msg->header.type = IOC_LF_MSG_OBJ_WRITE;
-	msg->header.clientId = connection.getClientId();
+	connection.fillProtocolHeader(msg->header, IOC_LF_MSG_OBJ_WRITE);
 	msg->data.objReadWrite.low = low;
 	msg->data.objReadWrite.high = high;
 	msg->data.objReadWrite.offset = offset;
