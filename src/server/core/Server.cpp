@@ -40,11 +40,12 @@ Server::Server(const Config * config, const std::string & port)
 	this->setupTcpServer(tcpPort, tcpPort);
 
 	//setup domain
-	this->domain = new LibfabricDomain(config->listenIP, port, config->activePolling);
+	this->domain = new LibfabricDomain(config->listenIP, port, true);
 	this->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, false);
+	//this->connection = new LibfabricConnection(this->domain, !config->activePolling);
 	this->connection->postRecives(1024*1024, 64);
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);
