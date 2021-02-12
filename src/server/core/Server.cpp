@@ -179,7 +179,7 @@ void Server::setupPingPong(void)
 
 			this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 				delete msg;
-				return false;
+				return LF_WAIT_LOOP_KEEP_WAITING;
 			});
 			
 		//	return false;
@@ -188,7 +188,7 @@ void Server::setupPingPong(void)
 		//republish
 		this->connection->repostRecive(id);
 
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -215,13 +215,13 @@ void Server::setupObjFlush(void)
 
 		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
 		this->connection->repostRecive(id);
 
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -254,14 +254,14 @@ void Server::setupObjRangeRegister(void)
 
 		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
 		this->connection->repostRecive(id);
 
 		//
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -298,14 +298,14 @@ void Server::setupObjUnregisterRange(void)
 
 		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
 		this->connection->repostRecive(id);
 
 		//
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -332,13 +332,13 @@ void Server::setupObjCreate(void)
 
 		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
 		this->connection->repostRecive(id);
 
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -402,10 +402,10 @@ void Server::objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage,
 		//send ack message
 		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 		
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//remove temp
@@ -452,7 +452,7 @@ void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage
 	//send ack message
 	this->connection->sendMessage(msg, sizeof (*msg) + dataSize, clientId, [this, msg](void){
 		this->connection->getDomain().retMsgBuffer(msg);
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -482,7 +482,7 @@ void Server::setupObjRead(void)
 		//republish
 		this->connection->repostRecive(id);
 
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -509,10 +509,10 @@ void Server::objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessa
 		//send ack message
 		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 		
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//remove temp
@@ -553,7 +553,7 @@ void Server::objEagerExtractFromMessage(int clientId, LibfabricMessage * clientM
 	//send ack message
 	this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 		delete msg;
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 
@@ -586,7 +586,7 @@ void Server::setupObjWrite(void)
 		//republish
 		this->connection->repostRecive(id);
 
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 }
 

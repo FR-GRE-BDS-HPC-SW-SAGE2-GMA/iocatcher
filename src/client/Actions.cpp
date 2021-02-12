@@ -29,7 +29,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	connection.registerHook(IOC_LF_MSG_PONG, [&connection](int clientId, size_t id, void * buffer) {
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//time
@@ -39,7 +39,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	//send
 	for (int i = 0 ; i < cnt ; i++) {
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-			return false;
+			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//poll
@@ -94,13 +94,13 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 
 		//repost recv buffer
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//send message
 	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, [msg, &connection](){
 		connection.getDomain().retMsgBuffer(msg);
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
@@ -152,13 +152,13 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//send message
 	connection.sendMessage(msg, toSend, IOC_LF_SERVER_ID, [msg, &connection](){
 		connection.getDomain().retMsgBuffer(msg);
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
@@ -192,12 +192,12 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
@@ -228,12 +228,12 @@ int IOC::obj_range_register(LibfabricConnection &connection, int64_t high, int64
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
@@ -265,12 +265,12 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
@@ -298,12 +298,12 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
 		connection.repostRecive(id);
-		return true;
+		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return false;
+		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll

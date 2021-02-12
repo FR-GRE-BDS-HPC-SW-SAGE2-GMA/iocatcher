@@ -65,7 +65,7 @@ TEST(TestLibfabricConnection, message)
 		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
 			gotMessage = true;
 			connection.repostRecive(id);
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 	});
@@ -81,7 +81,7 @@ TEST(TestLibfabricConnection, message)
 		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 	});
@@ -138,14 +138,14 @@ TEST(TestLibfabricConnection, rdma)
 		//do write
 		connection.rdmaWrite(clientId, ptrServer1, iov.addr, iov.key, size, [&gotRdmaWrite](){
 			gotRdmaWrite = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 
 		//do read
 		connection.rdmaRead(clientId, ptrServer2, iov.addr, iov.key, size, [&gotRdmaRead](){
 			gotRdmaRead = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 
@@ -239,14 +239,14 @@ TEST(TestLibfabricConnection, rdmav)
 		//do write
 		connection.rdmaWritev(clientId, iov1, 2, iov.addr, iov.key, [&gotRdmaWrite](){
 			gotRdmaWrite = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 
 		//do read
 		connection.rdmaReadv(clientId, iov2, 2, iov.addr, iov.key, [&gotRdmaRead](){
 			gotRdmaRead = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 
@@ -316,7 +316,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
 			gotMessage = true;
 			connection.repostRecive(id);
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 	});
@@ -333,7 +333,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 	});
@@ -371,7 +371,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
 			gotMessage = true;
 			connection.repostRecive(id);
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 	});
@@ -386,14 +386,14 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		//on error
 		connection.setOnBadAuth([&gotError](){
 			gotError = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		//send message
 		LibfabricMessage msg;
 		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
-			return true;
+			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
 		//wait reception

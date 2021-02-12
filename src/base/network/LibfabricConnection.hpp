@@ -31,12 +31,19 @@ namespace IOC
 class LibfabricConnection;
 
 /****************************************************/
+enum LibfabricActionResult
+{
+	LF_WAIT_LOOP_KEEP_WAITING = 0,
+	LF_WAIT_LOOP_UNBLOCK = 1,
+};
+
+/****************************************************/
 class LibfabricPostAction
 {
 	public:
 		LibfabricPostAction(void) {this->bufferId = -1; this->connection = NULL;};
 		virtual ~LibfabricPostAction(void) {};
-		virtual bool runPostAction(void) = 0;
+		virtual LibfabricActionResult runPostAction(void) = 0;
 		void registerBuffer(LibfabricConnection * connection, bool isRecv, size_t bufferId);
 		void freeBuffer(void);
 	protected:
@@ -49,10 +56,10 @@ class LibfabricPostAction
 class LibfabricPostActionFunction : public LibfabricPostAction
 {
 	public:
-		LibfabricPostActionFunction(std::function<bool(void)> function) {this->function = function;};
-		virtual bool runPostAction(void);
+		LibfabricPostActionFunction(std::function<LibfabricActionResult(void)> function) {this->function = function;};
+		virtual LibfabricActionResult runPostAction(void);
 	private:
-		std::function<bool(void)> function;
+		std::function<LibfabricActionResult(void)> function;
 };
 
 /****************************************************/
@@ -65,13 +72,13 @@ class LibfabricConnection
 		void joinServer(void);
 		void poll(bool waitMsg);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
-		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<bool(void)> postAction);
-		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(void)> postAction);
-		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(void)> postAction);
-		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<bool(void)> postAction);
-		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<bool(void)> postAction);
+		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
+		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
+		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
+		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
+		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
 		void repostRecive(size_t id);
-		void registerHook(int messageType, std::function<bool(int, size_t, void*)> function);
+		void registerHook(int messageType, std::function<LibfabricActionResult(int, size_t, void*)> function);
 		void unregisterHook(int messageType);
 		int getClientId(void) { return clientId;};
 		LibfabricDomain & getDomain(void) {return *lfDomain;};
@@ -81,7 +88,7 @@ class LibfabricConnection
 		void fillProtocolHeader(LibfabricMessageHeader & header, int type);
 		ClientRegistry & getClientRegistry(void);
 		void setCheckClientAuth(bool value);
-		void setOnBadAuth(std::function<bool(void)> hookOnBadAuth);
+		void setOnBadAuth(std::function<LibfabricActionResult(void)> hookOnBadAuth);
 	private:
 		bool pollRx(void);
 		bool pollTx(void);
