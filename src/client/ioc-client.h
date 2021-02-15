@@ -31,7 +31,7 @@ int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low);
 void ioc_client_ping_pong(ioc_client_t * client, int cnt);
 const char * ioc_client_provider_name(ioc_client_t * client);
 void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
-int ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size, bool write);
+int32_t ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size, bool write);
 int ioc_client_obj_range_unregister(ioc_client_t * client, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write);
 
 /****************************************************/

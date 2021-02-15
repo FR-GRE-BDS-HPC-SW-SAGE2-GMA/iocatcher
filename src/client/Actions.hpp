@@ -22,7 +22,7 @@ ssize_t obj_read(LibfabricConnection &connection, int64_t high, int64_t low, voi
 ssize_t obj_write(LibfabricConnection &connection, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset);
 int obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size);
 int obj_create(LibfabricConnection &connection, int64_t high, int64_t low);
-int obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write);
+int32_t obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write);
 int obj_range_unregister(LibfabricConnection &connection, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write);
 
 }

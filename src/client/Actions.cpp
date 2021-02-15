@@ -211,7 +211,7 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 }
 
 /****************************************************/
-int IOC::obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write)
+int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write)
 {
 	//setup message request
 	LibfabricMessage msg;
