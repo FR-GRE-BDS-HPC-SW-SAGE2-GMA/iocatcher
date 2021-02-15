@@ -11,6 +11,7 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 #include <stdint.h>
 #include <map>
+#include <mutex>
 
 /****************************************************/
 namespace IOC
@@ -26,9 +27,8 @@ class ClientRegistry
 		void disconnectClient(uint64_t id);
 		bool checkIdentification(uint64_t id, uint64_t key);
 	private:
-		uint64_t id;
-		uint64_t key;
 		std::map<uint64_t, uint64_t> clients;
+		std::mutex mutex;
 };
 
 }

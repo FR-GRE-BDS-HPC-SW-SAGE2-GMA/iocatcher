@@ -27,27 +27,40 @@ ClientRegistry::~ClientRegistry(void)
 /****************************************************/
 void ClientRegistry::registerClient(uint64_t id, uint64_t key)
 {
-	assert(clients.find(id) == clients.end());
-	clients[id] = key;
+	//CRITICAL SECTION
+	{
+		std::lock_guard<std::mutex> lockGuard(mutex);
+		assert(clients.find(id) == clients.end());
+		clients[id] = key;
+	}
 }
 
 /****************************************************/
 void ClientRegistry::disconnectClient(uint64_t id)
 {
-	assert(clients.find(id) != clients.end());
-	clients.erase(id);
+	//CRITICAL SECTION
+	{
+		std::lock_guard<std::mutex> lockGuard(mutex);
+		assert(clients.find(id) != clients.end());
+		clients.erase(id);
+	}
 }
 
 /****************************************************/
 bool ClientRegistry::checkIdentification(uint64_t id, uint64_t key)
 {
-	//search
-	auto it = clients.find(id);
+	//CRITICAL SECTION
+	{
+		std::lock_guard<std::mutex> lockGuard(mutex);
 
-	//check ok
-	if (it == clients.end())
-		return false;
+		//search
+		auto it = clients.find(id);
 
-	//check key
-	return (it->second == key);
+		//check ok
+		if (it == clients.end())
+			return false;
+
+		//check key
+		return (it->second == key);
+	}
 }
