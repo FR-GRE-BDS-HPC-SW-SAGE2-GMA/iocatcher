@@ -79,9 +79,9 @@ void Server::setupTcpServer(int port, int maxport)
 {
 	//create server
 	if (config->clientAuth)
-		this->tcpServer = new TcpServer(port, maxport, "conntrack");
+		this->tcpServer = new TcpServer(port, maxport, true);
 	else
-		this->tcpServer = new TcpServer(port, maxport, "noauth");
+		this->tcpServer = new TcpServer(port, maxport, false);
 
 	//server loop
 	this->tcpServerThread = std::thread([this](){

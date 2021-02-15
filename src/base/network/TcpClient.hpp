@@ -19,7 +19,7 @@ struct TcpConnInfo
 {
 	uint64_t clientId;
 	uint64_t key;
-	std::string url;
+	bool keepConnection;
 };
 
 /*****************************************************/

@@ -114,22 +114,24 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 
 	// Get client ID and key from TCP server
 	int rc;
-	rc = read(connFd, &infos.clientId, sizeof(uint64_t));
+	rc = read(connFd, &infos.clientId, sizeof(infos.clientId));
 	assert(rc == sizeof(uint64_t));
-	rc = read(connFd, &infos.key, sizeof(uint64_t));
+	rc = read(connFd, &infos.key, sizeof(infos.key));
 	assert(rc == sizeof(uint64_t));
-	fprintf(stderr, "Got client ID %lu and key %lx\n", infos.clientId, infos.key);
+	rc = read(connFd, &infos.keepConnection, sizeof(infos.keepConnection));
+	assert(rc == sizeof(bool));
+	fprintf(stderr, "Got client ID %lu and key %lx and keep connection %d\n", infos.clientId, infos.key, (int)infos.keepConnection);
 
 	// Get the mercury URL from the TCP server
-	char url[MAXURL];
+	/*char url[MAXURL];
 	ssize_t r = read(connFd, url, MAXURL-1);
 	assert(r > 0);
 	url[r] = '\0';
 	fprintf(stderr, "Got connect url %s\n", url);
-	infos.url = url;
+	infos.url = url;*/
 
 	//disconnect
-	if (strncmp("noauth", url, 7) == 0) {
+	if (infos.keepConnection == false) {
 		close(connFd);
 		connFd = -1;
 	}

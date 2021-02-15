@@ -22,12 +22,11 @@ set(IOC_BASE_INTERNAL_CODE
 set(IOC_BASE_EXTERN_LIBS ${LIBFABRIC_LIBRARIES})
 
 ######################################################
-add_library(iocatcher-base SHARED ${IOC_BASE_INTERNAL_CODE})
+add_library(iocatcher-base STATIC ${IOC_BASE_INTERNAL_CODE})
 set_target_properties(iocatcher-base PROPERTIES VERSION 0.0.0 SOVERSION 0)
 target_link_libraries(iocatcher-base ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(iocatcher-base ${IOC_BASE_EXTERN_LIBS})
 target_link_libraries(iocatcher-base ${LIBEVENT_LIBRARIES} ${LIBEVENT_PTHREADS_LIBRARIES})
-install(TARGETS iocatcher-base DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ######################################################
 add_subdirectory(common)

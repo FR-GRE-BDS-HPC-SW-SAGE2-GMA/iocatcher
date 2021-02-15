@@ -35,7 +35,7 @@ struct TcpClientInfo
 class TcpServer
 {
 	public:
-		TcpServer(int port, int portRange, const std::string & hgConnectInfo);
+		TcpServer(int port, int portRange, bool keepConnection);
 		~TcpServer(void);
 		void loop(std::function<void(uint64_t*, uint64_t*, TcpClientInfo*)> onConnect,std::function<void(TcpClientInfo*)> onDisconnect);
 		void stop(void);
@@ -47,13 +47,12 @@ class TcpServer
 	private:
 		int setupLibeventListener(void);
 		void sendClientId(TcpClientInfo *client);
-		void sendHgConnectInfo(TcpClientInfo *client);
 		void closeClient(TcpClientInfo *client, int fd);
 	private:
 		int listenFd;
 		struct event_base *ebase;
 		int nr_clients;
-		std::string hgConnectInfo;
+		bool keepConnection;
 		std::list<TcpClientInfo> clients;
 		std::function<void(uint64_t*, uint64_t*, TcpClientInfo*)> onConnect;
 		std::function<void(TcpClientInfo*)> onDisconnect;

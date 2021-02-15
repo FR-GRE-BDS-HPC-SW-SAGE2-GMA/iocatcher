@@ -30,7 +30,7 @@ using namespace IOC;
 #define trace(args...) printf(args)
 
 /****************************************************/
-TcpServer::TcpServer(int port, int portRange, const std::string & hgConnectInfo)
+TcpServer::TcpServer(int port, int portRange, bool keepConnection)
 {
 	//pthread init
 	static bool eventPthreadInit = false;
@@ -44,7 +44,7 @@ TcpServer::TcpServer(int port, int portRange, const std::string & hgConnectInfo)
 	assumeArg(res >= 0, "Failed to open socket : %1").arg(res).end();
 	this->listenFd = res;
 	this->nr_clients = 0;
-	this->hgConnectInfo = hgConnectInfo;
+	this->keepConnection = keepConnection;
 }
 
 /****************************************************/
@@ -81,14 +81,8 @@ void TcpServer::sendClientId(TcpClientInfo *client)
 	assume(rc == sizeof(id), "Invalid write() size !");
 	rc = write(client->fd, &key, sizeof(key));
 	assume(rc == sizeof(key), "Invalid write() size !");
-}
-
-/****************************************************/
-void TcpServer::sendHgConnectInfo(TcpClientInfo *client)
-{
-	const char *info = this->hgConnectInfo.c_str();
-	size_t rc = write(client->fd, info, strlen(info));
-	assume(rc == strlen(info), "Invalid write() size !");
+	rc = write(client->fd, &keepConnection, sizeof(keepConnection));
+	assume(rc == sizeof(keepConnection), "Invalid write() size !");
 }
 
 /****************************************************/
@@ -121,7 +115,7 @@ void TcpServer::acceptOneClientCallback(evutil_socket_t fd, short unused_events,
 
 	printf("Client %p arrived\n", client);
 	server->sendClientId(client);
-	server->sendHgConnectInfo(client);
+	//server->sendHgConnectInfo(client);
 }
 
 void TcpServer::recvClientMessageCallback(evutil_socket_t fd, short unused_events, void *clnt)

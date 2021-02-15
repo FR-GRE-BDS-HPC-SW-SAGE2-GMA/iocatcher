@@ -26,7 +26,7 @@ TEST(TestTcpClientServer, constructor)
 	int cntDisconnect = 0;
 
 	//server
-	TcpServer server(5555,1,"ofi+verbs://127.0.0.1:3333");
+	TcpServer server(5555,1,true);
 
 	//server loop
 	std::thread tcpThread([&server, &cntConnect, &cntDisconnect](){
@@ -49,6 +49,7 @@ TEST(TestTcpClientServer, constructor)
 	//check
 	EXPECT_EQ(10, conn.clientId);
 	EXPECT_EQ(20, conn.key);
+	EXPECT_TRUE(conn.keepConnection);
 	EXPECT_EQ(1, cntConnect);
 	EXPECT_EQ(0, cntDisconnect);
 
