@@ -42,8 +42,8 @@ int main(int argc, char ** argv)
 
 	//init mero
 	#ifndef NOMERO
-		printf("USING MERO RESSOURCE FILE: %s\n", config.meroRcFile);
-		c0appz_init(0, (char*)config.meroRcFile);
+		printf("USING MERO RESSOURCE FILE: %s\n", config.meroRcFile.c_str());
+		c0appz_init(0, (char*)config.meroRcFile.c_str());
 	#else
 		printf("NOT USING MERO\n");
 	#endif

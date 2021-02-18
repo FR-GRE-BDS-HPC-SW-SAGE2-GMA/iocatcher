@@ -13,12 +13,16 @@
 #include <mutex>
 #include <cassert>
 #include <cstdlib>
+#include <semaphore.h>
 #include "Actions.hpp"
 #include "../base/network/TcpClient.hpp"
 #include "ioc-client.h"
 
 /****************************************************/
 using namespace IOC;
+
+/****************************************************/
+#define IOC_CLIENT_MAX_CONN 8
 
 extern "C"
 {
@@ -30,6 +34,7 @@ struct ioc_client_s
 	TcpClient * tcpClient;
 	TcpConnInfo clientConnInfo;
 	std::mutex connections_mutex;
+	sem_t connections_semaphore;
 	std::vector<LibfabricConnection *> connections;
 	bool passive_wait;
 };
@@ -44,6 +49,9 @@ static void ioc_client_ret_connection(ioc_client_t * client, LibfabricConnection
 
 	//setup
 	connection->setUsed(false);
+
+	//open one again
+	sem_post(&client->connections_semaphore);
 }
 
 /****************************************************/
@@ -51,6 +59,9 @@ static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
 {
 	//check
 	assert(client != NULL);
+
+	//limit number
+	sem_wait(&client->connections_semaphore);
 
 	//lock
 	std::lock_guard<std::mutex> take_lock(client->connections_mutex);
@@ -99,6 +110,9 @@ ioc_client_t * ioc_client_init(const char * ip, const char * port)
 	client->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
 	client->passive_wait = true;
 
+	//init semaphore
+	sem_init(&client->connections_semaphore, 0, IOC_CLIENT_MAX_CONN);
+
 	//return
 	return client;
 }
@@ -106,12 +120,18 @@ ioc_client_t * ioc_client_init(const char * ip, const char * port)
 /****************************************************/
 void ioc_client_fini(ioc_client_t * client)
 {
+	//wait all to came back
+	for (int i = 0 ; i < IOC_CLIENT_MAX_CONN ; i++)
+		sem_wait(&client->connections_semaphore);
+
+	//start clean
 	client->connections_mutex.lock();
 	for (auto it : client->connections)
 		delete it;
 	delete client->domain;
 	delete client->tcpClient;
 	delete client;
+	sem_destroy(&client->connections_semaphore);
 }
 
 /****************************************************/

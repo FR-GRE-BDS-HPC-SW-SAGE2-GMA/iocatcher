@@ -478,6 +478,11 @@ unsigned long ping_pong_server(Connection & connection, const Options & options)
 		Message * msgPongs = (Message*)connection.bufferPongs[clientId];
 		msgPongs->type = MSG_PING_PONG;
 		msgPongs->id = msgPings->id;
+
+		/*void * buf = malloc(options.msgSize);
+		memcpy(buf, connection.bufferPings[clientId], options.msgSize);
+		free(buf);*/
+
 		//repost before send
 		err = fi_recv(connection.ep, connection.bufferPings[clientId], options.msgSize, 0, 0, (void*)clientId);
 		LIBFABRIC_CHECK_STATUS("fi_recv", err);
