@@ -39,6 +39,7 @@ int main(int argc, char ** argv)
 	printf("LISTEN: %s\n", config.listenIP.c_str());
 	if (config.nvdimmMountPath.empty())
 		printf("NVDIMM ENABLED: %s\n", config.nvdimmMountPath.c_str());
+	Object::setNvdimm(config.nvdimmMountPath);
 
 	//init mero
 	#ifndef NOMERO

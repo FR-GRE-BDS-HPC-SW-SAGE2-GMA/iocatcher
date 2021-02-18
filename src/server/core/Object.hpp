@@ -53,7 +53,7 @@ class Object
 		int flush(size_t offset, size_t size);
 		int create(void);
 		void forceAlignement(size_t alignment);
-		static void setNvdimm(const char * path);
+		static void setNvdimm(const std::string & path);
 		ConsistencyTracker & getConsistencyTracker(void);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
@@ -61,7 +61,7 @@ class Object
 		LibfabricDomain * domain;
 		ObjectId objectId;
 		ObjectSegmentMap segmentMap;
-		static const char * nvdimmPath;
+		static std::string nvdimmPath;
 		size_t alignement;
 		ConsistencyTracker consistencyTracker;
 };

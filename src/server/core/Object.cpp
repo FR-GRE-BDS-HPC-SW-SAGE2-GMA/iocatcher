@@ -48,7 +48,7 @@ using namespace IOC;
 using namespace std;
 
 /****************************************************/
-const char * IOC::Object::nvdimmPath;
+std::string IOC::Object::nvdimmPath;
 
 /****************************************************/
 #ifndef NOMERO
@@ -330,11 +330,11 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 }
 
 /****************************************************/
-char * allocateNvdimm(const char * nvdimmPath, int64_t high, int64_t low, size_t offset, size_t size)
+char * allocateNvdimm(const std::string & nvdimmPath, int64_t high, int64_t low, size_t offset, size_t size)
 {
 	//open
 	char fname[1024];
-	sprintf(fname, "%s/ioc-%ld:%ld-%lu.raw", nvdimmPath, high, low, offset);
+	sprintf(fname, "%s/ioc-%ld:%ld-%lu.raw", nvdimmPath.c_str(), high, low, offset);
 	unlink(fname);
 	int fd = open(fname, O_CREAT|O_RDWR);
 	assume(fd >= 0, "Fail to open nvdimm file !");
@@ -363,7 +363,7 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	segment.offset = offset;
 	segment.size = size;
 	segment.dirty = false;
-	if (this->nvdimmPath == NULL)
+	if (this->nvdimmPath.empty())
 		segment.ptr = (char*)malloc(size);
 	else
 		segment.ptr = allocateNvdimm(this->nvdimmPath, this->objectId.high, this->objectId.low, offset, size);
@@ -426,7 +426,7 @@ bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
 }
 
 /****************************************************/
-void IOC::Object::setNvdimm(const char * path)
+void IOC::Object::setNvdimm(const std::string & path)
 {
 	Object::nvdimmPath = path;
 }
