@@ -55,7 +55,7 @@ int TcpClient::tcp_connect(const char *addr, const char *aport)
 	struct servent *srv;
 	struct hostent *hp;
 
-	fprintf(stderr, "Connecting to %s:%s\n", addr, aport);
+	//fprintf(stderr, "Connecting to %s:%s\n", addr, aport);
 
 	if (!addr || !aport)
 		return -1;
@@ -120,7 +120,7 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 	assert(rc == sizeof(uint64_t));
 	rc = read(connFd, &infos.keepConnection, sizeof(infos.keepConnection));
 	assert(rc == sizeof(bool));
-	fprintf(stderr, "Got client ID %lu and key %lx and keep connection %d\n", infos.clientId, infos.key, (int)infos.keepConnection);
+	//fprintf(stderr, "Got client ID %lu and key %lx and keep connection %d\n", infos.clientId, infos.key, (int)infos.keepConnection);
 
 	// Get the mercury URL from the TCP server
 	/*char url[MAXURL];
