@@ -31,10 +31,32 @@ static struct argp_option options[] = {
 };
 
 /****************************************************/
+static std::vector<std::string> splitToVector(const std::string & value)
+{
+	//vars
+	std::vector<std::string> output;
+	std::string::size_type prev_pos = 0, pos = 0;
+
+	//loop on separators
+	while((pos = value.find(',', pos)) != std::string::npos)
+	{
+		std::string substring(value.substr(prev_pos, pos-prev_pos));
+		output.push_back(substring);
+		prev_pos = ++pos;
+	}
+
+	//push last
+	output.push_back(value.substr(prev_pos, pos-prev_pos));
+
+	//return
+	return output;
+}
+
+/****************************************************/
 static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 	Config *config = (Config *)state->input;
 	switch (key) {
-		case 'n': config->nvdimmMountPath = arg; break;
+		case 'n': config->nvdimmMountPath = splitToVector(arg); break;
 		case 'l': config->listenIP = arg; break;
 		case 'c': config->consistencyCheck = false; break;
 		case 'p': config->activePolling = true; break;
@@ -55,7 +77,6 @@ static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 Config::Config(void)
 {
 	this->listenIP = "";
-	this->nvdimmMountPath = "";
 	this->meroRcFile = "mero_ressource_file.rc";
 	this->consistencyCheck = true;
 	this->clientAuth = true;
@@ -70,11 +91,11 @@ void Config::initForUnitTests(void)
 }
 
 /****************************************************/
-void Config::parseArgs(int argc, char ** argv)
+void Config::parseArgs(int argc, const char ** argv)
 {
 	//parse args
 	static struct argp argp = { options, parseOptions, args_doc, doc, 0, 0, 0 };
-	argp_parse(&argp, argc, argv, 0, 0, this);
+	argp_parse(&argp, argc, (char**)argv, 0, 0, this);
 
 	//check
 	if (this->listenIP.empty()) {

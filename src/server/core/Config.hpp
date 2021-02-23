@@ -11,6 +11,7 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 //std c++
 #include <string>
+#include <vector>
 
 /****************************************************/
 namespace IOC
@@ -21,11 +22,11 @@ class Config
 {
 	public:
 		Config(void);
-		void parseArgs(int argc, char ** argv);
+		void parseArgs(int argc, const char ** argv);
 		void initForUnitTests(void);
 	public:
 		std::string listenIP;
-		std::string nvdimmMountPath;
+		std::vector<std::string> nvdimmMountPath;
 		std::string meroRcFile;
 		bool consistencyCheck;
 		bool clientAuth;

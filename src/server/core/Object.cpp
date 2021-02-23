@@ -48,7 +48,7 @@ using namespace IOC;
 using namespace std;
 
 /****************************************************/
-std::string IOC::Object::nvdimmPath;
+std::vector<std::string> IOC::Object::nvdimmPaths;
 
 /****************************************************/
 #ifndef NOMERO
@@ -261,6 +261,7 @@ Object::Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t align
 	this->domain = domain;
 	this->objectId.low = low;
 	this->objectId.high = high;
+	this->nvdimmId = 0;
 }
 
 /****************************************************/
@@ -363,10 +364,12 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	segment.offset = offset;
 	segment.size = size;
 	segment.dirty = false;
-	if (this->nvdimmPath.empty())
+	if (this->nvdimmPaths.empty()) {
 		segment.ptr = (char*)malloc(size);
-	else
-		segment.ptr = allocateNvdimm(this->nvdimmPath, this->objectId.high, this->objectId.low, offset, size);
+	} else {
+		segment.ptr = allocateNvdimm(this->nvdimmPaths[this->nvdimmId], this->objectId.high, this->objectId.low, offset, size);
+		this->nvdimmId = (this->nvdimmId + 1) % this->nvdimmPaths.size();
+	}
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
 	if (load) {
@@ -426,9 +429,9 @@ bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
 }
 
 /****************************************************/
-void IOC::Object::setNvdimm(const std::string & path)
+void IOC::Object::setNvdimm(const std::vector<std::string> & paths)
 {
-	Object::nvdimmPath = path;
+	Object::nvdimmPaths = paths;
 }
 
 /****************************************************/

@@ -29,7 +29,7 @@
 using namespace IOC;
 
 /****************************************************/
-int main(int argc, char ** argv)
+int main(int argc, const char ** argv)
 {
 	//parse args
 	Config config;
@@ -37,9 +37,11 @@ int main(int argc, char ** argv)
 	
 	//info
 	printf("LISTEN: %s\n", config.listenIP.c_str());
-	if (config.nvdimmMountPath.empty())
-		printf("NVDIMM ENABLED: %s\n", config.nvdimmMountPath.c_str());
-	Object::setNvdimm(config.nvdimmMountPath);
+	if (config.nvdimmMountPath.empty()) {
+		for (int i = 0 ; i < config.nvdimmMountPath.size() ; i++)
+			printf("NVDIMM ENABLED: %s\n", config.nvdimmMountPath[i].c_str());
+		Object::setNvdimm(config.nvdimmMountPath);
+	}
 
 	//init mero
 	#ifndef NOMERO
