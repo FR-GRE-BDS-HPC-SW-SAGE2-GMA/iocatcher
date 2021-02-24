@@ -38,36 +38,46 @@ bool ConsistencyTracker::hasCollision(size_t offset, size_t size, ConsistencyAcc
 /****************************************************/
 int32_t ConsistencyTracker::registerRange(uint64_t clientId, size_t offset, size_t size, ConsistencyAccessMode accessMode)
 {
-	//check collision
-	if (this->hasCollision(offset, size, accessMode))
-		return -1;
+	//CRITICAL SECTION
+	{
+		std::lock_guard<std::mutex> guard(this->mutex);
+	
+		//check collision
+		if (this->hasCollision(offset, size, accessMode))
+			return -1;
 
-	//register
-	struct ConsistencyRange range = {
-		.clientId = clientId,
-		.id = this->nextId++,
-		.offset = offset,
-		.size = size,
-		.accessMode = accessMode
-	};
-	this->ranges.push_back(range);
+		//register
+		struct ConsistencyRange range = {
+			.clientId = clientId,
+			.id = this->nextId++,
+			.offset = offset,
+			.size = size,
+			.accessMode = accessMode
+		};
+		this->ranges.push_back(range);
 
-	//ok
-	return range.id;
+		//ok
+		return range.id;
+	}
 }
 
 /****************************************************/
 bool ConsistencyTracker::unregisterRange(uint64_t clientId, int32_t id, size_t offset, size_t size, ConsistencyAccessMode accessMode)
 {
-	//loop to find overlap
-	for (auto it = ranges.begin(); it != ranges.end(); ++it) {
-		if (it->clientId == clientId && it->offset == offset && it->size == size && it->accessMode == accessMode && it->id == id) {
-			ranges.erase(it);
-			return true;
+	//CRITICAL SECTION
+	{
+		std::lock_guard<std::mutex> guard(this->mutex);
+	
+		//loop to find overlap
+		for (auto it = ranges.begin(); it != ranges.end(); ++it) {
+			if (it->clientId == clientId && it->offset == offset && it->size == size && it->accessMode == accessMode && it->id == id) {
+				ranges.erase(it);
+				return true;
+			}
 		}
-	}
 
-	return false;
+		return false;
+	}
 }
 
 /****************************************************/
@@ -83,10 +93,15 @@ bool ConsistencyTracker::overlap(size_t offset1, size_t size1, size_t offset2, s
 /****************************************************/
 void ConsistencyTracker::clientDisconnect(uint64_t clientId)
 {
-	for (auto it = ranges.begin() ; it != ranges.end() ; ) {
-		if (it->clientId == clientId)
-			it = ranges.erase(it);
-		else
-			++it;
+	//CRITICAL SECTION
+	{
+		std::lock_guard<std::mutex> guard(this->mutex);
+
+		for (auto it = ranges.begin() ; it != ranges.end() ; ) {
+			if (it->clientId == clientId)
+				it = ranges.erase(it);
+			else
+				++it;
+		}
 	}
 }

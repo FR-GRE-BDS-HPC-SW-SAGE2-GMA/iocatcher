@@ -244,7 +244,7 @@ void Server::setupObjRangeRegister(void)
 		if (clientMessage->data.registerRange.write)
 			mode = CONSIST_ACCESS_MODE_WRITE;
 		if (this->config->consistencyCheck)
-			status = tracker.registerRange(0, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+			status = tracker.registerRange(clientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
 
 		//return message
 		LibfabricMessage * msg = new LibfabricMessage;

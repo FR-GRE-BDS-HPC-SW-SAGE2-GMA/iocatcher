@@ -10,6 +10,7 @@ COPYRIGHT: 2020 Bull SAS
 
 /****************************************************/
 #include <list>
+#include <mutex>
 #include <cstdlib>
 #include <stdint.h>
 
@@ -46,6 +47,7 @@ class ConsistencyTracker
 		static bool overlap(size_t offset1, size_t size1, size_t offset2, size_t size2);
 		void clientDisconnect(uint64_t clientId);
 	private:
+		std::mutex mutex;
 		std::list<ConsistencyRange> ranges;
 		int32_t nextId;
 };
