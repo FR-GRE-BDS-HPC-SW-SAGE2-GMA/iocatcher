@@ -109,11 +109,15 @@ TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 	ObjectSegment & segment = (*segments.begin());
 	ASSERT_GE(segment.size, segSize);
 
+	//send one
+	memset(buffer, 2, size);
+	ioc_client_obj_write(client, 10, 20, buffer, size, 0);
+
 	//check content
 	for (auto it : segments) {
 		char * ptr = (char*)it.ptr;
 		for (int i = 0 ; i < segSize ; i++)
-			ASSERT_EQ(1, ptr[i]) << "index " << i;
+			ASSERT_EQ(2, ptr[i]) << "index " << i;
 	}
 }
 
@@ -138,6 +142,43 @@ TEST_F(TestClientServer, obj_read)
 
 	//check content
 	for (size_t i = 0 ; i < size ; i++)
+		ASSERT_EQ(1, buffer[i]) << "index " << i;
+}
+
+/****************************************************/
+TEST_F(TestClientServer, obj_read_more_256_obj_segments)
+{
+	//setup buffer
+	const size_t size = 1024*1024;
+	const size_t segCnt = 1024;
+	const size_t segSize = size / segCnt;
+	char * buffer = new char[size];
+	memset(buffer, 0, size);
+
+	//set alignement to 0
+	this->server->getContainer().setObjectSegmentsAlignement(0);
+
+	//write multiple segments object
+	Object & object = this->server->getContainer().getObject(10,20);
+	for (size_t i = 0 ; i < size ; i += segSize) {
+		ObjectSegmentList segments;
+		object.getBuffers(segments, i, segSize, false);
+		memset(segments.front().ptr, 1, size);
+	}
+
+	//check meta
+	ObjectSegmentList segments;
+	object.getBuffers(segments, 0, size, false);
+	ASSERT_EQ(segCnt, segments.size());
+	ObjectSegment & segment = (*segments.begin());
+	ASSERT_GE(segment.size, segSize);
+
+	//send one
+	memset(buffer, 2, size);
+	ioc_client_obj_read(client, 10, 20, buffer, size, 0);
+
+	//check content
+	for (int i = 0 ; i < size ; i++)
 		ASSERT_EQ(1, buffer[i]) << "index " << i;
 }
 
