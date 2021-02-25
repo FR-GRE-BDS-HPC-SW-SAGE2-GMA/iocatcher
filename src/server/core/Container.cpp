@@ -66,3 +66,9 @@ void Container::onClientDisconnect(uint64_t clientId)
 	for (auto it : objects)
 		it.second->getConsistencyTracker().clientDisconnect(clientId);
 }
+
+/****************************************************/
+void Container::setObjectSegmentsAlignement(size_t alignement)
+{
+	this->objectSegmentsAlignement = alignement;
+}

@@ -16,6 +16,9 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+#define IOC_LF_MAX_RDMA_SEGS 256
+
+/****************************************************/
 ServerStats::ServerStats(void)
 {
 	this->readSize = 0;
@@ -387,27 +390,54 @@ void Server::objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage,
 	//for (auto it : segments)
 	//	printf("-> %p %zu %zu (%p %zu)\n", it.ptr, it.offset, it.size, iov[cnt].iov_base, iov[cnt++].iov_len);
 
-	//emit rdma write vec & implement callback
-	this->connection->rdmaWritev(clientId, iov, segments.size(), clientMessage->data.objReadWrite.iov.addr, clientMessage->data.objReadWrite.iov.key, [size, this, clientId](void){
-		//send open
-		LibfabricMessage * msg = new LibfabricMessage;
-		msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-		msg->header.clientId = 0;
-		msg->data.response.msgHasData = false;
-		msg->data.response.msgDataSize = 0;
-		msg->data.response.status = 0;
+	//count number of ops
+	int  * ops = new int;
+	*ops = 0;
+	for (size_t i = 0 ; i < segments.size() ; i += IOC_LF_MAX_RDMA_SEGS)
+		(*ops)++;
 
-		//stats
-		this->stats.readSize += size;
+	//loop on all send groups (because LF cannot send more than 256 at same time)
+	size_t offset = 0;
+	for (size_t i = 0 ; i < segments.size() ; i += IOC_LF_MAX_RDMA_SEGS) {
+		//calc cnt
+		size_t cnt = segments.size() - i;
+		if (cnt > IOC_LF_MAX_RDMA_SEGS)
+			cnt = IOC_LF_MAX_RDMA_SEGS;
 
-		//send ack message
-		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-			delete msg;
+		//emit rdma write vec & implement callback
+		this->connection->rdmaWritev(clientId, iov + i, cnt, (char*)clientMessage->data.objReadWrite.iov.addr + offset, clientMessage->data.objReadWrite.iov.key, [ops,size, this, clientId](void){
+			//decrement
+			(*ops)--;
+
+			if (*ops == 0) {
+				//send open
+				LibfabricMessage * msg = new LibfabricMessage;
+				msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+				msg->header.clientId = 0;
+				msg->data.response.msgHasData = false;
+				msg->data.response.msgDataSize = 0;
+				msg->data.response.status = 0;
+
+				//stats
+				this->stats.readSize += size;
+
+				//send ack message
+				this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+					delete msg;
+					return LF_WAIT_LOOP_KEEP_WAITING;
+				});
+
+				//clean
+				delete ops;
+			}
+			
 			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
-		
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+
+		//update offset
+		for (size_t j = 0 ; j < cnt ; j++)
+			offset += iov[j].iov_len;
+	}
 
 	//remove temp
 	delete [] iov;

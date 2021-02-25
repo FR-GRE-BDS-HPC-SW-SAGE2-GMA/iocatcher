@@ -28,6 +28,7 @@ class Container
 		Object & getObject(int64_t low, int64_t high);
 		bool hasObject(int64_t low, int64_t high);
 		void onClientDisconnect(uint64_t clientId);
+		void setObjectSegmentsAlignement(size_t alignement);
 	private:
 		std::map<ObjectId, Object*> objects;
 		LibfabricDomain * lfDomain;
