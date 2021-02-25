@@ -113,7 +113,7 @@ LibfabricConnection::~LibfabricConnection(void)
 
 	//destroy buffers
 	if (this->recvBuffers != NULL) {
-		for (int i = 0 ; i < recvBuffersCount ; i++) {
+		for (size_t i = 0 ; i < recvBuffersCount ; i++) {
 			delete [] this->recvBuffers[i];
 		}
 		delete [] this->recvBuffers;
@@ -131,7 +131,7 @@ void LibfabricConnection::postRecives(size_t size, int count)
 	this->recvBuffers = new char * [count];
 
 	//allocate buffers
-	for (size_t i = 0 ; i < count ; i++) {
+	for (int i = 0 ; i < count ; i++) {
 		//alloc
 		this->recvBuffers[i] = new char[size];
 
@@ -353,7 +353,7 @@ void LibfabricConnection::onSent(void * buffer)
 	assert(buffer != NULL);
 
 	//convert
-	LibfabricMessage * message = (LibfabricMessage *)buffer;
+	//LibfabricMessage * message = (LibfabricMessage *)buffer;
 
 	//check
 

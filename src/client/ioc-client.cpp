@@ -30,6 +30,7 @@ extern "C"
 /****************************************************/
 struct ioc_client_s
 {
+	ioc_client_s(void);
 	LibfabricDomain * domain;
 	TcpClient * tcpClient;
 	TcpConnInfo clientConnInfo;
@@ -39,6 +40,14 @@ struct ioc_client_s
 	bool passive_wait;
 };
 typedef ioc_client_s ioc_client_t;
+
+/****************************************************/
+ioc_client_s::ioc_client_s(void)
+{
+	this->domain = NULL;
+	this->tcpClient = NULL;
+	this->passive_wait = true;
+}
 
 /****************************************************/
 static void ioc_client_ret_connection(ioc_client_t * client, LibfabricConnection * connection)

@@ -63,6 +63,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 {
 	//setup message request
 	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
+	memset(msg, 0, sizeof(*msg));
 	connection.fillProtocolHeader(msg->header, IOC_LF_MSG_OBJ_READ);
 	msg->data.objReadWrite.low = low;
 	msg->data.objReadWrite.high = high;
@@ -124,6 +125,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 {
 	//setup message request
 	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
+	memset(msg, 0, sizeof(*msg));
 	connection.fillProtocolHeader(msg->header, IOC_LF_MSG_OBJ_WRITE);
 	msg->data.objReadWrite.low = low;
 	msg->data.objReadWrite.high = high;
@@ -181,6 +183,7 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 {
 	//setup message request
 	LibfabricMessage msg;
+	memset(&msg, 0, sizeof(msg));
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_FLUSH);
 	msg.data.objFlush.low = low;
 	msg.data.objFlush.high = high;
@@ -216,6 +219,7 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, i
 {
 	//setup message request
 	LibfabricMessage msg;
+	memset(&msg, 0, sizeof(msg));
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_REGISTER);
 	msg.data.registerRange.low = low;
 	msg.data.registerRange.high = high;
@@ -252,6 +256,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 {
 	//setup message request
 	LibfabricMessage msg;
+	memset(&msg, 0, sizeof(msg));
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_UNREGISTER);
 	msg.data.unregisterRange.id = id;
 	msg.data.unregisterRange.low = low;
@@ -289,6 +294,7 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 {
 	//setup message request
 	LibfabricMessage msg;
+	memset(&msg, 0, sizeof(msg));
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_CREATE);
 	msg.data.objFlush.low = low;
 	msg.data.objFlush.high = high;

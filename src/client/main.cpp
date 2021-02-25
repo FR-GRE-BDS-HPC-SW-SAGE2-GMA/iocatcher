@@ -8,6 +8,7 @@
 /****************************************************/
 //std
 #include <cstdio>
+#include <cstring>
 //local
 #include "ioc-client.h"
 
@@ -34,6 +35,7 @@ int main(int argc, char ** argv)
 	//do obj write
 	printf("Run obj write\n");
 	char * buffer = new char[1024*1024];
+	memset(buffer, 0, 1024*1024);
 	ioc_client_obj_write(client, 10, 20, buffer, 1024*1024, 0);
 	ioc_client_obj_write(client, 10, 20, buffer, 1024*1024, 512*1024);
 

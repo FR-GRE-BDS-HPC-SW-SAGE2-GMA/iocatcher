@@ -38,7 +38,7 @@ int main(int argc, const char ** argv)
 	//info
 	printf("LISTEN: %s\n", config.listenIP.c_str());
 	if (config.nvdimmMountPath.empty() == false) {
-		for (int i = 0 ; i < config.nvdimmMountPath.size() ; i++)
+		for (size_t i = 0 ; i < config.nvdimmMountPath.size() ; i++)
 			printf("NVDIMM ENABLED: %s\n", config.nvdimmMountPath[i].c_str());
 		Object::setNvdimm(config.nvdimmMountPath);
 	}

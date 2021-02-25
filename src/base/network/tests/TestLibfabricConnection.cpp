@@ -128,8 +128,8 @@ TEST(TestLibfabricConnection, rdma)
 		});
 
 		//register
-		Iov iovLocal1 = domain.registerSegment(ptrServer1, size, true, true, false);
-		Iov iovLocal2 = domain.registerSegment(ptrServer2, size, true, true, false);
+		domain.registerSegment(ptrServer1, size, true, true, false);
+		domain.registerSegment(ptrServer2, size, true, true, false);
 
 		//ready
 		while(!gotConnection)
@@ -187,7 +187,7 @@ TEST(TestLibfabricConnection, rdma)
 	ASSERT_TRUE(gotRdmaWrite);
 
 	//check
-	for (int i = 0 ; i < size ; i++) {
+	for (size_t i = 0 ; i < size ; i++) {
 		ASSERT_EQ(1, ((char*)ptrClient)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer1)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer2)[i]) << i;
@@ -225,8 +225,8 @@ TEST(TestLibfabricConnection, rdmav)
 		});
 
 		//register
-		Iov iovLocal1 = domain.registerSegment(ptrServer1, size, true, true, false);
-		Iov iovLocal2 = domain.registerSegment(ptrServer2, size, true, true, false);
+		domain.registerSegment(ptrServer1, size, true, true, false);
+		domain.registerSegment(ptrServer2, size, true, true, false);
 
 		//iocs
 		struct iovec iov1[2] = {{ptrServer1, size/2},{(char*)ptrServer1+size/2, size/2}};
@@ -288,7 +288,7 @@ TEST(TestLibfabricConnection, rdmav)
 	ASSERT_TRUE(gotRdmaWrite);
 
 	//check
-	for (int i = 0 ; i < size ; i++) {
+	for (size_t i = 0 ; i < size ; i++) {
 		ASSERT_EQ(1, ((char*)ptrClient)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer1)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer2)[i]) << i;

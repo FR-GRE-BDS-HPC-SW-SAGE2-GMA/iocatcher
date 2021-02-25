@@ -109,7 +109,7 @@ class LibfabricConnection
 		bool wait;
 		/** buffers **/
 		char ** recvBuffers;
-		int recvBuffersCount;
+		size_t recvBuffersCount;
 		size_t recvBuffersSize;
 		std::map<int, fi_addr_t> remoteLiAddr;
 		int nextEndpointId;

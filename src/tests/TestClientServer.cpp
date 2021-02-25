@@ -41,8 +41,8 @@ class TestClientServer : public ::testing::Test
 		{
 			ioc_client_fini(this->client);
 			this->server->stop();
-			delete this->server;
 			this->thread.join();
+			delete this->server;
 		}
 };
 
@@ -80,7 +80,7 @@ TEST_F(TestClientServer, obj_write)
 
 	//check content
 	char * ptr = (char*)segment.ptr;
-	for (int i = 0 ; i < size ; i++)
+	for (size_t i = 0 ; i < size ; i++)
 		ASSERT_EQ(1, ptr[i]) << "index " << i;
 }
 
@@ -104,7 +104,7 @@ TEST_F(TestClientServer, obj_read)
 	ioc_client_obj_read(client, 10, 20, buffer, size, 0);
 
 	//check content
-	for (int i = 0 ; i < size ; i++)
+	for (size_t i = 0 ; i < size ; i++)
 		ASSERT_EQ(1, buffer[i]) << "index " << i;
 }
 

@@ -107,7 +107,7 @@ struct LibfabricUnregisterRange
 /****************************************************/
 struct LibfabricResponse
 {
-	int64_t msgDataSize;
+	uint64_t msgDataSize;
 	int32_t status;
 	bool msgHasData;
 };
