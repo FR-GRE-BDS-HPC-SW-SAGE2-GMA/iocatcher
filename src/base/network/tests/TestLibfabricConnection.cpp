@@ -54,7 +54,7 @@ TEST(TestLibfabricConnection, message)
 
 	//server
 	std::thread server([&gotConnection, &gotMessage]{
-		LibfabricDomain domain("127.0.0.1", "8444", true);
+		LibfabricDomain domain("127.0.0.1", "8446", true);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
 		connection.setHooks([&gotConnection](int id) {
@@ -72,12 +72,13 @@ TEST(TestLibfabricConnection, message)
 
 	//client
 	std::thread client([&sendMessage]{
-		LibfabricDomain domain("127.0.0.1", "8444", false);
+		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
 		//send message
 		LibfabricMessage msg;
+		memset(&msg, 0, sizeof(msg));
 		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
@@ -215,7 +216,7 @@ TEST(TestLibfabricConnection, rdmav)
 	//server
 	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2, ptrClient]{
 		int clientId = -1;
-		LibfabricDomain domain("127.0.0.1", "8448", true);
+		LibfabricDomain domain("127.0.0.1", "8450", true);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
 		connection.setHooks([&clientId, &gotConnection](int id) {
@@ -260,7 +261,7 @@ TEST(TestLibfabricConnection, rdmav)
 
 	//client
 	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
-		LibfabricDomain domain("127.0.0.1", "8448", false);
+		LibfabricDomain domain("127.0.0.1", "8450", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
@@ -330,6 +331,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		connection.joinServer();
 		//send message
 		LibfabricMessage msg;
+		memset(&msg, 0, sizeof(msg));
 		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;

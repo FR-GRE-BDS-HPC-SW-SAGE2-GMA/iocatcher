@@ -22,6 +22,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 
 	//send open
 	LibfabricMessage msg;
+	memset(&msg, 0, sizeof(msg));
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 	msg.data.iov = iov;
 

@@ -167,6 +167,7 @@ void LibfabricConnection::joinServer(void)
 
 	//new message
 	LibfabricMessage * msg = new LibfabricMessage;
+	memset(msg, 0, sizeof(*msg));
 	msg->header.type = IOC_LF_MSG_CONNECT_INIT;
 	err = fi_getname(&this->ep->fid, msg->data.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
@@ -472,6 +473,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 
 	//send message
 	LibfabricMessage * msg = new LibfabricMessage;
+	memset(msg, 0, sizeof(*msg));
 	msg->header.type = IOC_LF_MSG_ASSIGN_ID;
 	msg->header.clientId = epId;
 
