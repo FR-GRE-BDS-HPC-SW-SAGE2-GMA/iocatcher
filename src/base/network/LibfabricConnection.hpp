@@ -25,19 +25,30 @@ namespace IOC
 {
 
 /****************************************************/
+/** Position of the server in the address list. **/
 #define IOC_LF_SERVER_ID 0
 
 /****************************************************/
 class LibfabricConnection;
 
 /****************************************************/
+/**
+ * Possible action to return from the callbacks.
+ * @brief Actions to be returned from callbacks.
+**/
 enum LibfabricActionResult
 {
+	/** The poll(true) operation on the connection can continue polling. **/
 	LF_WAIT_LOOP_KEEP_WAITING = 0,
+	/** The poll(true) operation on the connection return after exit of the callback. **/
 	LF_WAIT_LOOP_UNBLOCK = 1,
 };
 
 /****************************************************/
+/**
+ * Define a post action when we recive a message or when an RDMA operation finish.
+ * @brief Post action on RDMA operations.
+**/
 class LibfabricPostAction
 {
 	public:
@@ -47,22 +58,38 @@ class LibfabricPostAction
 		void registerBuffer(LibfabricConnection * connection, bool isRecv, size_t bufferId);
 		void freeBuffer(void);
 	protected:
+		/** Keep track of the connection. **/
 		LibfabricConnection * connection;
+		/** If the registered buffer id correspond to a recive buffer. **/
 		bool isRecv;
+		/** A buffer ID to clean when then post action terminate. **/
 		size_t bufferId;
 };
 
 /****************************************************/
+/**
+ * Implement the core part of the post operation via a lambda function passed to
+ * the constructor.
+ * @brief Post action based on a lambda operation.
+**/
 class LibfabricPostActionFunction : public LibfabricPostAction
 {
 	public:
 		LibfabricPostActionFunction(std::function<LibfabricActionResult(void)> function) {this->function = function;};
 		virtual LibfabricActionResult runPostAction(void);
 	private:
+		/** Keep track of the lambda operation. **/
 		std::function<LibfabricActionResult(void)> function;
 };
 
 /****************************************************/
+/**
+ * Handling wrapper to managment a libfabric connection. It provides the 
+ * necessary semantic to recive messages, send messages and make RDMA operation 
+ * and be notified when they finish. It handle the client side and the server
+ * side to get the same class to handle all communications.
+ * @brief Wrapper to handle a libfabric connection.
+**/
 class LibfabricConnection
 {
 	public:
@@ -98,6 +125,7 @@ class LibfabricConnection
 		void onConnInit(LibfabricMessage * message);
 		bool checkAuth(LibfabricMessage * message, int clientId, int id);
 	private:
+		/** Pointer to the libfabric domain to be used to establish the connection. **/
 		LibfabricDomain * lfDomain;
 		/** Completion queue. **/
 		fid_cq *cq;
@@ -107,20 +135,46 @@ class LibfabricConnection
 		fid_ep *ep;
 		/** If use wait **/
 		bool wait;
-		/** buffers **/
+		/** Recive buffers being posted to libfabric. **/
 		char ** recvBuffers;
+		/** Number of recive buffer. **/
 		size_t recvBuffersCount;
+		/** Size of each recive buffer. **/
 		size_t recvBuffersSize;
+		/** Map of remote addresses to be used to send messages or rdma operation.**/
 		std::map<int, fi_addr_t> remoteLiAddr;
+		/** Keep track of the next ID to assign to the endpoints. **/
 		int nextEndpointId;
+		/** Hook to be called when a client connect. **/
 		std::function<void(int)> hookOnEndpointConnect;
+		/** Hook to be called when we recive a message with wrong authentication. **/
 		std::function<LibfabricActionResult(void)> hookOnBadAuth;
+		/** Keep track of the client ID if used for client side. **/
 		int clientId;
+		/** 
+		 * Keep tack of the lambda functions to be called when reciveing
+		 * the associated message ID.
+		**/
 		std::map<size_t, std::function<bool(int, size_t, void*)>> hooks;
+		/**
+		 * To know if the connection is in use of not to handle multiple client
+		 * connections for multi-threaded applications.
+		**/
 		bool used;
+		/** 
+		 * Keep track of the client ID assigned by the TCP connection. 
+		 * It will be send for client authentication on every message to the server.
+		**/
 		uint64_t tcpClientId;
+		/** 
+		 * Keep track of the authentication key assigned by the TCP connection.
+		 * It will be send for client authentication on every message to the server.
+		**/
 		uint64_t tcpClientKey;
+		/**
+		 * Keep track of the client list (used on the server side only) **/
 		ClientRegistry clientRegistry;
+		/** Enable of disable client authentication checking. **/
 		bool checkClientAuth;
 };
 

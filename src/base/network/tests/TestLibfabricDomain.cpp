@@ -14,12 +14,14 @@
 using namespace IOC;
 
 /****************************************************/
+// Test basic construction.
 TEST(TestLibfaricDomain, constructor)
 {
 	LibfabricDomain domain("127.0.0.1", "8555", true);
 }
 
 /****************************************************/
+// Test getting buffers already registered for sendMessage.
 TEST(TestLibfaricDomain, getMsgBuffer)
 {
 	LibfabricDomain domain("127.0.0.1", "8555", true);

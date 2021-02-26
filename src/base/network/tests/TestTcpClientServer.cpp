@@ -19,6 +19,7 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+// Test basic construction by starting a server and join by client.
 TEST(TestTcpClientServer, constructor)
 {
 	//vars

@@ -29,21 +29,40 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * Used to keep track of the memory region for pre-RDMA registratin.
+ * @brief Tracking of an RDMA registered memory region.
+**/
 struct MemoryRegion
 {
+	/** Base pointer of the memory region. **/
 	void * ptr;
+	/** Size of the memory region. **/
 	size_t size;
+	/** Libfabric regitration id for the given memory region. **/
 	fid_mr * mr;
 };
 
 /****************************************************/
+/**
+ * Use to describe the necessary informations to make a RDMA transfer.
+ * @brief Informations for an RDMA transfer.
+**/
 struct Iov
 {
+	/** Base address of the targetted memory region. **/
 	void * addr;
+	/** Authentication key to make an RDMA on the given memory region. **/
 	uint64_t key;
 };
 
 /****************************************************/
+/**
+ * Wrapper of a libfabric network domain. This is used to setup the library
+ * and is a prelude to a connection establishment. It also handle the memory
+ * registration operations.
+ * @brief Wrapper of a libfabric domain to setup connections.
+**/
 class LibfabricDomain
 {
 	public:
@@ -61,14 +80,39 @@ class LibfabricDomain
 		void retMsgBuffer(void * buffer);
 		const char * getLFProviderName(void) const;
 	private:
+		/** Libfabric configuration info being setup before the domain. **/
 		fi_info *fi;
+		/** libfabric fabric to be used. **/
 		fid_fabric *fabric;
+		/** libfabric domain to be used. **/
 		fid_domain *domain;
+		/** List of memory regions registered for RDMA transfers. **/
 		std::list<MemoryRegion> segments;
+		/** 
+		 * Boolean to know the memory region mode to know if we need to send
+		 * to the remote node the absolute address of the semgement for RDMA
+		 * operation of the relative address inside the segment considering
+		 * 0 as the base address.
+		**/
 		bool virtMrMode;
+		/** 
+		 * The domain can handle pre-registered buffers for message sending. This
+		 * varibale define their size to be allocated. 
+		**/
 		size_t msgBufferSize;
+		/** Keep track of the pre-registered buffers for message sending. **/
 		std::list<void *> msgBuffers;
+		/** 
+		 * Mutex to access the pre-registered buffer for message sending as
+		 * multiple threads might want to send messages via their local
+		 * connection instance.
+		**/
 		std::mutex msgBuffersMutex;
+		/**
+		 * Mutex to protect the memory region registration which can be done
+		 * by multiple thread to handle the final operatoin in their local
+		 * connection instance.
+		**/
 		std::mutex segmentMutex;
 };
 

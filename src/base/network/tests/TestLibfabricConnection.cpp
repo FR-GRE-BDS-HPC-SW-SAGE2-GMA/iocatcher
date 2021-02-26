@@ -19,9 +19,13 @@
 using namespace IOC;
 
 /****************************************************/
+//spawn a server and try to connect a client on it.
 TEST(TestLibfabricConnection, connect)
 {
+	// to check
 	bool gotConnection = false;
+
+	//spawn a server in a thread
 	std::thread server([&gotConnection]{
 		LibfabricDomain domain("127.0.0.1", "8444", true);
 		domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
@@ -30,9 +34,13 @@ TEST(TestLibfabricConnection, connect)
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection = true;
 		});
+
+		//wait first connection then exit loop
 		while (!gotConnection)
 			connection.poll(false);
 	});
+
+	//spawn a client in a thread
 	std::thread client([]{
 		LibfabricDomain domain("127.0.0.1", "8444", false);
 		domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
@@ -40,12 +48,17 @@ TEST(TestLibfabricConnection, connect)
 		connection->postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection->joinServer();
 	});
+
+	//wait them
 	server.join();
 	client.join();
+
+	//check
 	ASSERT_TRUE(gotConnection);
 }
 
 /****************************************************/
+// Connect and client send a message.
 TEST(TestLibfabricConnection, message)
 {
 	bool gotConnection = false;
@@ -60,13 +73,18 @@ TEST(TestLibfabricConnection, message)
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection = true;
 		});
+
+		//wait connection
 		while (!gotConnection) 
 			connection.poll(false);
-		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+			connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
 			gotMessage = true;
 			connection.repostRecive(id);
+			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
+
+		//poll unit get message
 		connection.poll(true);
 	});
 
@@ -82,8 +100,10 @@ TEST(TestLibfabricConnection, message)
 		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
 		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
 			sendMessage = true;
+			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
+		//poll unit message to be sent
 		connection.poll(true);
 	});
 
@@ -98,6 +118,7 @@ TEST(TestLibfabricConnection, message)
 }
 
 /****************************************************/
+// check rdma data transmission (read/write).
 TEST(TestLibfabricConnection, rdma)
 {
 	bool gotConnection = false;
@@ -195,6 +216,7 @@ TEST(TestLibfabricConnection, rdma)
 }
 
 /****************************************************/
+// Test rdma transmission with multiple segments in scatter/gather mode.
 TEST(TestLibfabricConnection, rdmav)
 {
 	bool gotConnection = false;
@@ -296,6 +318,7 @@ TEST(TestLibfabricConnection, rdmav)
 }
 
 /****************************************************/
+// Test authentication message, ok.
 TEST(TestLibfabricConnection, message_auth_ok)
 {
 	bool gotConnection = false;
@@ -351,6 +374,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 }
 
 /****************************************************/
+// Test authentication failure.
 TEST(TestLibfabricConnection, message_auth_not_ok)
 {
 	bool gotConnection = false;

@@ -13,12 +13,14 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+// Test the basic constructor.
 TEST(TestClientRegistry, constructor)
 {
 	ClientRegistry registry;
 }
 
 /****************************************************/
+// Register a client and check various identities.
 TEST(TestClientRegistry, register_check)
 {
 	//create
@@ -32,6 +34,7 @@ TEST(TestClientRegistry, register_check)
 }
 
 /****************************************************/
+// Register two clients, check identities and distconnect then check again.
 TEST(TestClientRegistry, disconnect)
 {
 	//create

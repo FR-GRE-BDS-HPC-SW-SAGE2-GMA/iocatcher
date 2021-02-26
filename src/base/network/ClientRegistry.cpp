@@ -13,18 +13,29 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Constructor, don't to anything yet.
+**/
 ClientRegistry::ClientRegistry(void)
 {
 	//nothing to do
 }
 
 /****************************************************/
+/**
+ * Destructeur, don't to anything yet.
+**/
 ClientRegistry::~ClientRegistry(void)
 {
 	//nothing to do
 }
 
 /****************************************************/
+/**
+ * Register a client.
+ * @param id ID of the client.
+ * @param key Authentication key attached to the given ID.
+**/
 void ClientRegistry::registerClient(uint64_t id, uint64_t key)
 {
 	//CRITICAL SECTION
@@ -36,6 +47,10 @@ void ClientRegistry::registerClient(uint64_t id, uint64_t key)
 }
 
 /****************************************************/
+/**
+ * Disconnect the given client id.
+ * @param id of the client to disconnect.
+**/
 void ClientRegistry::disconnectClient(uint64_t id)
 {
 	//CRITICAL SECTION
@@ -47,6 +62,12 @@ void ClientRegistry::disconnectClient(uint64_t id)
 }
 
 /****************************************************/
+/**
+ * Check the authentication of the incomming client identified by its id.
+ * @param id ID of the client.
+ * @param key Authentication key to check.
+ * @return True if the authentication is OK, false otherwise.
+**/
 bool ClientRegistry::checkIdentification(uint64_t id, uint64_t key)
 {
 	//CRITICAL SECTION
