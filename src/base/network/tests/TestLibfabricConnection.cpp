@@ -77,7 +77,9 @@ TEST(TestLibfabricConnection, message)
 		//wait connection
 		while (!gotConnection) 
 			connection.poll(false);
-			connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+
+		//register hook
+		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
 			gotMessage = true;
 			connection.repostRecive(id);
 			//say to unblock the poll(true) loop when return

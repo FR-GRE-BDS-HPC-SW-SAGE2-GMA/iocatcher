@@ -23,6 +23,10 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * On deletion of the object we free the attached recieve buffer to return it to
+ * the connection.
+**/
 void LibfabricPostAction::freeBuffer(void)
 {
 	if (connection != NULL)
@@ -31,13 +35,21 @@ void LibfabricPostAction::freeBuffer(void)
 }
 
 /****************************************************/
+/**
+ * On post action we call the lambda function.
+**/
 LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 {
 	return this->function();
 };
 
 /****************************************************/
-LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
+/**
+ * Constructor used to establigh a new connection handler.
+ * @param lfDomain Libfabric domain to be used. This should not be NULL.
+ * @param passivePolling Use a passive polling if true and an active polling it false.
+ **/
+LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool passivePolling)
 {
 	//check
 	assert(lfDomain != NULL);
@@ -46,7 +58,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	this->used = false;
 	this->clientId = -1;
 	this->lfDomain = lfDomain;
-	this->wait = wait;
+	this->passivePolling = passivePolling;
 	this->recvBuffersCount = 0;
 	this->recvBuffers = NULL;
 	this->nextEndpointId = 0;
@@ -71,7 +83,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 	//setup attr
 	cq_attr.format = FI_CQ_FORMAT_MSG;
 	cq_attr.size = fi->tx_attr->size;
-	if (wait)
+	if (passivePolling)
 		cq_attr.wait_obj = FI_WAIT_UNSPEC;
 	else
 		cq_attr.wait_obj = FI_WAIT_NONE;
@@ -104,6 +116,9 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool wait)
 }
 
 /****************************************************/
+/**
+ * Destructor of the connection, it frees all ressources attached to the connection.
+**/
 LibfabricConnection::~LibfabricConnection(void)
 {
 	//close
@@ -121,6 +136,11 @@ LibfabricConnection::~LibfabricConnection(void)
 }
 
 /****************************************************/
+/**
+ * Allocate recive buffer and pose them to libfabric.
+ * @param size Size of the recive buffer.
+ * @param count Number of recive buffer to allocate and post.
+**/
 void LibfabricConnection::postRecives(size_t size, int count)
 {
 	//setup
@@ -146,14 +166,24 @@ void LibfabricConnection::postRecives(size_t size, int count)
 }
 
 /****************************************************/
+/**
+ * Republish a recive buffer to libfabric by identifying it by its ID.
+ * @param id ID of the buffer to repost.
+**/
 void LibfabricConnection::repostRecive(size_t id)
 {
+	//check
+	assumeArg(id <recvBuffersCount, "Invalid recive buffer ID: %1").arg(id).end();
+
 	//post
 	int err = fi_recv(this->ep, this->recvBuffers[id], recvBuffersSize, 0, 0, (void*)id);
 	LIBFABRIC_CHECK_STATUS("fi_recv", err);
 }
 
 /****************************************************/
+/**
+ * When being a client, this function is used to join the libfabric domain server.
+**/
 void LibfabricConnection::joinServer(void)
 {
 	//vars
@@ -192,12 +222,22 @@ void LibfabricConnection::joinServer(void)
 }
 
 /****************************************************/
+/**
+ * Send a message to the given destination ID.
+ * @param buffer Buffer to be sent.
+ * @param size Size of the given buffer.
+ * @param destrinationEpId ID of the destination.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
 void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
 {
 	//vars
 	int err;
 
 	//checks
+	assert(buffer != NULL);
 	assert(size <= recvBuffersSize);
 
 	//search
@@ -214,10 +254,27 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 }
 
 /****************************************************/
+/**
+ * Start a rdma read operation to fetch data from the remote server.
+ * @param destrinationEpId ID of the destination.
+ * @param localAddr The local address where to place the data.
+ * @param remoteAddr The remote address to read from.
+ * @param remoteKey The remote key to be allowed to read the remote segment.
+ * @param size the size to read.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
 void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
 {
+	//check
+	assert(localAddr != NULL);
+	assert(remoteAddr != NULL);
+
+	//get
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
 	void * mrDesc = fi_mr_desc(mr);
+	assert(mr != NULL);
 
 	//search
 	auto it = this->remoteLiAddr.find(destinationEpId);
@@ -230,11 +287,32 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 }
 
 /****************************************************/
+/**
+ * Start a rdma read operation to fetch data from the remote server.
+ * This implementation consider the case where the local memory is spreaded
+ * over multiple segments described by the IOv array.
+ * @param destrinationEpId ID of the destination.
+ * @param iov The local io vector describing the list of segments where to place the data.
+ * @param count The number of local segments in the iov.
+ * @param remoteAddr The remote address to read from.
+ * @param remoteKey The remote key to be allowed to read the remote segment.
+ * @param size the size to read.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
 void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
 {
+	//check
+	assert(iov != NULL);
+	assert(count > 0);
+	assert(remoteAddr != NULL);
+
+	//go
 	void ** mrDesc = new void*[count];
 	for (int i = 0 ; i < count ; i++) {
 		fid_mr * mr = lfDomain->getFidMR(iov[i].iov_base,iov[i].iov_len);
+		assert(mr != NULL);
 		mrDesc[i] = fi_mr_desc(mr);
 	}
 
@@ -252,11 +330,32 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 }
 
 /****************************************************/
+/**
+ * Start a rdma write operation to send data from the remote server.
+ * This implementation consider the case where the local memory is spreaded
+ * over multiple segments described by the IOv array.
+ * @param destrinationEpId ID of the destination.
+ * @param iov The local io vector describing the list of segments containing the data to send.
+ * @param count The number of local segments in the iov.
+ * @param remoteAddr The remote address to write to.
+ * @param remoteKey The remote key to be allowed to read the remote segment.
+ * @param size the size to read.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
 void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
 {
+	//checks
+	assert(iov != NULL);
+	assert(count > 0);
+	assert(remoteAddr != NULL);
+
+	//get mr
 	void ** mrDesc = new void*[count];
 	for (int i = 0 ; i < count ; i++) {
 		fid_mr * mr = lfDomain->getFidMR(iov[i].iov_base,iov[i].iov_len);
+		assert(mr != NULL);
 		mrDesc[i] = fi_mr_desc(mr);
 	}
 
@@ -274,10 +373,28 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 }
 
 /****************************************************/
+/**
+ * Start a rdma write operation to send data to the remote server.
+ * @param destrinationEpId ID of the destination.
+ * @param localAddr The local address where to read the data from.
+ * @param remoteAddr The remote address where to place the data.
+ * @param remoteKey The remote key to be allowed to read the remote segment.
+ * @param size the size to read.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
 void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
 {
+	//checks
+	assert(localAddr != NULL);
+	assert(remoteAddr != NULL);
+	assert(size > 0);
+
+	//get mr
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
 	void * mrDesc = fi_mr_desc(mr);
+	assert(mr != NULL);
 
 	//search
 	auto it = this->remoteLiAddr.find(destinationEpId);
@@ -290,6 +407,16 @@ void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void 
 }
 
 /****************************************************/
+/**
+ * Perform the polling action to wait for events. Depending on the passivPolling it will
+ * perform a passive or active polling.
+ * The loop will automatically exit when one of the callback attached to the operations
+ * will return LF_WAIT_LOOP_UNBLOCK. If the callback return LF_WAIT_LOOP_KEEP_WAITING the
+ * polling will continue to perform.
+ * @param waitMsg Permit to say poll() to exit after making the first check. This as
+ * only sens when using with active polling to make other operation and check regularly
+ * the progress from the caller.
+**/
 void LibfabricConnection::poll(bool waitMsg)
 {
 	//vars
@@ -297,7 +424,7 @@ void LibfabricConnection::poll(bool waitMsg)
 
 	//poll
 	for (;;) {
-		int status = pollForCompletion(this->cq, &entry, this->wait);
+		int status = pollForCompletion(this->cq, &entry, this->passivePolling);
 		if (status == 1) {
 			if (entry.flags & FI_RECV) {
 				if (this->onRecv((size_t)entry.op_context))
@@ -316,13 +443,16 @@ void LibfabricConnection::poll(bool waitMsg)
 }
 
 /****************************************************/
+/**
+ * Wait to recive a data (not used anymore).
+**/
 bool LibfabricConnection::pollRx(void)
 {
 	//vars
 	fi_cq_msg_entry entry;
 
 	//poll
-	int status = pollForCompletion(this->cq, &entry, this->wait);
+	int status = pollForCompletion(this->cq, &entry, this->passivePolling);
 	if (status == 1) {
 		printf("ENTRY RECV FLAG: %lu == %llu == %llu\n", entry.flags, FI_RECV, FI_SEND);
 		this->onRecv((size_t)entry.op_context);
@@ -333,10 +463,13 @@ bool LibfabricConnection::pollRx(void)
 }
 
 /****************************************************/
+/**
+ * Wait for a RDMA operation to terminate.
+**/
 bool LibfabricConnection::pollTx(void)
 {
 	fi_cq_msg_entry entry;
-	int status = pollForCompletion(this->cq, &entry, this->wait);
+	int status = pollForCompletion(this->cq, &entry, this->passivePolling);
 	if (status == 1) {
 		printf("ENTRY SENT FLAG: %lu\n", entry.flags);
 		this->onSent((void*)entry.op_context);
@@ -347,6 +480,11 @@ bool LibfabricConnection::pollTx(void)
 }
 
 /****************************************************/
+/**
+ * @todo Remove
+ * No implemented stays from old code to be removed.
+ * @deprecated
+**/
 void LibfabricConnection::onSent(void * buffer)
 {
 	//check
@@ -360,8 +498,20 @@ void LibfabricConnection::onSent(void * buffer)
 }
 
 /****************************************************/
-bool LibfabricConnection::checkAuth(LibfabricMessage * message, int clientId, int id)
+/**
+ * Check the authentication information from a reicved message.
+ * @param message The message which has been recived.
+ * @param lfClientId The libfabric client ID to know to who send an error message in 
+ * case of failure.
+ * @param id Id of the recive buffer to be reposted in case of authentication failure.
+ * @return True in case of succes, false otherwise (and a message will automatically be
+ * send to the client).
+**/
+bool LibfabricConnection::checkAuth(LibfabricMessage * message, int lfClientId, int id)
 {
+	//checks
+	assert(message != NULL);
+
 	//no auth
 	if (this->checkClientAuth == false)
 		return true;
@@ -384,7 +534,7 @@ bool LibfabricConnection::checkAuth(LibfabricMessage * message, int clientId, in
 		fillProtocolHeader(msg->header, IOC_LF_MSG_BAD_AUTH);
 
 		//send message
-		this->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		this->sendMessage(msg, sizeof (*msg), lfClientId, [msg](void){
 			delete msg;
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -395,7 +545,11 @@ bool LibfabricConnection::checkAuth(LibfabricMessage * message, int clientId, in
 }
 
 /****************************************************/
-bool LibfabricConnection::onRecv(size_t id)
+/**
+ * Function to be called when a message is recived by the poll() function.
+ * @param id ID of the recive buffer where the message has been recived.
+**/
+LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 {
 	//check
 	assert(id < this->recvBuffersCount);
@@ -425,7 +579,7 @@ bool LibfabricConnection::onRecv(size_t id)
 		default:
 			//check auth
 			if (this->checkAuth(message, message->header.clientId, id) == false)
-				return true;
+				return LF_WAIT_LOOP_UNBLOCK;
 
 			//find handler
 			auto it = this->hooks.find(message->header.type);
@@ -439,10 +593,19 @@ bool LibfabricConnection::onRecv(size_t id)
 	}
 
 	//continue
-	return false;
+	return LF_WAIT_LOOP_KEEP_WAITING;
 }
 
 /****************************************************/
+/**
+ * Register a lamda functon to be called when a message arrive with a given ID.
+ * @param messageType Type of message to which attach the given lambda function;
+ * @param function The lambda function to call on message recive. Its parameters
+ * represent:
+ *   - The client ID.
+ *   - The revice buffer ID.
+ *   - The buffer address.
+**/
 void LibfabricConnection::registerHook(int messageType, std::function<LibfabricActionResult(int, size_t, void*)> function)
 {
 	//assert(this->hooks.find(messageType) == this->hooks.end());
@@ -450,12 +613,21 @@ void LibfabricConnection::registerHook(int messageType, std::function<LibfabricA
 }
 
 /****************************************************/
+/**
+ * Remove a hook which has been previously registered.
+ * @param messageType Define the type of message for which we want to remove
+ * the hook.
+**/
 void LibfabricConnection::unregisterHook(int messageType)
 {
 	this->hooks.erase(messageType);
 }
 
 /****************************************************/
+/**
+ * Function to be called on connection initialization.
+ * @param message The first message recived to establish the connection.
+**/
 void LibfabricConnection::onConnInit(LibfabricMessage * message)
 {
 	//check
@@ -488,18 +660,30 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 }
 
 /****************************************************/
-int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool wait)
+/**
+ * Poll the libfabric completion queue to get a completion.
+ * @param cq The completion queue to poll.
+ * @param entry The completion entry to fill on event recive.
+ * @param passivePolling Use passive or active polling. On passive polling the function
+ * will block waiting an event. On active polling it will return on the first
+ * check so the caller need to establish the waiting loop.
+**/
+int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling)
 {
 	//vars
 	struct fi_cq_msg_entry localEntry;
 	int ret;
+
+	//check
+	assert(cq != NULL);
+	assert(entry != NULL);
 
 	//has no entry
 	if (entry == NULL)
 		entry = &localEntry;
 
 	//active or passive
-	if (wait)
+	if (passivePolling)
 		ret = fi_cq_sread(cq, entry, 1, NULL, -1);
 	else
 		ret = fi_cq_read(cq, entry, 1);
@@ -522,12 +706,23 @@ int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_
 }
 
 /****************************************************/
+/**
+ * Define various hooks to be called on events.
+ * @param hookOnEndpointConnect Provide a lambda function to be called on incomming connection.
+**/
 void LibfabricConnection::setHooks(std::function<void(int)> hookOnEndpointConnect)
 {
 	this->hookOnEndpointConnect = hookOnEndpointConnect;
 }
 
 /****************************************************/
+/**
+ * Setup the TCP connection info, meaning the TCP client ID and the TCP client KEY
+ * to we can send them for every message we send to the server so he can check
+ * out identifty as there is no connection tracking with rxm libfabric driver.
+ * @param tcpClientId The TCP client ID.
+ * @param tcpClientKey The key to prove we are the right client.
+**/
 void LibfabricConnection::setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpClientKey)
 {
 	this->tcpClientId = tcpClientId;
@@ -535,6 +730,12 @@ void LibfabricConnection::setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpCl
 }
 
 /****************************************************/
+/**
+ * Helper function to fill the protocl header struct, mainly the lcient authentifiants
+ * and the message type.
+ * @param header Reference to the header struct to fill.
+ * @param type Tye of msesage to be sent.
+**/
 void LibfabricConnection::fillProtocolHeader(LibfabricMessageHeader & header, int type)
 {
 	header.type = type;
@@ -544,18 +745,30 @@ void LibfabricConnection::fillProtocolHeader(LibfabricMessageHeader & header, in
 }
 
 /****************************************************/
+/**
+ * @return Return a reference to the client registry for unit tests.
+**/
 ClientRegistry & LibfabricConnection::getClientRegistry(void)
 {
 	return clientRegistry;
 }
 
 /****************************************************/
+/**
+ * Enable of disable the authentication checking on message recieve.
+ * @param value Set to true to enable the checking, false to disable.
+**/
 void LibfabricConnection::setCheckClientAuth(bool value)
 {
 	this->checkClientAuth = value;
 }
 
 /****************************************************/
+/**
+ * Setup a hook to be called when getting an authentication failure so we can print
+ * a warning on the server output.
+ * @param hookOnBadAuth Lambda function to be called on the given event.
+**/
 void LibfabricConnection::setOnBadAuth(std::function<LibfabricActionResult(void)> hookOnBadAuth)
 {
 	this->hookOnBadAuth = hookOnBadAuth;

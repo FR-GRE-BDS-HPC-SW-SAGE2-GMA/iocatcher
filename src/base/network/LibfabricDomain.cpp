@@ -23,6 +23,13 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * Establish a new libfabric domain to latter create connections in this domain.
+ * @param serverIp The IP of the server to join or the IP to listen if being the server.
+ * @param port The server to connect on if being client or to listen if being the server.
+ * @param isDomainServer Define if this instance is the domain server or will be used to 
+ * connection clients to the server.
+**/
 LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string & port, bool isDomainServer)
 {
 	//check
@@ -74,6 +81,11 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 }
 
 /****************************************************/
+/**
+ * Destroy the domain and clean every ressources attached to it.
+ * @warning Caution you need to destroy the connections first it will
+ * not be done by this function.
+**/
 LibfabricDomain::~LibfabricDomain(void)
 {
 	//free msg buffers
@@ -91,36 +103,63 @@ LibfabricDomain::~LibfabricDomain(void)
 }
 
 /****************************************************/
+/**
+ * Return the libfabric provider name in use.
+**/
 const char * LibfabricDomain::getLFProviderName(void) const
 {
 	return this->fi->fabric_attr->prov_name;
 }
 
 /****************************************************/
+/**
+ * Return the libfabric infos in use.
+**/
 struct fi_info * LibfabricDomain::getFiInfo(void)
 {
 	return this->fi;
 }
 
 /****************************************************/
+/**
+ * Return the current fabric to be used by the connection to connect.
+**/
 struct fid_fabric * LibfabricDomain::getFabric(void)
 {
 	return this->fabric;
 }
 
 /****************************************************/
+/**
+ * Return the current domain to be used by the connection to connect.
+**/
 struct fid_domain * LibfabricDomain::getDomain(void)
 {
 	return this->domain;
 }
 
 /****************************************************/
+/**
+ * Register a memory segment to be used for RDMA operations.
+ * @param ptr Base address of the segment.
+ * @param size Size of the segment to register.
+ * @param read If to be used for read operation (reading the segment).
+ * @param write If to be used to write operation (writing in the segment).
+ * @param pmem If being a persistent memory (pmem) segment (not sure this is really necessary).
+ * @return Return the description of the segment to be transmitted to the remote server
+ * making the RDMA operation.
+**/
 Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool write, bool pmem)
 {
+	//vars
 	MemoryRegion region;
 	region.ptr = ptr;
 	region.size = size;
 	region.mr = nullptr;
+
+	//checks
+	assert(ptr != NULL);
+	assert(size > 0);
 
 	//access
 	uint64_t accessFlag = 0;
@@ -162,9 +201,19 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 }
 
 /****************************************************/
+/**
+ * Deregister the given memory segment.
+ * @param ptr Base address of the segment to deregister.
+ * @param size Size of the segment to deregister.
+**/
 void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 {
+	//checks
+	assert(ptr! = NULL);
+
+	//get mr
 	fid_mr* mr = getFidMR(ptr,size);
+	assert(mr != NULL);
 	fi_close(&mr->fid);
 
 	//remove from list
@@ -180,8 +229,19 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 }
 
 /****************************************************/
+/**
+ * Get the libfabric MR description.
+ * @param ptr Base address of the segment.
+ * @param size Size of the segment.
+ * @return The memory region descriptor or null if not found.
+**/
 fid_mr* LibfabricDomain::getFidMR ( void* ptr, size_t size )
 {
+	//checks
+	assert(ptr != NULL);
+	assert(size > 0);
+
+	//get
 	MemoryRegion * region = getMR(ptr,size);
 	if (region == nullptr)
 		return nullptr;
@@ -190,8 +250,18 @@ fid_mr* LibfabricDomain::getFidMR ( void* ptr, size_t size )
 }
 
 /****************************************************/
+/**
+ * Get the memory region description.
+ * @param ptr Base address of the segment.
+ * @param size Size of the segment.
+ * @return Pointer to the memory region object or null if not found.
+**/
 MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 {
+	//checks
+	assert(ptr != NULL);
+	assert(size > 0);
+
 	//search
 	MemoryRegion * mr = nullptr;
 	segmentMutex.lock();
@@ -209,12 +279,22 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 }
 
 /****************************************************/
+/**
+ * We might want to use pre-registered buffers for sendMessage operations. This function
+ * set their size to prepare them and keep track of them.
+ * @param size Size of the segments we want to be allocated.
+**/
 void LibfabricDomain::setMsgBuffeSize(size_t size)
 {
 	this->msgBufferSize = size;
 }
 
 /****************************************************/
+/**
+ * Get a pre-registerd buffer for sendMessage operations. (This do not seems required, but in case).
+ * It has a fixed size which is defined by setMsgBuffeSize().
+ * @return Return the requested segment.
+**/
 void * LibfabricDomain::getMsgBuffer(void)
 {
 	//vars
@@ -244,6 +324,11 @@ void * LibfabricDomain::getMsgBuffer(void)
 }
 
 /****************************************************/
+/**
+ * Return a message buffer which has been used to sendMessage() operation so it can
+ * be reused latter.
+ * @param buffer The buffer to return.
+**/
 void LibfabricDomain::retMsgBuffer(void * buffer)
 {
 	//check

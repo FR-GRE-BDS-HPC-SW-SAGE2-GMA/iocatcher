@@ -53,7 +53,7 @@ class LibfabricPostAction
 {
 	public:
 		LibfabricPostAction(void) {this->bufferId = -1; this->connection = NULL;};
-		virtual ~LibfabricPostAction(void) {};
+		virtual ~LibfabricPostAction(void) {this->freeBuffer();};
 		virtual LibfabricActionResult runPostAction(void) = 0;
 		void registerBuffer(LibfabricConnection * connection, bool isRecv, size_t bufferId);
 		void freeBuffer(void);
@@ -93,7 +93,7 @@ class LibfabricPostActionFunction : public LibfabricPostAction
 class LibfabricConnection
 {
 	public:
-		LibfabricConnection(LibfabricDomain * lfDomain, bool wait);
+		LibfabricConnection(LibfabricDomain * lfDomain, bool passivePolling);
 		~LibfabricConnection(void);
 		void postRecives(size_t size, int count);
 		void joinServer(void);
@@ -119,8 +119,8 @@ class LibfabricConnection
 	private:
 		bool pollRx(void);
 		bool pollTx(void);
-		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool wait);
-		bool onRecv(size_t id);
+		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling);
+		LibfabricActionResult onRecv(size_t id);
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
 		bool checkAuth(LibfabricMessage * message, int clientId, int id);
@@ -134,7 +134,7 @@ class LibfabricConnection
 		/** Endpoint **/
 		fid_ep *ep;
 		/** If use wait **/
-		bool wait;
+		bool passivePolling;
 		/** Recive buffers being posted to libfabric. **/
 		char ** recvBuffers;
 		/** Number of recive buffer. **/
@@ -155,7 +155,7 @@ class LibfabricConnection
 		 * Keep tack of the lambda functions to be called when reciveing
 		 * the associated message ID.
 		**/
-		std::map<size_t, std::function<bool(int, size_t, void*)>> hooks;
+		std::map<size_t, std::function<LibfabricActionResult(int, size_t, void*)>> hooks;
 		/**
 		 * To know if the connection is in use of not to handle multiple client
 		 * connections for multi-threaded applications.
