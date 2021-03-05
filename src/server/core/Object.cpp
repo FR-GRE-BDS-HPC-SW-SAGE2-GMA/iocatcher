@@ -336,10 +336,10 @@ void Object::markDirty(size_t base, size_t size)
 /**
  * Change the force lignement size. This does not be proactive on existing segments.
  * @param alignement.
- * @todo Check it work if preexisting segments ?
 **/
 void Object::forceAlignement(size_t alignment)
 {
+	assume(this->segmentMap.empty(), "Cannot change the alignement after accessing the object.");
 	this->alignement = alignment;
 }
 
