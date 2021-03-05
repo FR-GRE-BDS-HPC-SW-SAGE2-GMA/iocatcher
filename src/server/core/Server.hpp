@@ -54,7 +54,6 @@ class Server
 	private:
 		//setups
 		void setupTcpServer(int port, int maxport);
-		void setupPingPong(void);
 		void setupObjFlush(void);
 		void setupObjRangeRegister(void);
 		void setupObjUnregisterRange(void);

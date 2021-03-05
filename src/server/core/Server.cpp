@@ -12,6 +12,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <cassert>
 #include "Server.hpp"
 #include "../hooks/HookPingPong.hpp"
+#include "../hooks/HookFlush.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -68,12 +69,11 @@ Server::Server(const Config * config, const std::string & port)
 
 	//register hooks
 	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());
+	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, new HookFlush(this->container));
 
 	//register actions
-	this->setupObjFlush();
 	this->setupObjRead();
 	this->setupObjWrite();
-	this->setupObjFlush();
 	this->setupObjCreate();
 	this->setupObjRangeRegister();
 	this->setupObjUnregisterRange();
@@ -199,43 +199,6 @@ void Server::stop(void)
 		this->tcpServer = NULL;
 		this->tcpServerThread.join();
 	}
-}
-
-/****************************************************/
-/**
- * Register the hook for FLUSH messages and apply the flush on reception, then
- * answer with an ACK message.
-**/
-void Server::setupObjFlush(void)
-{
-	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, [this](LibfabricConnection* connection, int clientId, size_t id, void * buffer) {
-		//infos
-		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
-
-		//printf
-		//printf("Get flush object %ld:%ld %lu->%lu\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low, clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
-
-		//flush object
-		Object & object = this->container->getObject(clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
-		int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
-
-		//send open
-		LibfabricMessage * msg = new LibfabricMessage;
-		msg->header.type = IOC_LF_MSG_OBJ_FLUSH_ACK;
-		msg->header.clientId = clientId;
-		msg->data.response.status = ret;
-
-		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-			delete msg;
-			return LF_WAIT_LOOP_KEEP_WAITING;
-		});
-
-		//republish
-		connection->repostRecive(id);
-
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
 }
 
 /****************************************************/
