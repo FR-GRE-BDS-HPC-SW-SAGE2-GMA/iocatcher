@@ -13,6 +13,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "Server.hpp"
 #include "../hooks/HookPingPong.hpp"
 #include "../hooks/HookFlush.hpp"
+#include "../hooks/HookRangeRegister.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -70,12 +71,12 @@ Server::Server(const Config * config, const std::string & port)
 	//register hooks
 	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());
 	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, new HookFlush(this->container));
+	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, new HookRangeRegister(this->config, this->container));
 
 	//register actions
 	this->setupObjRead();
 	this->setupObjWrite();
 	this->setupObjCreate();
-	this->setupObjRangeRegister();
 	this->setupObjUnregisterRange();
 }
 
@@ -199,50 +200,6 @@ void Server::stop(void)
 		this->tcpServer = NULL;
 		this->tcpServerThread.join();
 	}
-}
-
-/****************************************************/
-/**
- * Register the hook for OBJ_RANGE_REGISTER messages and apply the flush on reception, then
- * answer with an ACK message.
-**/
-void Server::setupObjRangeRegister(void)
-{
-	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		//infos
-		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
-
-		//get object
-		Object & object = this->container->getObject(clientMessage->data.registerRange.high, clientMessage->data.registerRange.low);
-		ConsistencyTracker & tracker = object.getConsistencyTracker();
-
-		//check
-		int status = 0;
-		ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-		if (clientMessage->data.registerRange.write)
-			mode = CONSIST_ACCESS_MODE_WRITE;
-		if (this->config->consistencyCheck)
-			status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
-
-		//return message
-		LibfabricMessage * msg = new LibfabricMessage;
-		msg->header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
-		msg->header.clientId = clientId;
-		msg->data.response.status = status;
-		msg->data.response.msgHasData = false;
-
-		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
-			delete msg;
-			return LF_WAIT_LOOP_KEEP_WAITING;
-		});
-
-		//republish
-		connection->repostRecive(id);
-
-		//
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
 }
 
 /****************************************************/

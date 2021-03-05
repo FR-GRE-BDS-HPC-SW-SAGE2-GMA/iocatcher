@@ -6,7 +6,7 @@
 ######################################################
 
 ######################################################
-set(SERVER_HOOKS_SRC HookPingPong.cpp HookFlush.cpp)
+set(SERVER_HOOKS_SRC HookPingPong.cpp HookFlush.cpp HookRangeRegister.cpp)
 
 ######################################################
 add_library(ioc-server-hooks OBJECT ${SERVER_HOOKS_SRC})
