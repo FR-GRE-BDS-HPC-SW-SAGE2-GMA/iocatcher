@@ -14,6 +14,7 @@
 #include <sys/mman.h>
 //local
 #include "LibfabricDomain.hpp"
+#include "Protocol.hpp"
 #include "../common/Debug.hpp"
 //libfabric
 #include <rdma/fi_rma.h>
@@ -65,6 +66,10 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 
 	//display
 	//IOC_INFO_ARG("NET: %1").arg(fi->fabric_attr->prov_name).end();
+
+	//checks
+	assume(this->fi->src_addrlen <= IOC_LF_MAX_ADDR_LEN, "Invalid hard coded maximum address len !");
+	assume(this->fi->dest_addrlen <= IOC_LF_MAX_ADDR_LEN, "Invalid hard coded maximum address len !");
 
 	//IOC_
 	err = fi_fabric(fi->fabric_attr, &this->fabric, nullptr);
@@ -209,7 +214,7 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 {
 	//checks
-	assert(ptr! = NULL);
+	assert(ptr != NULL);
 
 	//get mr
 	fid_mr* mr = getFidMR(ptr,size);

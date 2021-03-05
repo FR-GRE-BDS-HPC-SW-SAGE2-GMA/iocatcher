@@ -4,6 +4,8 @@
 			COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
+// This code is inspired from initial poc from Simon Derr.
+
 /****************************************************/
 //std
 #include <cstdlib>
@@ -26,10 +28,19 @@
 using namespace IOC;
 
 /****************************************************/
+/** Maximal size for a TCP message. **/
 #define MAX_TCP_MSG_LEN 4096
+/** Define a tracing function to help debugging. **/
 #define trace(args...) printf(args)
 
 /****************************************************/
+/**
+ * Constructor of the TCP server which open the listing socket,
+ * configure libevent.
+ * @param port Port to listen.
+ * @param portRange Number of ports to try.
+ * @param keepConnection If we need to keep the connection alive after the auth handshake.
+**/
 TcpServer::TcpServer(int port, int portRange, bool keepConnection)
 {
 	//pthread init
@@ -48,6 +59,9 @@ TcpServer::TcpServer(int port, int portRange, bool keepConnection)
 }
 
 /****************************************************/
+/**
+ * Destructor of the tcp server, it close the listening socket.
+**/
 TcpServer::~TcpServer(void)
 {
 	int res = close(this->listenFd);
@@ -55,6 +69,9 @@ TcpServer::~TcpServer(void)
 }
 
 /****************************************************/
+/**
+ * Used to create the libevent infos.
+**/
 int TcpServer::setupLibeventListener(void)
 {
 	this->ebase = event_base_new();
@@ -69,11 +86,15 @@ int TcpServer::setupLibeventListener(void)
 }
 
 /****************************************************/
+/**
+ * Send the auth information to the client to finish the connection
+ * handshake.
+ * @param client Connection information to be used to join the client.
+**/
 void TcpServer::sendClientId(TcpClientInfo *client)
 {
 	uint64_t id;
 	uint64_t key;
-	//client_id_new(idtable, &id, &key, (struct client_data*) client);
 	this->onConnect(&id, &key, client);
 	client->id = id;
 	int rc;
@@ -86,6 +107,12 @@ void TcpServer::sendClientId(TcpClientInfo *client)
 }
 
 /****************************************************/
+/**
+ * Callback used by libevent when a client connect.
+ * @param fd The file descriptor to join the client.
+ * @param unused_events Unused variable.
+ * @param tcpServer Address of the tcp server.
+**/
 void TcpServer::acceptOneClientCallback(evutil_socket_t fd, short unused_events, void * tcpServer)
 {
 	TcpServer * server = static_cast<TcpServer *>(tcpServer);
@@ -118,6 +145,13 @@ void TcpServer::acceptOneClientCallback(evutil_socket_t fd, short unused_events,
 	//server->sendHgConnectInfo(client);
 }
 
+/****************************************************/
+/**
+ * Callback used when libevent recive a message from the client.
+ * @param fd File descriptor to join the client.
+ * @param unused_events Unused.
+ * @param clnt Pointer to the client structure.
+**/
 void TcpServer::recvClientMessageCallback(evutil_socket_t fd, short unused_events, void *clnt)
 {
 	/** Buffer for reception of messages */
@@ -143,12 +177,19 @@ retry:
 }
 
 /****************************************************/
+/**
+ * Stop libevent to the polling thread can exit cleanly  before exiting the process.
+**/
 void TcpServer::stop(void)
 {
 	event_base_loopbreak(this->ebase);
 }
 
 /****************************************************/
+/**
+ * Function to handle client messages. The client can ask to stop the server.
+ * @todo To be removed (not used anymore, this was waiting TcpServer::stop() to work.).
+**/
 void TcpServer::handleClientMessage(TcpClientInfo *client, const char *msg, int len)
 {
 	// do some stuff here
@@ -158,6 +199,11 @@ void TcpServer::handleClientMessage(TcpClientInfo *client, const char *msg, int 
 }
 
 /****************************************************/
+/**
+ * Close client connection.
+ * @param client Infos of the client.
+ * @param fd File descriptor of the client.
+**/
 void TcpServer::closeClient(TcpClientInfo *client, int fd)
 {
 	trace("client fd %d exits\n", fd);
@@ -170,6 +216,12 @@ void TcpServer::closeClient(TcpClientInfo *client, int fd)
 }
 
 /****************************************************/
+/**
+ * Listening loop handled by libevent so the calling polling thread can wait data.
+ * It exit only when stop() is called by the main thread.
+ * @param onConnect Connection handler to call when a client connection.
+ * @param onDisconnect Disconnection handler to call when a client disconnect.
+**/
 void TcpServer::loop(std::function<void(uint64_t*, uint64_t*, TcpClientInfo*)> onConnect,std::function<void(TcpClientInfo*)> onDisconnect)
 {
 	this->onConnect = onConnect;
@@ -183,7 +235,13 @@ void TcpServer::loop(std::function<void(uint64_t*, uint64_t*, TcpClientInfo*)> o
 }
 
 /****************************************************/
-int TcpServer::createSocketV4(int firstPort, int maxPort, int *bound_port)
+/**
+ * Create a listening socket for TCP V4.
+ * @param firstPost Try on this port, if failed try others.
+ * @param maxPort Maximum port to try.
+ * @param bound_potr Pointer to recive the final port;
+**/
+int TcpServer::createSocketV4(int firstPort, int maxPort, int *boundPort)
 {
 	int			sock = -1;
 	int			one = 1;
@@ -233,8 +291,8 @@ int TcpServer::createSocketV4(int firstPort, int maxPort, int *bound_port)
 	}
 
 	trace("Open port %d\n", port);
-	if (bound_port)
-		*bound_port = port;
+	if (boundPort)
+		*boundPort = port;
 	return sock;
 
 err:

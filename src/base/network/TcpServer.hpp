@@ -4,6 +4,8 @@
 			COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
+// This code is inspired from initial poc from Simon Derr.
+
 #ifndef IOC_TCP_SERVER_HPP
 #define IOC_TCP_SERVER_HPP
 
@@ -23,15 +25,28 @@ namespace IOC
 class TcpServer;
 
 /*****************************************************/
+/**
+ * Struct used to keep track of client connection informations.
+**/
 struct TcpClientInfo
 {
-	struct event *event; /**< libevent event for this client fd */
+	/** libevent event for this client fd */
+	struct event *event; 
+	/** File descriptor of the connection to the client. **/
 	int           fd;
+	/** Client ID. **/
 	uint64_t      id;
+	/** Address of the TCP server. **/
 	TcpServer *   server;
 };
 
 /*****************************************************/
+/**
+ * Implement the TCP server to keep track of client connection so we can
+ * be notified when a client disconnect due to a crash. This is required
+ * because libfabric rxm protocol do not provide this notification.
+ * This is required for range registration tracking to not block the server.
+**/
 class TcpServer
 {
 	public:
@@ -49,16 +64,28 @@ class TcpServer
 		void sendClientId(TcpClientInfo *client);
 		void closeClient(TcpClientInfo *client, int fd);
 	private:
+		/** Listen socket **/
 		int listenFd;
+		/** Handler for libevent. **/
 		struct event_base *ebase;
+		/** Number of clients. **/
 		int nr_clients;
+		/** 
+		 * To know if we need to keep the connection alive of if we disconnect
+		 * just after exchanging the auth informaations.
+		**/
 		bool keepConnection;
+		/** Track the alive clients. **/
 		std::list<TcpClientInfo> clients;
+		/** 
+		 * Labmda function to be called when a client connection.
+		 * It is used to fill the auth informations.
+		**/
 		std::function<void(uint64_t*, uint64_t*, TcpClientInfo*)> onConnect;
+		/** Labmda function to be called when a client disconnect. **/
 		std::function<void(TcpClientInfo*)> onDisconnect;
 };
 
 }
-
 
 #endif //IOC_TCP_SERVER_HPP

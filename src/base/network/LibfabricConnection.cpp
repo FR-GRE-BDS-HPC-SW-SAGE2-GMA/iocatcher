@@ -269,7 +269,6 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 {
 	//check
 	assert(localAddr != NULL);
-	assert(remoteAddr != NULL);
 
 	//get
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
@@ -306,7 +305,6 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 	//check
 	assert(iov != NULL);
 	assert(count > 0);
-	assert(remoteAddr != NULL);
 
 	//go
 	void ** mrDesc = new void*[count];
@@ -349,7 +347,6 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 	//checks
 	assert(iov != NULL);
 	assert(count > 0);
-	assert(remoteAddr != NULL);
 
 	//get mr
 	void ** mrDesc = new void*[count];
@@ -388,7 +385,6 @@ void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void 
 {
 	//checks
 	assert(localAddr != NULL);
-	assert(remoteAddr != NULL);
 	assert(size > 0);
 
 	//get mr

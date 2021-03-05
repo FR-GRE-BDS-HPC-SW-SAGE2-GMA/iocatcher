@@ -30,9 +30,11 @@
 using namespace IOC;
 
 /*****************************************************/
-#define MAXURL 256
-
-/*****************************************************/
+/**
+ * Constructor of the TCP client. It establish the connectin.
+ * @param addr Address of the server.
+ * @param port TCP port to connect to the server.
+**/
 TcpClient::TcpClient(const std::string & addr, const std::string & port)
 {
 	this->connFd = tcp_connect(addr.c_str(), port.c_str());
@@ -40,6 +42,9 @@ TcpClient::TcpClient(const std::string & addr, const std::string & port)
 }
 
 /*****************************************************/
+/**
+ * Destructor to disconnect the client from the server.
+**/
 TcpClient::~TcpClient(void)
 {
 	if (this->connFd != -1)
@@ -47,6 +52,11 @@ TcpClient::~TcpClient(void)
 }
 
 /*****************************************************/
+/**
+ * Function used to etablish the conection to the server.
+ * @param addr Address of the server.
+ * @param aport TCP port to connect to the server.
+ **/
 int TcpClient::tcp_connect(const char *addr, const char *aport)
 {
 	int sockfd;
@@ -107,6 +117,12 @@ int TcpClient::tcp_connect(const char *addr, const char *aport)
 }
 
 /*****************************************************/
+/**
+ * After establishing the connection we make some read operation
+ * on the connection to recive the auth information so we are
+ * ready to exchange messages on the libfabric protocol.
+ * @return Return a struct containing the auth informations recieved from the server.
+**/
 TcpConnInfo TcpClient::getConnectionInfos(void)
 {
 	// vars
@@ -121,14 +137,6 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 	rc = read(connFd, &infos.keepConnection, sizeof(infos.keepConnection));
 	assert(rc == sizeof(bool));
 	//fprintf(stderr, "Got client ID %lu and key %lx and keep connection %d\n", infos.clientId, infos.key, (int)infos.keepConnection);
-
-	// Get the mercury URL from the TCP server
-	/*char url[MAXURL];
-	ssize_t r = read(connFd, url, MAXURL-1);
-	assert(r > 0);
-	url[r] = '\0';
-	fprintf(stderr, "Got connect url %s\n", url);
-	infos.url = url;*/
 
 	//disconnect
 	if (infos.keepConnection == false) {
