@@ -13,6 +13,13 @@
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Implement the ping pong operation for the client side. We can ask to make the loop
+ * as many time as wanted.
+ * @param domain Reference to the libfabric domain to be used.
+ * @param connection Reference to the client connection to be used.
+ * @param cnt Number of time to make the ping pong roundtrip.
+**/
 void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, int cnt)
 {
 	//rma
@@ -59,6 +66,16 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 }
 
 /****************************************************/
+/**
+ * Make read read operation to read an object from the server. It can handle it via eager or RDMA operation.
+ * @param connection Reference to the libfabric connection to use.
+ * @param high High part of the object ID to read.
+ * @param low low part of the object ID to read.
+ * @param buffer Buffer where to place the data. It will be automatically registered for RDMA operation and de-registered after the operation.
+ * @param size Size of the read operation.
+ * @param offset Offset of the data to read from the object.
+ * @return Size of the read operation or negative value on error.
+**/
 ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low, void* buffer, size_t size, size_t offset)
 {
 	//setup message request
@@ -121,6 +138,16 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 }
 
 /****************************************************/
+/**
+ * Make read write operation to write to an object on the server. It can handle it via eager or RDMA operation.
+ * @param connection Reference to the libfabric connection to use.
+ * @param high High part of the object ID to write.
+ * @param low Low part of the object ID to write.
+ * @param buffer Buffer where to place the data. It will be automatically registered for RDMA operation and de-registered after the operation.
+ * @param size Size of the write operation.
+ * @param offset Offset of the data where to write in the object.
+ * @return Size of the write operation or negative value on error.
+**/
 ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset)
 {
 	//setup message request
@@ -179,6 +206,15 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 }
 
 /****************************************************/
+/**
+ * Perform a flush operation on a range space of the given object.
+ * @param connection Reference to the libfabric connection to use.
+ * @param high High part of the object ID to flush.
+ * @param low Low part of the object ID to flush.
+ * @param offset Offset of the flush operation.
+ * @param size Size of the segment to flush. Can use 0 to say all.
+ * @return Return 0 on success, negative value on error.
+**/
 int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size)
 {
 	//setup message request
@@ -215,6 +251,18 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 }
 
 /****************************************************/
+/**
+ * Perform a range registrion to notify we make a mapping on this part of the object.
+ * This is used to prevent coherency issue by mapping in write mode several time the
+ * same object.
+ * @param connection Reference to the libfabric connection to use.
+ * @param high High part of the object ID.
+ * @param low Low part of the object ID.
+ * @param offset Base offset of the mapping range to register.
+ * @param size Size of the mapping range to register.
+ * @param write Say if it read or read-write mapping.
+ * @return An identifier to be used for de-registration to identify the mapping. It return negative value on error.
+**/
 int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write)
 {
 	//setup message request
@@ -252,6 +300,17 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, i
 }
 
 /****************************************************/
+/**
+ * Deregister a mapping range to we can reuse it for other mappings.
+ * @param connection Reference to the libfabric connection to use.
+ * @param id If of the range to de-register.
+ * @param high High part of the object ID.
+ * @param low Low part of the object ID.
+ * @param offset Base offset of the mapping range to register.
+ * @param size Size of the mapping range to register.
+ * @param write Say if it read or read-write mapping.
+ * @return Return 0 on success and negative value on error.
+**/
 int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write)
 {
 	//setup message request
@@ -290,6 +349,13 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 }
 
 /****************************************************/
+/**
+ * Create an object, this is mostly use to create an object in Mero before starting
+ * to flush data to it otherwise it fails.
+ * @param connection Reference to the libfabric connection to use.
+ * @param high High part of the object ID.
+ * @param low Low part of the object ID.
+**/
 int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 {
 	//setup message request

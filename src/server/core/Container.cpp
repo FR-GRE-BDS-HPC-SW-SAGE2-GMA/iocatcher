@@ -61,10 +61,10 @@ bool Container::hasObject(int64_t high, int64_t low)
 }
 
 /****************************************************/
-void Container::onClientDisconnect(uint64_t clientId)
+void Container::onClientDisconnect(uint64_t tcpClientId)
 {
 	for (auto it : objects)
-		it.second->getConsistencyTracker().clientDisconnect(clientId);
+		it.second->getConsistencyTracker().clientDisconnect(tcpClientId);
 }
 
 /****************************************************/

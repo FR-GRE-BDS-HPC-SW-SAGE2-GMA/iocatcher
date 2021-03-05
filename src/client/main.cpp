@@ -13,6 +13,9 @@
 #include "ioc-client.h"
 
 /****************************************************/
+/**
+ * Basic example usage of the IOC client API.
+**/
 int main(int argc, char ** argv)
 {
 	if (argc != 2) {
