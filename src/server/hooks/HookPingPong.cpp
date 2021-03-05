@@ -12,7 +12,7 @@
 using namespace IOC;
 
 /****************************************************/
-LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * message)
+LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//prepare answer
 	LibfabricMessage * msg = new LibfabricMessage;

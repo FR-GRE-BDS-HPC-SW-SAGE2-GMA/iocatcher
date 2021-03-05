@@ -43,10 +43,10 @@ class Hook
 		 * @param connection The connection to be used to respond.
 		 * @param lfClientid The libfaric client ID to respond to.
 		 * @param msgBufferId The message buffer ID to be returned to the connection after finishing the work.
-		 * @param buffer Pointer to the buffer containing the user message.
+		 * @param clientMessage Pointer to the buffer containing the client message.
 		 * @return It returns an enum saying if the polling loop need to exit or not.
 		**/
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * message) = 0;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) = 0;
 };
 
 }

@@ -23,7 +23,7 @@ class HookFlush : public Hook
 {
 	public:
 		HookFlush(Container * container);
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * message) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;

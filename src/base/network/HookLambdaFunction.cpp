@@ -28,7 +28,7 @@ HookLambdaFunction::~HookLambdaFunction(void)
 
 /****************************************************/
 //inherit
-LibfabricActionResult HookLambdaFunction::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * message)
+LibfabricActionResult HookLambdaFunction::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
-	return this->function(connection, lfClientId, msgBufferId, message);
+	return this->function(connection, lfClientId, msgBufferId, clientMessage);
 }

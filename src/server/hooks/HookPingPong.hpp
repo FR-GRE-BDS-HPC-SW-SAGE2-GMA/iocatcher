@@ -21,7 +21,7 @@ namespace IOC
 class HookPingPong : public Hook
 {
 	public:
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * message) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
 };
 
 }
