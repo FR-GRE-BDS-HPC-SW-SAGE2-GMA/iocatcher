@@ -11,6 +11,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <random>
 #include <cassert>
 #include "Server.hpp"
+#include "../hooks/HookPingPong.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -64,9 +65,11 @@ Server::Server(const Config * config, const std::string & port)
 
 	//create container
 	this->container = new Container(domain, 8*1024*1024);
-	
+
+	//register hooks
+	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());
+
 	//register actions
-	this->setupPingPong();
 	this->setupObjFlush();
 	this->setupObjRead();
 	this->setupObjWrite();
@@ -196,45 +199,6 @@ void Server::stop(void)
 		this->tcpServer = NULL;
 		this->tcpServerThread.join();
 	}
-}
-
-/****************************************************/
-/**
- * Setup the required actions on recieving a PING message.
- * It anwser by a PONG.
-**/
-void Server::setupPingPong(void)
-{
-	//rma
-	char * rmaBuffer = new char[TEST_RDMA_SIZE];
-	connection->getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true, false);
-
-	//register hook
-	connection->registerHook(IOC_LF_MSG_PING, [this, rmaBuffer](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		//printf
-		//printf("Get 10 %d\n", clientId);
-
-		//do rdma read
-		//LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
-		//connection.rdmaWrite(clientId, rmaBuffer, clientMessage->data.iov.addr, clientMessage->data.iov.key, TEST_RDMA_SIZE, new LibfabricPostActionFunction([&connection, clientId](void){
-			//send open
-			LibfabricMessage * msg = new LibfabricMessage;
-			msg->header.type = IOC_LF_MSG_PONG;
-			msg->header.clientId = 0;
-
-			connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-				delete msg;
-				return LF_WAIT_LOOP_KEEP_WAITING;
-			});
-			
-		//	return false;
-		//}));
-
-		//republish
-		connection->repostRecive(id);
-
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
 }
 
 /****************************************************/
