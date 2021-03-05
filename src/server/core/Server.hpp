@@ -25,14 +25,22 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * Struct used to track server statistics.
+**/
 struct ServerStats
 {
 	ServerStats(void);
+	/** How much bytes we read. **/
 	size_t readSize;
+	/** how much bytes we wrote. **/
 	size_t writeSize;
 };
 
 /****************************************************/
+/**
+ * Implement the RDMA server to access objects with a cache in memory or nvdimm.
+**/
 class Server
 {
 	public:
@@ -63,39 +71,27 @@ class Server
 		void onClientConnect(uint64_t id, uint64_t key);
 		void onClientDisconnect(uint64_t id);
 	private:
+		/** The libfabric domain to be used for memory registration. **/
 		LibfabricDomain * domain;
+		/** The connection to be used to exchange messages wuth clients and make RDMA operations. **/
 		LibfabricConnection * connection;
+		/** The container to store objects. **/
 		Container * container;
+		/** keep track of IO statistics. **/
 		ServerStats stats;
+		/** Pointer to the config object. **/
 		const Config * config;
+		/** Thread printing the stats in the termianl every seconds. **/
 		std::thread statThread;
+		/** Thread handling the TCP connection to accept incomming clients and be notified of client disconnection. **/
 		std::thread tcpServerThread;
+		/** True while we need to continue to active poll. **/
 		volatile bool pollRunning;
+		/** To know if the stat thread need to continue to run or need to exit. **/
 		volatile bool statsRunning;
+		/** Pointer to the TCP server. **/
 		TcpServer * tcpServer;
 };
-
-/****************************************************/
-//TODO work to clean this
-extern bool gblConsistencyCheck;
-extern size_t gblReadSize;
-extern size_t gblWriteSize;
-
-/****************************************************/
-/*
-void setupPingPong(LibfabricConnection & connection);
-void setupObjFlush(LibfabricConnection & connection, Container & container);
-void setupObjRangeRegister(LibfabricConnection & connection, Container & container);
-void setupObjUnregisterRange(LibfabricConnection & connection, Container & container);
-void setupObjCreate(LibfabricConnection & connection, Container & container);
-iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
-void objRdmaPushToClient(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-void objEagerPushToClient(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-void setupObjRead(LibfabricConnection & connection, Container & container);
-void objRdmaFetchFromClient(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-void objEagerExtractFromMessage(LibfabricConnection & connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-void setupObjWrite(LibfabricConnection & connection, Container & container);
-*/
 
 }
 

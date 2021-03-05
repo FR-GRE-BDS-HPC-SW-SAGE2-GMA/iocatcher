@@ -31,6 +31,12 @@ static struct argp_option options[] = {
 };
 
 /****************************************************/
+/**
+ * Split a string on commas an build a list of string from it. It does not
+ * keep empty sub strings.
+ * @param value The string to split.
+ * @return A list of strings.
+**/
 static std::vector<std::string> splitToVector(const std::string & value)
 {
 	//vars
@@ -41,7 +47,8 @@ static std::vector<std::string> splitToVector(const std::string & value)
 	while((pos = value.find(',', pos)) != std::string::npos)
 	{
 		std::string substring(value.substr(prev_pos, pos-prev_pos));
-		output.push_back(substring);
+		if (substring.empty() == false)
+			output.push_back(substring);
 		prev_pos = ++pos;
 	}
 
@@ -53,6 +60,13 @@ static std::vector<std::string> splitToVector(const std::string & value)
 }
 
 /****************************************************/
+/**
+ * Handler to use argp to parse the program arguments.
+ * @param key The current key we are parsing.
+ * @param arg Eventual argument value attached to the key.
+ * @param state Pointer to the Config object to store config state.
+ * @return Zero for a valid paring ARGP_ERR_UNKNOWN otherwise.
+**/
 static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 	Config *config = (Config *)state->input;
 	switch (key) {
@@ -74,6 +88,9 @@ static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 }
 
 /****************************************************/
+/**
+ * Constructor of the config, it setups the default values.
+**/
 Config::Config(void)
 {
 	this->listenIP = "";
@@ -84,6 +101,9 @@ Config::Config(void)
 }
 
 /****************************************************/
+/**
+ * Setup special values for unit tests.
+**/
 void Config::initForUnitTests(void)
 {
 	this->listenIP = "127.0.0.1";
@@ -91,6 +111,11 @@ void Config::initForUnitTests(void)
 }
 
 /****************************************************/
+/**
+ * Parse the program arguments.
+ * @param argc NUmber of arguments.
+ * @param argv Array of arguments as C strings.
+**/
 void Config::parseArgs(int argc, const char ** argv)
 {
 	//parse args

@@ -20,6 +20,10 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * A container aggregate all the handle objects and provide the necessary
+ * function to find them from object IDs.
+**/
 class Container
 {
 	public:
@@ -30,8 +34,11 @@ class Container
 		void onClientDisconnect(uint64_t clientId);
 		void setObjectSegmentsAlignement(size_t alignement);
 	private:
+		/** List ob objects identified by their object ID. **/
 		std::map<ObjectId, Object*> objects;
+		/** Libfabric domain to be used to pre-register the allocated memory to be ready for RDMA operations. **/
 		LibfabricDomain * lfDomain;
+		/** We can force a minimal size for the object segments to get better performance. **/
 		size_t objectSegmentsAlignement;
 };
 

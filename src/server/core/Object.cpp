@@ -48,21 +48,38 @@ using namespace IOC;
 using namespace std;
 
 /****************************************************/
+/**
+ * Store the list of paths to create nvdimm files. Shared between all objects.
+**/
 std::vector<std::string> IOC::Object::nvdimmPaths;
 
 /****************************************************/
 #ifndef NOMERO
-	inline std::ostream&
-	operator<<(std::ostream& out, struct m0_uint128 object_id)
+	/**
+	 * Operator to help debugging by printing a mero object ID to std::streams.
+	 * @param out Reference to the output stream to be used.
+	 * @param object_id Object ID to print.
+	 * @return Reference to the output stream after printing.
+	**/
+	inline std::ostream& operator<<(std::ostream& out, struct m0_uint128 object_id)
 	{
-	out << object_id.u_hi << ":" << object_id.u_lo;
-	out << std::flush;
-	return out;
+		out << object_id.u_hi << ":" << object_id.u_lo;
+		out << std::flush;
+		return out;
 	}
 #endif
 
 /****************************************************/
-static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t size, size_t offset)
+/**
+ * Helper function to make a write operation on a mero object.
+ * @param high The high part of the object ID.
+ * @param low The low part of the object ID.
+ * @param buffer The data to write.
+ * @param size Size of the data to write.
+ * @param offset Offset in the mero object.
+ * @return The size which has been written or negativ number in case of error.
+**/
+static ssize_t helperPwrite(int64_t high, int64_t low, const void * buffer, size_t size, size_t offset)
 {
 	#ifndef NOMERO
 		//check
@@ -143,11 +160,11 @@ static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t siz
 		};
 
 		if (ret == 0) {
-			//cout << "[Success] Executing the MERO pwrite op, object ID="<< m_object_id << ", size=" << size
+			//cout << "[Success] Executing the MERO helperPwrite op, object ID="<< m_object_id << ", size=" << size
 			//			<< ", offset=" << offset << endl;
 			return size;
 		} else {
-			cerr << "[Failed] Error executing the MERO pwrite op, object ID=" << m_object_id << " , size=" << size
+			cerr << "[Failed] Error executing the MERO helperPwrite op, object ID=" << m_object_id << " , size=" << size
 						<< ", offset=" << offset << endl;
 			errno = EIO;
 			return -1;
@@ -158,7 +175,16 @@ static ssize_t pwrite(int64_t high, int64_t low, const void * buffer, size_t siz
 }
 
 /****************************************************/
-static ssize_t pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
+/**
+ * Helper function to make a read operation on a mero object.
+ * @param high The high part of the object ID.
+ * @param low The low part of the object ID.
+ * @param buffer The data to write.
+ * @param size Size of the data to read.
+ * @param offset Offset in the mero object.
+ * @return The size which has been read or negativ number in case of error.
+**/
+static ssize_t helperPread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
 {
 	return size;
 	#ifndef NOMERO
@@ -234,11 +260,11 @@ static ssize_t pread(int64_t high, int64_t low, void * buffer, size_t size, size
 		};
 
 		if (ret == 0) {
-			cout << "[Success] Executing the MERO pread op, object ID="<< m_object_id << ", size=" << size
+			cout << "[Success] Executing the MERO helperPread op, object ID="<< m_object_id << ", size=" << size
 					<< ", offset=" << offset << endl;
 			return size;
 		} else {
-			cerr << "[Failed] Error executing the MERO pread op, object ID=" << m_object_id << " , size=" << size
+			cerr << "[Failed] Error executing the MERO helperPread op, object ID=" << m_object_id << " , size=" << size
 						<< ", offset=" << offset << endl;
 			errno = EIO;
 			return -1;
@@ -249,12 +275,25 @@ static ssize_t pread(int64_t high, int64_t low, void * buffer, size_t size, size
 }
 
 /****************************************************/
+/**
+ * Check if the given range overlap with the given segment.
+ * @param segBase The base offset of the segment to test.
+ * @param segSize The size of the segment to test.
+ * @return True if the segment overlap, false otherwise.
+**/
 bool ObjectSegment::overlap(size_t segBase, size_t segSize)
 {
 	return (this->offset < segBase + segSize && this->offset + this->size > segBase);
 }
 
 /****************************************************/
+/**
+ * Constructor of an object.
+ * @param domain The libfabric domain to be used for memory registration.
+ * @param low The low part of the object ID.
+ * @param high The high part of the object ID.
+ * @param alignement The segment size alignement to be used.
+**/
 Object::Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement)
 {
 	this->alignement = alignement;
@@ -265,12 +304,23 @@ Object::Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t align
 }
 
 /****************************************************/
+/**
+ * @return Return the object ID.
+**/
 const ObjectId & Object::getObjectId(void)
 {
 	return this->objectId;
 }
 
 /****************************************************/
+/**
+ * Mark a given range as dirty.
+ * It loops on all segment and mark all overlapping segments as dirty.
+ * @todo Can be improved by splitting the segments but need more work
+ * to support dirty sub segment tracking.
+ * @param base The base offset or the range to mark dirty.
+ * @param size Size of the range to mark dirty.
+**/
 void Object::markDirty(size_t base, size_t size)
 {
 	//extract
@@ -283,12 +333,26 @@ void Object::markDirty(size_t base, size_t size)
 }
 
 /****************************************************/
+/**
+ * Change the force lignement size. This does not be proactive on existing segments.
+ * @param alignement.
+ * @todo Check it work if preexisting segments ?
+**/
 void Object::forceAlignement(size_t alignment)
 {
 	this->alignement = alignment;
 }
 
 /****************************************************/
+/**
+ * Get the list of object segments matching the given range.
+ * @warning Cauton, the first segment can have a lower offset thant the requested offset.
+ * It return segments as they are in the object.
+ * @param segments The list to fill.
+ * @param base The base address of the range to consider.
+ * @param size The size of the range to consider.
+ * @param load If need to load the segment if not present.
+**/
 void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load)
 {
 	//align
@@ -331,7 +395,16 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 }
 
 /****************************************************/
-char * allocateNvdimm(const std::string & nvdimmPath, int64_t high, int64_t low, size_t offset, size_t size)
+/**
+ * Helper function to allocate an nvdimm stores buffer for the given range.
+ * @param nvdimmPath Where to store the object.
+ * @param high The high part of the object ID.
+ * @param low The low part of the object ID.
+ * @param offset The offset of the given range.
+ * @param size The size of the range (which define the size of the allocation).
+ * @return Address of the allocated segment.
+**/
+static char * allocateNvdimm(const std::string & nvdimmPath, int64_t high, int64_t low, size_t offset, size_t size)
 {
 	//open
 	char fname[1024];
@@ -358,6 +431,15 @@ char * allocateNvdimm(const std::string & nvdimmPath, int64_t high, int64_t low,
 }
 
 /****************************************************/
+/**
+ * Load a segment for the given range. It will allocated its memory (on nvdimm if enabled),
+ * then load the data from mero if enabled and register the segment to the libfabric 
+ * domain for RDMA operations.
+ * @param offset Offset of the range to consider.
+ * @param size Size of the range to consider.
+ * @param load If need to load data from mero.
+ * @return The loaded object segment.
+**/
 ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 {
 	ObjectSegment & segment = this->segmentMap[offset];
@@ -373,23 +455,28 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	if (this->domain != NULL)
 		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
 	if (load) {
-		size_t status = pread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
-		assume(status == size, "Fail to pread from object !");
+		size_t status = helperPread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+		assume(status == size, "Fail to helperPread from object !");
 		if (status != size)
-			status = pwrite(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+			status = helperPwrite(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
 		assume(status == size, "Fail to write from object !");
 	}
 	return segment;
 }
 
 /****************************************************/
+/**
+ * Loop on all the segments and flush the dirty one overlapping the given range.
+ * @param offset Base offset from where to flush.
+ * @param size Size of the range to flus. Use 0 to flush all.
+**/
 int Object::flush(size_t offset, size_t size)
 {
 	int ret = 0;
 	for (auto it : this->segmentMap) {
 		if (it.second.dirty) {
 			if (size == 0 || it.second.overlap(offset, size)) {
-				if (pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
+				if (helperPwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
 					ret = -1;
 				it.second.dirty = false;
 			}
@@ -399,6 +486,9 @@ int Object::flush(size_t offset, size_t size)
 }
 
 /****************************************************/
+/**
+ * Make a mero object creation before accessing the object.
+**/
 int Object::create(void)
 {
 	#ifndef NOMERO
@@ -412,12 +502,18 @@ int Object::create(void)
 }
 
 /****************************************************/
+/**
+ * Permit to order the ranges to use in std::map
+**/
 bool IOC::operator< (const ObjectSegment & seg1, const ObjectSegment & seg2)
 {
 	return seg1.offset < seg2.offset;
 }
 
 /****************************************************/
+/**
+ * Order object IDs to be used as inded in std map.
+**/
 bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
 {
 	if (objId1.high < objId2.high)
@@ -429,12 +525,18 @@ bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
 }
 
 /****************************************************/
+/**
+ * Set the nvdimm paths.
+**/
 void IOC::Object::setNvdimm(const std::vector<std::string> & paths)
 {
 	Object::nvdimmPaths = paths;
 }
 
 /****************************************************/
+/**
+ * Return the consistency tracker.
+**/
 ConsistencyTracker & Object::getConsistencyTracker(void)
 {
 	return this->consistencyTracker;

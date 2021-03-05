@@ -19,6 +19,9 @@ using namespace IOC;
 #define IOC_LF_MAX_RDMA_SEGS 4
 
 /****************************************************/
+/** 
+ * Constructor of the server stat, it init values to 0. 
+**/
 ServerStats::ServerStats(void)
 {
 	this->readSize = 0;
@@ -26,6 +29,12 @@ ServerStats::ServerStats(void)
 }
 
 /****************************************************/
+/**
+ * Constructor of the server. It create all sub object and register the hooks for
+ * message reception on the libfabric connection.
+ * @param config Pointer to the config object.
+ * @param port Port to listen on (libfabric port which is tcp port + 1).
+**/
 Server::Server(const Config * config, const std::string & port)
 {
 	//check
@@ -68,6 +77,9 @@ Server::Server(const Config * config, const std::string & port)
 }
 
 /****************************************************/
+/**
+ * Clean the sub objects.
+**/
 Server::~Server(void)
 {
 	this->stop();
@@ -78,6 +90,14 @@ Server::~Server(void)
 }
 
 /****************************************************/
+/**
+ * Setup the TCP server to recive new cilents. It start a new thread
+ * to handle the connection. It also provide the handler to assign
+ * clientIDs and client key (randomly generated) to auth the clients.
+ * @param port Define the TCP port to listen.
+ * @param maxport If different than port it allows auto 
+ * selecting the first available port in the given range.
+**/
 void Server::setupTcpServer(int port, int maxport)
 {
 	//create server
@@ -109,12 +129,20 @@ void Server::setupTcpServer(int port, int maxport)
 }
 
 /****************************************************/
+/**
+ * Setup handler on client connection.
+ * @param handler Lambda function to be called on client
+ * connection so we can print a message.
+**/
 void Server::setOnClientConnect(std::function<void(int id)> handler)
 {
 	this->connection->setHooks(handler);
 }
 
 /****************************************************/
+/**
+ * Polling function. it polls until this->pollRunning become false.
+**/
 void Server::poll(void)
 {
 	this->pollRunning = true;
@@ -124,6 +152,11 @@ void Server::poll(void)
 }
 
 /****************************************************/
+/**
+ * Start the statistics thread to print the bandwidths 
+ * on the terminal every seconds.
+ * It can be stopped by setting statsRunning to false.
+**/
 void Server::startStatsThread(void)
 {
 	this->statsRunning = true;
@@ -138,6 +171,9 @@ void Server::startStatsThread(void)
 }
 
 /****************************************************/
+/**
+ * Stop the tcp thread and the polling.
+**/
 void Server::stop(void)
 {
 	//wait poll
@@ -156,12 +192,17 @@ void Server::stop(void)
 	//stop tcp server
 	if (this->tcpServer != NULL) {
 		this->tcpServer->stop();
+		delete this->tcpServer;
 		this->tcpServer = NULL;
 		this->tcpServerThread.join();
 	}
 }
 
 /****************************************************/
+/**
+ * Setup the required actions on recieving a PING message.
+ * It anwser by a PONG.
+**/
 void Server::setupPingPong(void)
 {
 	//rma
@@ -197,6 +238,10 @@ void Server::setupPingPong(void)
 }
 
 /****************************************************/
+/**
+ * Register the hook for FLUSH messages and apply the flush on reception, then
+ * answer with an ACK message.
+**/
 void Server::setupObjFlush(void)
 {
 	//register hook
@@ -230,6 +275,10 @@ void Server::setupObjFlush(void)
 }
 
 /****************************************************/
+/**
+ * Register the hook for OBJ_RANGE_REGISTER messages and apply the flush on reception, then
+ * answer with an ACK message.
+**/
 void Server::setupObjRangeRegister(void)
 {
 	//register hook
@@ -270,6 +319,10 @@ void Server::setupObjRangeRegister(void)
 }
 
 /****************************************************/
+/**
+ * Register the hook for OBJ_RANGE_UNREGISTER messages and apply the flush on reception, then
+ * answer with an ACK message.
+**/
 void Server::setupObjUnregisterRange(void)
 {
 	//register hook
@@ -314,6 +367,10 @@ void Server::setupObjUnregisterRange(void)
 }
 
 /****************************************************/
+/**
+ * Register the hook for OBJ_CREATE messages and apply the flush on reception, then
+ * answer with an ACK message.
+**/
 void Server::setupObjCreate(void)
 {
 	//register hook
@@ -347,6 +404,16 @@ void Server::setupObjCreate(void)
 }
 
 /****************************************************/
+/**
+ * Build the IOC vector to make scatter/gather RDMA operations.
+ * It take a segment list and compute the intersection if not fully matched, 
+ * then build the segment list to be used.
+ * @param segments The list of object segments to consider.
+ * @param offset The base offset of the range to consider.
+ * @param size The size of the range to consider.
+ * @return An array of iovec struct to be used by libfabric scatter/gather RDMA operations.
+ * It need to be freed by the caller with delete.
+**/
 iovec * Server::buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
 {
 	//compute intersection
@@ -376,6 +443,12 @@ iovec * Server::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 }
 
 /****************************************************/
+/**
+ * Push data to the client via RDMA.
+ * @param clientId Define the libfabric client ID.
+ * @param clientMessage Pointer the the message requesting the RDMA read operation.
+ * @param segments The list of object segments to transfer.
+**/
 void Server::objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//build iovec
@@ -441,10 +514,18 @@ void Server::objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage,
 }
 
 /****************************************************/
+/**
+ * Push data to the client making an eager communication and adding the data after the response
+ * to the client.
+ * @param clientId the libfabric client ID to know the connection to be used.
+ * @param clientMessage the request from the client to get the required informations.
+ * @param segments The list of object segments to be sent.
+**/
 void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//size
 	size_t dataSize = clientMessage->data.objReadWrite.size;
+	size_t baseOffset = clientMessage->data.objReadWrite.offset;
 
 	//send open
 	//char * buffer = new char[sizeof(LibfabricMessage) + dataSize];
@@ -464,11 +545,17 @@ void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage
 	for (auto segment : segments) {
 		//compute copy size to stay in data limits
 		size_t copySize = segment.size;
-		if (cur + copySize > dataSize)
+		size_t offset = 0;
+		if (cur + copySize > dataSize) {
 			copySize = dataSize - cur;
+		}
+		if (baseOffset > segment.offset) {
+			offset = baseOffset - segment.offset;
+			copySize -= offset;
+		}
 
 		//copy
-		memcpy(data + cur, segment.ptr, copySize);
+		memcpy(data + cur, segment.ptr + offset, copySize);
 
 		//progress
 		cur += copySize;
@@ -485,6 +572,10 @@ void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage
 }
 
 /****************************************************/
+/**
+ * Register the hook for OBJ_READ messages and apply the flush on reception, then
+ * answer with an ACK message after making an eager (int the response) or an rdam transfer.
+**/
 void Server::setupObjRead(void)
 {
 	//register hook
@@ -515,6 +606,12 @@ void Server::setupObjRead(void)
 }
 
 /****************************************************/
+/**
+ * Fetch data from the client via RDMA.
+ * @param clientId Define the libfabric client ID.
+ * @param clientMessage Pointer the the message requesting the RDMA write operation.
+ * @param segments The list of object segments to transfer.
+**/
 void Server::objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//build iovec
@@ -575,6 +672,13 @@ void Server::objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessa
 }
 
 /****************************************************/
+/**
+ * Pull data to the client getting an eager communication and copying it directly to the object segments.
+ * to the client.
+ * @param clientId the libfabric client ID to know the connection to be used.
+ * @param clientMessage the request from the client to get the required informations.
+ * @param segments The list of object segments to be sent.
+**/
 void Server::objEagerExtractFromMessage(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//get base pointer
@@ -583,14 +687,21 @@ void Server::objEagerExtractFromMessage(int clientId, LibfabricMessage * clientM
 	//copy data
 	size_t cur = 0;
 	size_t dataSize = clientMessage->data.objReadWrite.size;
+	size_t baseOffset = clientMessage->data.objReadWrite.offset;
 	for (auto segment : segments) {
 		//compute copy size to stay in data limits
 		size_t copySize = segment.size;
-		if (cur + copySize > dataSize)
+		size_t offset = 0;
+		if (cur + copySize > dataSize) {
 			copySize = dataSize - cur;
+		}
+		if (baseOffset > segment.offset) {
+			offset = baseOffset - segment.offset;
+			copySize -= offset;
+		}
 
 		//copy
-		memcpy(segment.ptr, data + cur, copySize);
+		memcpy(segment.ptr + offset, data + cur, copySize);
 
 		//progress
 		cur += copySize;
@@ -613,6 +724,10 @@ void Server::objEagerExtractFromMessage(int clientId, LibfabricMessage * clientM
 }
 
 /****************************************************/
+/**
+ * Register the hook for OBJ_WRITE messages and apply the flush on reception, then
+ * answer with an ACK message after making an eager (from the recived message) or an rdam transfer.
+**/
 void Server::setupObjWrite(void)
 {
 	//register hook
@@ -646,6 +761,12 @@ void Server::setupObjWrite(void)
 }
 
 /****************************************************/
+/**
+ * On TCP client connect we register the client to the libfabric connection
+ * so it can check the client auth to let him sending messages to the server.
+ * @param tcpClientId Define the TCP client ID.
+ * @param key The key attached to this client to validate incoming messages.
+**/
 void Server::onClientConnect(uint64_t tcpClientId, uint64_t key)
 {
 	printf("Client connect ID=%lu, key=%lu\n", tcpClientId, key);
@@ -653,6 +774,10 @@ void Server::onClientConnect(uint64_t tcpClientId, uint64_t key)
 }
 
 /****************************************************/
+/**
+ * On client disconnection we need to remove it from the allowed client list in
+ * the connection.
+**/
 void Server::onClientDisconnect(uint64_t tcpClientId)
 {
 	printf("Client disconnect ID=%lu\n", tcpClientId);

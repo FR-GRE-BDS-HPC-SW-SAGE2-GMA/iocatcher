@@ -24,24 +24,42 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * Define what is object ID.
+**/
 struct ObjectId
 {
+	/** The low part. **/
 	int64_t low;
+	/** The high part. **/
 	int64_t high;
 };
 
 /****************************************************/
+/**
+ * Define an object segment. It match with what has been requested by clients
+ * via read/write operations.
+**/
 struct ObjectSegment
 {
-	char * ptr;
-	size_t offset;
-	size_t size;
-	bool dirty;
+	//functions
 	bool overlap(size_t segBase, size_t segSize);
+
+	//members
+	/** Address of the memory buffer storing this segment. **/
+	char * ptr;
+	/** Offset of this segment. **/
+	size_t offset;
+	/** Size of this segment. **/
+	size_t size;
+	/** Store ditry state to know if we need to flush it or not. **/
+	bool dirty;
 };
 
 /****************************************************/
+/** Define an object segment list. **/
 typedef std::list<ObjectSegment> ObjectSegmentList;
+/** Define an object segment map identified by its offset. **/
 typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 
 /****************************************************/
@@ -60,12 +78,22 @@ class Object
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
 	private:
+		/** Libfabric domain to be used for meomry registration. **/
 		LibfabricDomain * domain;
+		/** Object ID **/
 		ObjectId objectId;
+		/** List of segments hosted by this object. **/
 		ObjectSegmentMap segmentMap;
+		/** 
+		 * Paths to nvdim to allocate memory on it.
+		 * @todo Make cleaner code avoiding this static.
+		**/
 		static std::vector<std::string> nvdimmPaths;
+		/** Base alignement to use. **/
 		size_t alignement;
+		/** Consistency tracker to track ranges mapped by clients and guaranty exclusive write access. **/
 		ConsistencyTracker consistencyTracker;
+		/** ID of file creation on the NVDIMM. **/
 		int nvdimmId;
 };
 
