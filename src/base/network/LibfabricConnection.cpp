@@ -16,6 +16,7 @@
 #include <sys/uio.h>
 //local
 #include "LibfabricConnection.hpp"
+#include "HookLambdaFunction.hpp"
 #include "../common/Debug.hpp"
 
 /****************************************************/
@@ -133,6 +134,10 @@ LibfabricConnection::~LibfabricConnection(void)
 		}
 		delete [] this->recvBuffers;
 	}
+
+	//destroy hooks
+	for (auto & it : this->hooks)
+		delete it.second;
 }
 
 /****************************************************/
@@ -204,10 +209,10 @@ void LibfabricConnection::joinServer(void)
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
 	//register hook
-	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](int clientId, size_t id, void * buffer) {
+	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, int clientId, size_t msgId, void * buffer) {
 		//printf("get clientID %d\n", clientId);
 		this->clientId = clientId;
-		this->repostRecive(id);
+		connection->repostRecive(msgId);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -582,7 +587,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 			//handle
 			if (it != this->hooks.end())
-				return it->second(message->header.clientId, id, buffer);
+				return it->second->onMessage(this, message->header.clientId, id, message);
 			else
 				IOC_FATAL_ARG("Invalid message type %1").arg(message->header.type).end();
 			break;
@@ -594,18 +599,41 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 /****************************************************/
 /**
+ * Attach a hook to be called when reciving a message.
+ * @param messageType The type of message to filter.
+ * @param hook Pointer to the hook to assocaite.
+**/
+void LibfabricConnection::registerHook(int messageType, Hook * hook)
+{
+	//check
+	assert(hook != NULL);
+
+	//check if already exist and delete
+	auto it = this->hooks.find(messageType);
+	if (it == this->hooks.end()) {
+		this->hooks[messageType] = hook;
+	} else {
+		delete it->second;
+		it->second = hook;
+	}
+}
+
+/****************************************************/
+/**
  * Register a lamda functon to be called when a message arrive with a given ID.
  * @param messageType Type of message to which attach the given lambda function;
  * @param function The lambda function to call on message recive. Its parameters
  * represent:
+ *   - A pointer to the libfabric connection
  *   - The client ID.
  *   - The revice buffer ID.
  *   - The buffer address.
 **/
-void LibfabricConnection::registerHook(int messageType, std::function<LibfabricActionResult(int, size_t, void*)> function)
+void LibfabricConnection::registerHook(int messageType, HookLambdaDef function)
 {
-	//assert(this->hooks.find(messageType) == this->hooks.end());
-	this->hooks[messageType] = function;
+	//allocate
+	Hook * hook = new HookLambdaFunction(function);
+	this->registerHook(messageType, hook);
 }
 
 /****************************************************/

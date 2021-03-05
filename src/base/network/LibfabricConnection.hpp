@@ -19,6 +19,7 @@
 //local
 #include "LibfabricDomain.hpp"
 #include "Protocol.hpp"
+#include "Hook.hpp"
 
 /****************************************************/
 namespace IOC
@@ -30,19 +31,6 @@ namespace IOC
 
 /****************************************************/
 class LibfabricConnection;
-
-/****************************************************/
-/**
- * Possible action to return from the callbacks.
- * @brief Actions to be returned from callbacks.
-**/
-enum LibfabricActionResult
-{
-	/** The poll(true) operation on the connection can continue polling. **/
-	LF_WAIT_LOOP_KEEP_WAITING = 0,
-	/** The poll(true) operation on the connection return after exit of the callback. **/
-	LF_WAIT_LOOP_UNBLOCK = 1,
-};
 
 /****************************************************/
 /**
@@ -105,7 +93,8 @@ class LibfabricConnection
 		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
 		void repostRecive(size_t id);
-		void registerHook(int messageType, std::function<LibfabricActionResult(int, size_t, void*)> function);
+		void registerHook(int messageType, Hook * hook);
+		void registerHook(int messageType, std::function<LibfabricActionResult(LibfabricConnection *, int, size_t, void*)> function);
 		void unregisterHook(int messageType);
 		int getClientId(void) { return clientId;};
 		LibfabricDomain & getDomain(void) {return *lfDomain;};
@@ -155,7 +144,7 @@ class LibfabricConnection
 		 * Keep tack of the lambda functions to be called when reciveing
 		 * the associated message ID.
 		**/
-		std::map<size_t, std::function<LibfabricActionResult(int, size_t, void*)>> hooks;
+		std::map<size_t, Hook *> hooks;
 		/**
 		 * To know if the connection is in use of not to handle multiple client
 		 * connections for multi-threaded applications.

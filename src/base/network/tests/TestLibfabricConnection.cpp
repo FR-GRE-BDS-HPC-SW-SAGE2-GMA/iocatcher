@@ -79,9 +79,9 @@ TEST(TestLibfabricConnection, message)
 			connection.poll(false);
 
 		//register hook
-		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 			gotMessage = true;
-			connection.repostRecive(id);
+			connection->repostRecive(id);
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -339,9 +339,9 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		});
 		while (!gotConnection) 
 			connection.poll(false);
-		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 			gotMessage = true;
-			connection.repostRecive(id);
+			connection->repostRecive(id);
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
@@ -396,9 +396,9 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		});
 		while (!gotConnection) 
 			connection.poll(false);
-		connection.registerHook(IOC_LF_MSG_PING, [&connection, &gotMessage](int clientId, size_t id, void * buffer) {
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 			gotMessage = true;
-			connection.repostRecive(id);
+			connection->repostRecive(id);
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);

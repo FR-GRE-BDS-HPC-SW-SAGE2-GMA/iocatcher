@@ -210,7 +210,7 @@ void Server::setupPingPong(void)
 	connection->getDomain().registerSegment(rmaBuffer, TEST_RDMA_SIZE, true, true, false);
 
 	//register hook
-	connection->registerHook(IOC_LF_MSG_PING, [this, rmaBuffer](int clientId, size_t id, void * buffer) {
+	connection->registerHook(IOC_LF_MSG_PING, [this, rmaBuffer](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get 10 %d\n", clientId);
 
@@ -222,7 +222,7 @@ void Server::setupPingPong(void)
 			msg->header.type = IOC_LF_MSG_PONG;
 			msg->header.clientId = 0;
 
-			this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+			connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 				delete msg;
 				return LF_WAIT_LOOP_KEEP_WAITING;
 			});
@@ -231,7 +231,7 @@ void Server::setupPingPong(void)
 		//}));
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
@@ -245,7 +245,7 @@ void Server::setupPingPong(void)
 void Server::setupObjFlush(void)
 {
 	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, [this](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, [this](LibfabricConnection* connection, int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
@@ -262,13 +262,13 @@ void Server::setupObjFlush(void)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
@@ -282,7 +282,7 @@ void Server::setupObjFlush(void)
 void Server::setupObjRangeRegister(void)
 {
 	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, [this](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
@@ -305,13 +305,13 @@ void Server::setupObjRangeRegister(void)
 		msg->data.response.status = status;
 		msg->data.response.msgHasData = false;
 
-		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
+		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
 			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		//
 		return LF_WAIT_LOOP_KEEP_WAITING;
@@ -326,7 +326,7 @@ void Server::setupObjRangeRegister(void)
 void Server::setupObjUnregisterRange(void)
 {
 	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, [this](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
@@ -353,13 +353,13 @@ void Server::setupObjUnregisterRange(void)
 		msg->data.response.status = status;
 		msg->data.response.msgHasData = false;
 
-		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
+		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](){
 			delete msg;
 			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		//
 		return LF_WAIT_LOOP_KEEP_WAITING;
@@ -374,7 +374,7 @@ void Server::setupObjUnregisterRange(void)
 void Server::setupObjCreate(void)
 {
 	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, [this](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//infos
 		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
 
@@ -391,13 +391,13 @@ void Server::setupObjCreate(void)
 		msg->header.clientId = clientId;
 		msg->data.response.status = ret;
 
-		this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
 			delete msg;
 			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
@@ -579,7 +579,7 @@ void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage
 void Server::setupObjRead(void)
 {
 	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, [this](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get OBJ_READ %d\n", clientId);
 
@@ -599,7 +599,7 @@ void Server::setupObjRead(void)
 		}
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
@@ -731,7 +731,7 @@ void Server::objEagerExtractFromMessage(int clientId, LibfabricMessage * clientM
 void Server::setupObjWrite(void)
 {
 	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_WRITE, [this](int clientId, size_t id, void * buffer) {
+	this->connection->registerHook(IOC_LF_MSG_OBJ_WRITE, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//printf
 		//printf("Get OBJ_READ %d\n", clientId);
 
@@ -754,7 +754,7 @@ void Server::setupObjWrite(void)
 		object.markDirty(clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
 		//republish
-		this->connection->repostRecive(id);
+		connection->repostRecive(id);
 
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});

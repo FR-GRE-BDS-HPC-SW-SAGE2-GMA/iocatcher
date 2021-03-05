@@ -82,6 +82,19 @@ enum LibfabricMessageType
 
 /****************************************************/
 /**
+ * Use to describe the necessary informations to make a RDMA transfer.
+ * @brief Informations for an RDMA transfer.
+**/
+struct Iov
+{
+	/** Base address of the targetted memory region. **/
+	void * addr;
+	/** Authentication key to make an RDMA on the given memory region. **/
+	uint64_t key;
+};
+
+/****************************************************/
+/**
  * Message header used by the low level protocol to identify the client and define
  * the mesage type. This is send in head of every message.
 **/

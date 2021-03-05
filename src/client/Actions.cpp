@@ -34,9 +34,9 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	msg.data.iov = iov;
 
 	//register hook
-	connection.registerHook(IOC_LF_MSG_PONG, [&connection](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_PONG, [](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//printf("get 11 %d\n", clientId);
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -97,7 +97,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 
 	//register hook for reception
 	int status = -1;
-	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&connection, &status, buffer, size](int clientId, size_t id, void * msgBuffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&status, buffer, size](LibfabricConnection * connection, int clientId, size_t id, void * msgBuffer) {
 		//extract status
 		LibfabricMessage * ackMsg = (LibfabricMessage *)msgBuffer;
 		status = ackMsg->data.response.status;
@@ -112,7 +112,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 		}
 
 		//repost recv buffer
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -178,10 +178,10 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -228,10 +228,10 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_FLUSH_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_FLUSH_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -277,10 +277,10 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, i
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -326,10 +326,10 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -367,10 +367,10 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 
 	//register hook for reception
 	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_CREATE_ACK, [&connection,&ackMsg](int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_OBJ_CREATE_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		ackMsg = *(LibfabricMessage *)buffer;
 		//printf("get 11 %d\n", clientId);
-		connection.repostRecive(id);
+		connection->repostRecive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 

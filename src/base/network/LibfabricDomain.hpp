@@ -18,6 +18,7 @@
 #include <rdma/fi_errno.h>
 #include <rdma/fi_domain.h>
 //local
+#include "Protocol.hpp"
 #include "ClientRegistry.hpp"
 
 //TMP
@@ -41,19 +42,6 @@ struct MemoryRegion
 	size_t size;
 	/** Libfabric regitration id for the given memory region. **/
 	fid_mr * mr;
-};
-
-/****************************************************/
-/**
- * Use to describe the necessary informations to make a RDMA transfer.
- * @brief Informations for an RDMA transfer.
-**/
-struct Iov
-{
-	/** Base address of the targetted memory region. **/
-	void * addr;
-	/** Authentication key to make an RDMA on the given memory region. **/
-	uint64_t key;
 };
 
 /****************************************************/
