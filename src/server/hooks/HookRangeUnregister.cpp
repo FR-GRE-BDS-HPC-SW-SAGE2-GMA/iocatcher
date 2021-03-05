@@ -6,7 +6,7 @@
 
 /****************************************************/
 #include "base/network/LibfabricConnection.hpp"
-#include "HookRangeRegister.hpp"
+#include "HookRangeUnregister.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -17,30 +17,34 @@ using namespace IOC;
  * @param config The config object to know if range tracking is enabled.
  * @param container The container to be able to access objects to register ranges.
 **/
-HookRangeRegister::HookRangeRegister(const Config * config, Container * container)
+HookRangeUnregister::HookRangeUnregister(const Config * config, Container * container)
 {
 	this->config = config;
 	this->container = container;
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//get object
 	Object & object = this->container->getObject(clientMessage->data.registerRange.high, clientMessage->data.registerRange.low);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
 
+	//extract
+	LibfabricUnregisterRange &data = clientMessage->data.unregisterRange;
+
 	//check
 	int status = 0;
 	ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-	if (clientMessage->data.registerRange.write)
+	if (data.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+		if (!tracker.unregisterRange(clientMessage->header.tcpClientId, data.id, data.offset, data.size, mode))
+			status = -1;
 
 	//return message
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
+	msg->header.type = IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;

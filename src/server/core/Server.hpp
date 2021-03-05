@@ -54,7 +54,6 @@ class Server
 	private:
 		//setups
 		void setupTcpServer(int port, int maxport);
-		void setupObjUnregisterRange(void);
 		void setupObjCreate(void);
 		void setupObjRead(void);
 		void setupObjWrite(void);

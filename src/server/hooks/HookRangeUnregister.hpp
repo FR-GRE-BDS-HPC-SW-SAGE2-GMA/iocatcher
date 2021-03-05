@@ -4,8 +4,8 @@
 			COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
-#ifndef IOC_HOOK_RANGE_REGISTER_HPP
-#define IOC_HOOK_RANGE_REGISTER_HPP
+#ifndef IOC_HOOK_RANGE_UNREGISTER_HPP
+#define IOC_HOOK_RANGE_UNREGISTER_HPP
 
 /****************************************************/
 #include "base/network/Hook.hpp"
@@ -18,12 +18,12 @@ namespace IOC
 
 /****************************************************/
 /**
- * Implement the server side handling of object range register operations.
+ * Implement the server side handling of object range unregister operations.
 **/
-class HookRangeRegister : public Hook
+class HookRangeUnregister : public Hook
 {
 	public:
-		HookRangeRegister(const Config * config, Container * container);
+		HookRangeUnregister(const Config * config, Container * container);
 		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
 	private:
 		/** Pointer to the container to be able to access objects **/
@@ -34,4 +34,4 @@ class HookRangeRegister : public Hook
 
 }
 
-#endif //IOC_HOOK_RANGE_REGISTER_HPP
+#endif //IOC_HOOK_RANGE_UNREGISTER_HPP
