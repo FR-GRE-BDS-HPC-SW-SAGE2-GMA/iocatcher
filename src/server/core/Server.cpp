@@ -15,6 +15,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "../hooks/HookFlush.hpp"
 #include "../hooks/HookRangeRegister.hpp"
 #include "../hooks/HookRangeUnregister.hpp"
+#include "../hooks/HookObjectCreate.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -74,11 +75,11 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, new HookFlush(this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, new HookRangeRegister(this->config, this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, new HookRangeUnregister(this->config, this->container));
+	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, new HookObjectCreate(this->container));
 
 	//register actions
 	this->setupObjRead();
 	this->setupObjWrite();
-	this->setupObjCreate();
 }
 
 /****************************************************/
@@ -201,43 +202,6 @@ void Server::stop(void)
 		this->tcpServer = NULL;
 		this->tcpServerThread.join();
 	}
-}
-
-/****************************************************/
-/**
- * Register the hook for OBJ_CREATE messages and apply the flush on reception, then
- * answer with an ACK message.
-**/
-void Server::setupObjCreate(void)
-{
-	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		//infos
-		LibfabricMessage * clientMessage = (LibfabricMessage*)buffer;
-
-		//printf
-		printf("Get create object %ld:%ld\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
-
-		//create object
-		Object & object = this->container->getObject(clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
-		int ret = object.create();
-
-		//send open
-		LibfabricMessage * msg = new LibfabricMessage;
-		msg->header.type = IOC_LF_MSG_OBJ_CREATE_ACK;
-		msg->header.clientId = clientId;
-		msg->data.response.status = ret;
-
-		connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-			delete msg;
-			return LF_WAIT_LOOP_KEEP_WAITING;
-		});
-
-		//republish
-		connection->repostRecive(id);
-
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
 }
 
 /****************************************************/

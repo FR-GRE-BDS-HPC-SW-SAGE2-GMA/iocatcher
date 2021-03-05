@@ -42,13 +42,14 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 		if (!tracker.unregisterRange(clientMessage->header.tcpClientId, data.id, data.offset, data.size, mode))
 			status = -1;
 
-	//return message
+	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
 	msg->header.type = IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;
 
+	//send message
 	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](){
 		delete msg;
 		return LF_WAIT_LOOP_KEEP_WAITING;

@@ -38,13 +38,14 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 	if (this->config->consistencyCheck)
 		status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
 
-	//return message
+	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
 	msg->header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;
 
+	//send message
 	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](){
 		delete msg;
 		return LF_WAIT_LOOP_KEEP_WAITING;
