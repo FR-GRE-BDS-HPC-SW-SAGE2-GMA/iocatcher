@@ -11,6 +11,7 @@ set(SERVER_HOOKS_SRC HookPingPong.cpp
                      HookRangeRegister.cpp
                      HookRangeUnregister.cpp
                      HookObjectCreate.cpp
+                     HookObjectRead.cpp
 )
 
 ######################################################

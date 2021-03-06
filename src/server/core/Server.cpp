@@ -11,17 +11,16 @@ COPYRIGHT: 2020 Bull SAS
 #include <random>
 #include <cassert>
 #include "Server.hpp"
+#include "Consts.hpp"
 #include "../hooks/HookPingPong.hpp"
 #include "../hooks/HookFlush.hpp"
 #include "../hooks/HookRangeRegister.hpp"
 #include "../hooks/HookRangeUnregister.hpp"
 #include "../hooks/HookObjectCreate.hpp"
+#include "../hooks/HookObjectRead.hpp"
 
 /****************************************************/
 using namespace IOC;
-
-/****************************************************/
-#define IOC_LF_MAX_RDMA_SEGS 4
 
 /****************************************************/
 /** 
@@ -76,9 +75,9 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, new HookRangeRegister(this->config, this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, new HookRangeUnregister(this->config, this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, new HookObjectCreate(this->container));
+	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, new HookObjectRead(this->container, &this->stats));
 
 	//register actions
-	this->setupObjRead();
 	this->setupObjWrite();
 }
 
@@ -206,208 +205,6 @@ void Server::stop(void)
 
 /****************************************************/
 /**
- * Build the IOC vector to make scatter/gather RDMA operations.
- * It take a segment list and compute the intersection if not fully matched, 
- * then build the segment list to be used.
- * @param segments The list of object segments to consider.
- * @param offset The base offset of the range to consider.
- * @param size The size of the range to consider.
- * @return An array of iovec struct to be used by libfabric scatter/gather RDMA operations.
- * It need to be freed by the caller with delete.
-**/
-iovec * Server::buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
-{
-	//compute intersection
-	for (auto & it : segments) {
-		if (it.offset < offset) {
-			int delta = offset - it.offset;
-			it.ptr += delta;
-			it.offset += delta;
-			it.size -= delta;
-		}
-		if (it.offset + it.size > offset + size) {
-			int delta = it.offset + it.size - (offset + size);
-			it.size -= delta;
-		}
-	}
-
-	//build iov
-	struct iovec * iov = new iovec[segments.size()];
-	int cnt = 0;
-	for (auto & it : segments) {
-		iov[cnt].iov_base = it.ptr;
-		iov[cnt].iov_len = it.size;
-		cnt++;
-	}
-
-	return iov;
-}
-
-/****************************************************/
-/**
- * Push data to the client via RDMA.
- * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA read operation.
- * @param segments The list of object segments to transfer.
-**/
-void Server::objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
-{
-	//build iovec
-	iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
-	size_t size = clientMessage->data.objReadWrite.size;
-
-	//dispaly
-	//printf("IOV SIZE %lu (%zu, %zu)\n", segments.size(), clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
-	//int cnt = 0;
-	//for (auto it : segments)
-	//	printf("-> %p %zu %zu (%p %zu)\n", it.ptr, it.offset, it.size, iov[cnt].iov_base, iov[cnt++].iov_len);
-
-	//count number of ops
-	int  * ops = new int;
-	*ops = 0;
-	for (size_t i = 0 ; i < segments.size() ; i += IOC_LF_MAX_RDMA_SEGS)
-		(*ops)++;
-
-	//loop on all send groups (because LF cannot send more than 256 at same time)
-	size_t offset = 0;
-	for (size_t i = 0 ; i < segments.size() ; i += IOC_LF_MAX_RDMA_SEGS) {
-		//calc cnt
-		size_t cnt = segments.size() - i;
-		if (cnt > IOC_LF_MAX_RDMA_SEGS)
-			cnt = IOC_LF_MAX_RDMA_SEGS;
-		//emit rdma write vec & implement callback
-		this->connection->rdmaWritev(clientId, iov + i, cnt, (char*)clientMessage->data.objReadWrite.iov.addr + offset, clientMessage->data.objReadWrite.iov.key, [ops,size, this, clientId](void){
-			//decrement
-			(*ops)--;
-
-			if (*ops == 0) {
-				//send open
-				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-				msg->header.clientId = 0;
-				msg->data.response.msgHasData = false;
-				msg->data.response.msgDataSize = 0;
-				msg->data.response.status = 0;
-
-				//stats
-				this->stats.readSize += size;
-
-				//send ack message
-				this->connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-					delete msg;
-					return LF_WAIT_LOOP_KEEP_WAITING;
-				});
-
-				//clean
-				delete ops;
-			}
-			
-			return LF_WAIT_LOOP_KEEP_WAITING;
-		});
-
-		//update offset
-		for (size_t j = 0 ; j < cnt ; j++)
-			offset += iov[i+j].iov_len;
-	}
-
-	//remove temp
-	delete [] iov;
-}
-
-/****************************************************/
-/**
- * Push data to the client making an eager communication and adding the data after the response
- * to the client.
- * @param clientId the libfabric client ID to know the connection to be used.
- * @param clientMessage the request from the client to get the required informations.
- * @param segments The list of object segments to be sent.
-**/
-void Server::objEagerPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
-{
-	//size
-	size_t dataSize = clientMessage->data.objReadWrite.size;
-	size_t baseOffset = clientMessage->data.objReadWrite.offset;
-
-	//send open
-	//char * buffer = new char[sizeof(LibfabricMessage) + dataSize];
-	LibfabricMessage * msg = (LibfabricMessage *)this->connection->getDomain().getMsgBuffer();
-	//LibfabricMessage * msg = (LibfabricMessage*)buffer;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.clientId = 0;
-	msg->data.response.msgDataSize = dataSize;
-	msg->data.response.msgHasData = true;
-	msg->data.response.status = 0;
-
-	//get base pointer
-	char * data = (char*)(msg + 1);
-
-	//copy data
-	size_t cur = 0;
-	for (auto segment : segments) {
-		//compute copy size to stay in data limits
-		size_t copySize = segment.size;
-		size_t offset = 0;
-		if (cur + copySize > dataSize) {
-			copySize = dataSize - cur;
-		}
-		if (baseOffset > segment.offset) {
-			offset = baseOffset - segment.offset;
-			copySize -= offset;
-		}
-
-		//copy
-		memcpy(data + cur, segment.ptr + offset, copySize);
-
-		//progress
-		cur += copySize;
-	}
-
-	//stats
-	this->stats.readSize += dataSize;
-
-	//send ack message
-	this->connection->sendMessage(msg, sizeof (*msg) + dataSize, clientId, [this, msg](void){
-		this->connection->getDomain().retMsgBuffer(msg);
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
-}
-
-/****************************************************/
-/**
- * Register the hook for OBJ_READ messages and apply the flush on reception, then
- * answer with an ACK message after making an eager (int the response) or an rdam transfer.
-**/
-void Server::setupObjRead(void)
-{
-	//register hook
-	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, [this](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		//printf
-		//printf("Get OBJ_READ %d\n", clientId);
-
-		//do rdma write on remote segment to send data to reader
-		LibfabricMessage * clientMessage = (LibfabricMessage *)buffer;
-
-		//get buffers from object
-		Object & object = this->container->getObject(clientMessage->data.objReadWrite.high, clientMessage->data.objReadWrite.low);
-		ObjectSegmentList segments;
-		object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
-
-		//eager or rdma
-		if (clientMessage->data.objReadWrite.size <= IOC_EAGER_MAX_READ) {
-			objEagerPushToClient(clientId, clientMessage, segments);
-		} else {
-			objRdmaPushToClient(clientId, clientMessage, segments);
-		}
-
-		//republish
-		connection->repostRecive(id);
-
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
-}
-
-/****************************************************/
-/**
  * Fetch data from the client via RDMA.
  * @param clientId Define the libfabric client ID.
  * @param clientMessage Pointer the the message requesting the RDMA write operation.
@@ -416,7 +213,7 @@ void Server::setupObjRead(void)
 void Server::objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//build iovec
-	iovec * iov = buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+	iovec * iov = Object::buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 	size_t size = clientMessage->data.objReadWrite.size;
 
 	//count number of ops

@@ -11,11 +11,10 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 //std
 #include <thread>
-//linux
-#include <sys/uio.h>
 //local
 #include "Config.hpp"
 #include "Container.hpp"
+#include "ServerStats.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 #include "../../base/network/LibfabricConnection.hpp"
 #include "../../base/network/TcpServer.hpp"
@@ -23,19 +22,6 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 namespace IOC
 {
-
-/****************************************************/
-/**
- * Struct used to track server statistics.
-**/
-struct ServerStats
-{
-	ServerStats(void);
-	/** How much bytes we read. **/
-	size_t readSize;
-	/** how much bytes we wrote. **/
-	size_t writeSize;
-};
 
 /****************************************************/
 /**
@@ -54,12 +40,8 @@ class Server
 	private:
 		//setups
 		void setupTcpServer(int port, int maxport);
-		void setupObjRead(void);
 		void setupObjWrite(void);
 		//internal
-		iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
-		void objRdmaPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-		void objEagerPushToClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		void objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		void objEagerExtractFromMessage(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		//conn tracking

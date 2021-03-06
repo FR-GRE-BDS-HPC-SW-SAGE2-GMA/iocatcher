@@ -541,3 +541,42 @@ ConsistencyTracker & Object::getConsistencyTracker(void)
 {
 	return this->consistencyTracker;
 }
+
+/****************************************************/
+/**
+ * Build the IOC vector to make scatter/gather RDMA operations.
+ * It take a segment list and compute the intersection if not fully matched, 
+ * then build the segment list to be used.
+ * @param segments The list of object segments to consider.
+ * @param offset The base offset of the range to consider.
+ * @param size The size of the range to consider.
+ * @return An array of iovec struct to be used by libfabric scatter/gather RDMA operations.
+ * It need to be freed by the caller with delete.
+**/
+iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t size)
+{
+	//compute intersection
+	for (auto & it : segments) {
+		if (it.offset < offset) {
+			int delta = offset - it.offset;
+			it.ptr += delta;
+			it.offset += delta;
+			it.size -= delta;
+		}
+		if (it.offset + it.size > offset + size) {
+			int delta = it.offset + it.size - (offset + size);
+			it.size -= delta;
+		}
+	}
+
+	//build iov
+	struct iovec * iov = new iovec[segments.size()];
+	int cnt = 0;
+	for (auto & it : segments) {
+		iov[cnt].iov_base = it.ptr;
+		iov[cnt].iov_len = it.size;
+		cnt++;
+	}
+
+	return iov;
+}

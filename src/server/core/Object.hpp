@@ -9,6 +9,7 @@ COPYRIGHT: 2020 Bull SAS
 #define IOC_OBJECT_HPP
 
 /****************************************************/
+//std
 #include <cstdint>
 #include <cstdlib>
 #include <list>
@@ -16,6 +17,9 @@ COPYRIGHT: 2020 Bull SAS
 #include <ostream>
 #include <vector>
 #include <string>
+//linux
+#include <sys/uio.h>
+//internal
 #include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 
@@ -69,6 +73,7 @@ class Object
 		Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
+		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
 		void markDirty(size_t base, size_t size);
 		int flush(size_t offset, size_t size);
 		int create(void);
