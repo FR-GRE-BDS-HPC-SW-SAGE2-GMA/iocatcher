@@ -444,6 +444,44 @@ void LibfabricConnection::poll(bool waitMsg)
 }
 
 /****************************************************/
+bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, LibfabricMessageType expectedMessageType)
+{
+	//vars
+	fi_cq_msg_entry entry;
+
+	//fill default
+	clientMessage.lfClientId = -1;
+	clientMessage.message = NULL;
+	clientMessage.msgBufferId = -1;
+
+	//poll
+	for (;;) {
+		int status = pollForCompletion(this->cq, &entry, this->passivePolling);
+		if (status == 1) {
+			if (entry.flags & FI_RECV) {
+				bool status = this->onRecvMessage(clientMessage, (size_t)entry.op_context);
+				if (status) {
+					assumeArg(clientMessage.message->header.type == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
+						.arg(clientMessage.message->header.type)
+						.arg(expectedMessageType)
+						.end();
+					return true;
+				} else {
+					return false;
+				}
+				
+			} else {
+				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
+				LibfabricActionResult status = action->runPostAction();
+				delete action;
+				if (status == LF_WAIT_LOOP_UNBLOCK)
+					return false;
+			}
+		}
+	}
+}
+
+/****************************************************/
 /**
  * Wait to recive a data (not used anymore).
 **/
@@ -595,6 +633,53 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 	//continue
 	return LF_WAIT_LOOP_KEEP_WAITING;
+}
+
+/****************************************************/
+/**
+ * Function to be called when a message is recived by the pollMessage() function.
+ * @param clientMessage The client message infos to be filled for the caller.
+ * @param id ID of the recive buffer where the message has been recived.
+ * @return True if we get a message false otherwise. Caution, it does not check the type of message,
+ * the responsability is left to the caller. It just check the eventuell auth.
+**/
+bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, size_t id)
+{
+	//check
+	assert(id < this->recvBuffersCount);
+
+	//cast
+	void * buffer =  this->recvBuffers[id];
+	LibfabricMessage * message = (LibfabricMessage *)buffer;
+
+	//switch
+	if (message->header.type == IOC_LF_MSG_BAD_AUTH) {
+		if (this->hookOnBadAuth) {
+			this->hookOnBadAuth();
+			repostRecive(id);
+			return false;
+		} else {
+			IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
+				.arg(tcpClientId)
+				.arg(tcpClientKey)
+				.end();
+			return false;
+		}
+	} else {
+		//check auth
+		printf("checkAuth\n");
+		if (this->checkAuth(message, message->header.clientId, id) == false)
+			return false;
+		
+		//fill the struct
+		printf("setMessage\n");
+		clientMessage.message = message;
+		clientMessage.lfClientId = message->header.clientId;
+		clientMessage.msgBufferId = id;
+
+		//retu
+		return true;
+	}
 }
 
 /****************************************************/

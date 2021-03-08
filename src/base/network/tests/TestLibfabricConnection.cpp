@@ -120,6 +120,63 @@ TEST(TestLibfabricConnection, message)
 }
 
 /****************************************************/
+// Connect and client send a message.
+TEST(TestLibfabricConnection, pollMessage)
+{
+	bool gotConnection = false;
+	bool gotMessage = false;
+	bool sendMessage = false;
+
+	//server
+	std::thread server([&gotConnection, &gotMessage]{
+		LibfabricDomain domain("127.0.0.1", "8476", true);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection = true;
+		});
+
+		//wait connection
+		while (!gotConnection) 
+			connection.poll(false);
+
+		//poll message
+		LibfabricClientMessage message;
+		bool status = connection.pollMessage(message, IOC_LF_MSG_PING);
+		if (status && message.message->header.type == IOC_LF_MSG_PING)
+			gotMessage = true;
+	});
+
+	//client
+	std::thread client([&sendMessage]{
+		LibfabricDomain domain("127.0.0.1", "8476", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		//send message
+		LibfabricMessage msg;
+		memset(&msg, 0, sizeof(msg));
+		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
+		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+			sendMessage = true;
+			//say to unblock the poll(true) loop when return
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+		//poll unit message to be sent
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	ASSERT_TRUE(gotConnection);
+	ASSERT_TRUE(gotMessage);
+	ASSERT_TRUE(sendMessage);
+}
+
+/****************************************************/
 // check rdma data transmission (read/write).
 TEST(TestLibfabricConnection, rdma)
 {
