@@ -50,8 +50,10 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 			return LF_WAIT_LOOP_KEEP_WAITING;
 		});
 
-		//poll
-		connection.poll(true);
+		//poll server response
+		LibfabricClientMessage serverResponse;
+		connection.pollMessage(serverResponse, IOC_LF_MSG_PONG);
+		connection.repostRecive(serverResponse);
 	}
 
 	//time
@@ -95,35 +97,30 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 		msg->data.objReadWrite.iov = iov;
 	}
 
-	//register hook for reception
-	int status = -1;
-	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&status, buffer, size](LibfabricConnection * connection, int clientId, size_t id, void * msgBuffer) {
-		//extract status
-		LibfabricMessage * ackMsg = (LibfabricMessage *)msgBuffer;
-		status = ackMsg->data.response.status;
-
-		//if need to copy data from eager exchange
-		if (ackMsg->data.response.msgHasData) {
-			assumeArg(ackMsg->data.response.msgDataSize == size, "Invalid message size recieved, expect %1 got %2")
-				.arg(ackMsg->data.response.msgDataSize)
-				.arg(size)
-				.end();
-			memcpy(buffer, ackMsg + 1, ackMsg->data.response.msgDataSize);
-		}
-
-		//repost recv buffer
-		connection->repostRecive(id);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
-
 	//send message
 	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, [msg, &connection](){
 		connection.getDomain().retMsgBuffer(msg);
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
-	//poll
-	connection.poll(true);
+	//poll server response
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
+
+	//get status
+	int status = serverResponse.message->data.response.status;
+
+	//if need to copy data from eager exchange
+	if (serverResponse.message->data.response.msgHasData) {
+		assumeArg(serverResponse.message->data.response.msgDataSize == size, "Invalid message size recieved, expect %1 got %2")
+			.arg(serverResponse.message->data.response.msgDataSize)
+			.arg(size)
+			.end();
+		memcpy(buffer, serverResponse.message + 1, serverResponse.message->data.response.msgDataSize);
+	}
+
+	//repost recv buffer
+	connection.repostRecive(serverResponse);
 
 	//unregister
 	if (size > IOC_EAGER_MAX_READ)
@@ -176,33 +173,27 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 		toSend += size;
 	}
 
-	//register hook for reception
-	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_READ_WRITE_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		ackMsg = *(LibfabricMessage *)buffer;
-		//printf("get 11 %d\n", clientId);
-		connection->repostRecive(id);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
-
 	//send message
 	connection.sendMessage(msg, toSend, IOC_LF_SERVER_ID, [msg, &connection](){
 		connection.getDomain().retMsgBuffer(msg);
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
-	//poll
-	connection.poll(true);
+	//poll server response
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
+	int status = serverResponse.message->data.response.status;
+	connection.repostRecive(serverResponse);
 
 	//unregister
 	if (size > IOC_EAGER_MAX_WRITE)
 		connection.getDomain().unregisterSegment((char*)buffer, size);
 
 	//check status
-	if (ackMsg.data.response.status != 0)
-		printf("Invalid status write : %d\n", ackMsg.data.response.status);
+	if (status != 0)
+		printf("Invalid status write : %d\n", status);
 	
-	return ackMsg.data.response.status;
+	return status;
 }
 
 /****************************************************/
@@ -226,28 +217,22 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 	msg.data.objFlush.offset = offset;
 	msg.data.objFlush.size = size;
 
-	//register hook for reception
-	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_FLUSH_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		ackMsg = *(LibfabricMessage *)buffer;
-		//printf("get 11 %d\n", clientId);
-		connection->repostRecive(id);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
-
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
-	connection.poll(true);
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_FLUSH_ACK);
+	int status = serverResponse.message->data.response.status;
+	connection.repostRecive(serverResponse);
 
 	//check status
-	if (ackMsg.data.response.status != 0)
-		printf("Invalid status flush : %d\n", ackMsg.data.response.status);
+	if (status != 0)
+		printf("Invalid status flush : %d\n", status);
 	
-	return ackMsg.data.response.status;
+	return status;
 }
 
 /****************************************************/
@@ -275,28 +260,22 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, i
 	msg.data.registerRange.size = size;
 	msg.data.registerRange.write = write;
 
-	//register hook for reception
-	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		ackMsg = *(LibfabricMessage *)buffer;
-		//printf("get 11 %d\n", clientId);
-		connection->repostRecive(id);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
-
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
-	connection.poll(true);
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK);
+	int status = serverResponse.message->data.response.status;
+	connection.repostRecive(serverResponse);
 
 	//check status
-	//if (ackMsg.data.response.status != 0)
-	//	printf("Invalid status create : %d\n", ackMsg.data.response.status);
+	//if (status != 0)
+	//	printf("Invalid status create : %d\n", status);
 	
-	return ackMsg.data.response.status;
+	return status;
 }
 
 /****************************************************/
@@ -324,28 +303,22 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 	msg.data.unregisterRange.size = size;
 	msg.data.unregisterRange.write = write;
 
-	//register hook for reception
-	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		ackMsg = *(LibfabricMessage *)buffer;
-		//printf("get 11 %d\n", clientId);
-		connection->repostRecive(id);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
-
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
-	connection.poll(true);
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK);
+	int status = serverResponse.message->data.response.status;
+	connection.repostRecive(serverResponse);
 
 	//check status
-	//if (ackMsg.data.response.status != 0)
-	//	printf("Invalid status create : %d\n", ackMsg.data.response.status);
+	//if (status != 0)
+	//	printf("Invalid status create : %d\n", status);
 	
-	return ackMsg.data.response.status;
+	return status;
 }
 
 /****************************************************/
@@ -365,26 +338,20 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 	msg.data.objFlush.low = low;
 	msg.data.objFlush.high = high;
 
-	//register hook for reception
-	LibfabricMessage ackMsg;
-	connection.registerHook(IOC_LF_MSG_OBJ_CREATE_ACK, [&ackMsg](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
-		ackMsg = *(LibfabricMessage *)buffer;
-		//printf("get 11 %d\n", clientId);
-		connection->repostRecive(id);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
-
 	//send message
 	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//poll
-	connection.poll(true);
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_CREATE_ACK);
+	int status = serverResponse.message->data.response.status;
+	connection.repostRecive(serverResponse);
 
 	//check status
-	//if (ackMsg.data.response.status != 0)
-	//	printf("Invalid status create : %d\n", ackMsg.data.response.status);
+	//if (status != 0)
+	//	printf("Invalid status create : %d\n", status);
 	
-	return ackMsg.data.response.status;
+	return status;
 }

@@ -187,6 +187,16 @@ void LibfabricConnection::repostRecive(size_t id)
 
 /****************************************************/
 /**
+ * Republish a recive buffer to libfabric by identifying it by its ID.
+ * @param clientMessage The client message struct containing the message buffer ID.
+**/
+void LibfabricConnection::repostRecive(const LibfabricClientMessage & clientMessage)
+{
+	this->repostRecive(clientMessage.msgBufferId);
+}
+
+/****************************************************/
+/**
  * When being a client, this function is used to join the libfabric domain server.
 **/
 void LibfabricConnection::joinServer(void)

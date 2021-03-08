@@ -109,6 +109,7 @@ class LibfabricConnection
 		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
 		void repostRecive(size_t id);
+		void repostRecive(const LibfabricClientMessage & clientMessage);
 		void registerHook(int messageType, Hook * hook);
 		void registerHook(int messageType, std::function<LibfabricActionResult(LibfabricConnection *, int, size_t, void*)> function);
 		void unregisterHook(int messageType);
