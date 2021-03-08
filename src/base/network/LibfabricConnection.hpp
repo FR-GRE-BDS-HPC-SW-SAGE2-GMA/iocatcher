@@ -28,6 +28,7 @@ namespace IOC
 /****************************************************/
 /** Position of the server in the address list. **/
 #define IOC_LF_SERVER_ID 0
+#define IOC_LF_NO_WAKEUP_POST_ACTION ((void*)-1)
 
 /****************************************************/
 class LibfabricConnection;
@@ -104,6 +105,7 @@ class LibfabricConnection
 		bool pollMessage(LibfabricClientMessage & clientMessage, LibfabricMessageType expectedMessageType);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
+		void sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId);
 		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);

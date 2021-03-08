@@ -46,9 +46,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 
 	//send
 	for (int i = 0 ; i < cnt ; i++) {
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-			return LF_WAIT_LOOP_KEEP_WAITING;
-		});
+		connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 		//poll server response
 		LibfabricClientMessage serverResponse;
@@ -98,10 +96,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 	}
 
 	//send message
-	connection.sendMessage(msg, sizeof (*msg), IOC_LF_SERVER_ID, [msg, &connection](){
-		connection.getDomain().retMsgBuffer(msg);
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection.sendMessageNoPollWakeup(msg, sizeof (*msg), IOC_LF_SERVER_ID);
 
 	//poll server response
 	LibfabricClientMessage serverResponse;
@@ -121,6 +116,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, int64_t high, int64_t low
 
 	//repost recv buffer
 	connection.repostRecive(serverResponse);
+	connection.getDomain().retMsgBuffer(msg);
 
 	//unregister
 	if (size > IOC_EAGER_MAX_READ)
@@ -174,16 +170,14 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, int64_t high, int64_t lo
 	}
 
 	//send message
-	connection.sendMessage(msg, toSend, IOC_LF_SERVER_ID, [msg, &connection](){
-		connection.getDomain().retMsgBuffer(msg);
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection.sendMessageNoPollWakeup(msg, toSend, IOC_LF_SERVER_ID);
 
 	//poll server response
 	LibfabricClientMessage serverResponse;
 	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
+	connection.getDomain().retMsgBuffer(msg);
 
 	//unregister
 	if (size > IOC_EAGER_MAX_WRITE)
@@ -218,9 +212,7 @@ int IOC::obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, s
 	msg.data.objFlush.size = size;
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
 	LibfabricClientMessage serverResponse;
@@ -261,9 +253,7 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, int64_t high, i
 	msg.data.registerRange.write = write;
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
 	LibfabricClientMessage serverResponse;
@@ -304,9 +294,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, int64
 	msg.data.unregisterRange.write = write;
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
 	LibfabricClientMessage serverResponse;
@@ -339,9 +327,7 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 	msg.data.objFlush.high = high;
 
 	//send message
-	connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [msg](){
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
 	LibfabricClientMessage serverResponse;

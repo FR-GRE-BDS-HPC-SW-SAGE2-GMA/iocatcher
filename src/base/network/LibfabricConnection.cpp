@@ -270,6 +270,36 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 
 /****************************************************/
 /**
+ * Send a message to the given destination ID. This variant of sendMessage() by default do
+ * not unlock the poll() and pollMessage() functions when the message has been sent.
+ * @param buffer Buffer to be sent.
+ * @param size Size of the given buffer.
+ * @param destrinationEpId ID of the destination.
+**/
+void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId)
+{
+	//vars
+	int err;
+
+	//checks
+	assert(buffer != NULL);
+	assert(size <= recvBuffersSize);
+
+	//search
+	auto it = this->remoteLiAddr.find(destinationEpId);
+	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
+		.arg(destinationEpId)
+		.end();
+
+	//send
+	do {
+		err = fi_send(this->ep, buffer, size, NULL, it->second, IOC_LF_NO_WAKEUP_POST_ACTION);
+	} while(err == -FI_EAGAIN);
+	LIBFABRIC_CHECK_STATUS("fi_send", err);
+}
+
+/****************************************************/
+/**
  * Start a rdma read operation to fetch data from the remote server.
  * @param destrinationEpId ID of the destination.
  * @param localAddr The local address where to place the data.
@@ -440,7 +470,7 @@ void LibfabricConnection::poll(bool waitMsg)
 			if (entry.flags & FI_RECV) {
 				if (this->onRecv((size_t)entry.op_context))
 					break;
-			} else {
+			} else if (entry.op_context != IOC_LF_NO_WAKEUP_POST_ACTION) {
 				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
 				LibfabricActionResult status = action->runPostAction();
 				delete action;
@@ -480,7 +510,7 @@ bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, Li
 					return false;
 				}
 				
-			} else {
+			} else if (entry.op_context != IOC_LF_NO_WAKEUP_POST_ACTION) {
 				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
 				LibfabricActionResult status = action->runPostAction();
 				delete action;
