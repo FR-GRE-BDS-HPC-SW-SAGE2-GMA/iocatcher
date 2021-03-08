@@ -34,6 +34,10 @@ digraph IOCATCHER
 		label = "{ConsistencyTracker|\l|\l}"
 	]
 
+	Hook [
+		label = "{Hook|\l|\l}"
+	]
+
 	LibfabricConnection [
 		label = "{LibfabricConnection|\l|\l}"
 	]
@@ -70,23 +74,68 @@ digraph IOCATCHER
 		label = "{ClientRegistry|\l|\l}"
 	]
 
+	HookObjectWrite [
+		label = "{HookObjectWrite|\l|\l}"
+	]
+
+	HookObjectRead [
+		label = "{HookObjectRead|\l|\l}"
+	]
+
+	HookObjectCreate [
+		label = "{HookObjectCreate|\l|\l}"
+	]
+
+	HookRangeRegister [
+		label = "{HookRangeRegister|\l|\l}"
+	]
+
+	HookRangeUnregister [
+		label = "{HookRangeUnregister|\l|\l}"
+	]
+
+	HookFlush [
+		label = "{HookFlush|\l|\l}"
+	]
+
+	HookPingPong [
+		label = "{HookPingPong|\l|\l}"
+	]
+
+	ServerStats [
+		label = "{ServerStats|\l|\l}"
+	]
+
 	//inheritance links
-	//Policy -> FifoWindowPolicy
+	Hook -> HookFlush
+	Hook -> HookObjectCreate
+	Hook -> HookObjectRead
+	Hook -> HookObjectWrite
+	Hook -> HookRangeRegister
+	Hook -> HookRangeUnregister
+	Hook -> HookPingPong
 
 	//composition
-	//Mapping -> Policy[arrowtail=odiamond]
 	Server -> Config[arrowtail=odiamond]
-	Server -> Container[arrowtail=odiamond]
-	Server -> TcpServer[arrowtail=odiamond]
-	Server -> LibfabricDomain[arrowtail=odiamond]
-	Server -> LibfabricConnection[arrowtail=odiamond]
-	LibfabricConnection -> ClientRegistry[arrowtail=odiamond]
+	Server -> Container[arrowtail=diamond]
+	Server -> TcpServer[arrowtail=diamond]
+	Server -> LibfabricDomain[arrowtail=diamond]
+	Server -> LibfabricConnection[arrowtail=diamond]
+	Server -> ServerStats[arrowtail=diamond]
+	LibfabricConnection -> ClientRegistry[arrowtail=diamond]
 	LibfabricConnection -> LibfabricDomain[arrowtail=odiamond]
-	Container -> Object[arrowtail=odiamond]
-	Object -> ObjectSegment[arrowtail=odiamond]
-	Object -> ConsistencyTracker[arrowtail=odiamond]
-	ConsistencyTracker -> ConsistencyRange[arrowtail=odiamond]
-	ioc_client_t -> TcpClient[arrowtail=odiamond]
-	ioc_client_t -> LibfabricDomain[arrowtail=odiamond]
-	ioc_client_t -> LibfabricConnection[arrowtail=odiamond]
+	LibfabricConnection -> Hook[arrowtail=diamond]
+	Container -> Object[arrowtail=diamond]
+	Object -> ObjectSegment[arrowtail=diamond]
+	Object -> ConsistencyTracker[arrowtail=diamond]
+	ConsistencyTracker -> ConsistencyRange[arrowtail=diamond]
+	ioc_client_t -> TcpClient[arrowtail=diamond]
+	ioc_client_t -> LibfabricDomain[arrowtail=diamond]
+	ioc_client_t -> LibfabricConnection[arrowtail=diamond]
+	HookFlush -> Container[arrowtail=odiamond]
+	HookObjectCreate -> Container[arrowtail=odiamond]
+	HookObjectRead -> Container[arrowtail=odiamond]
+	HookObjectWrite -> Container[arrowtail=odiamond]
+	HookObjectRead -> ServerStats[arrowtail=odiamond]
+	HookObjectWrite -> ServerStats[arrowtail=odiamond]
 }
