@@ -40,10 +40,6 @@ class Server
 	private:
 		//setups
 		void setupTcpServer(int port, int maxport);
-		void setupObjWrite(void);
-		//internal
-		void objRdmaFetchFromClient(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-		void objEagerExtractFromMessage(int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		//conn tracking
 		void onClientConnect(uint64_t id, uint64_t key);
 		void onClientDisconnect(uint64_t id);
