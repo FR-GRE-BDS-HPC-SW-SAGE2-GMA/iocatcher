@@ -9,17 +9,8 @@
 set(SERVER_CORE_SRC Object.cpp Container.cpp ConsistencyTracker.cpp Server.cpp Config.cpp)
 
 ######################################################
-if (MERO_FOUND)
-	add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC} clovis_api.c)
-	SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-	SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
-endif(MERO_FOUND)
-
-######################################################
-add_library(ioc-server-core-no-mero OBJECT ${SERVER_CORE_SRC})
-SET_TARGET_PROPERTIES(ioc-server-core-no-mero PROPERTIES POSITION_INDEPENDENT_CODE ON)
-SET_TARGET_PROPERTIES(ioc-server-core-no-mero PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
-target_compile_definitions(ioc-server-core-no-mero PUBLIC -DNOMERO)
+add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC})
+SET_TARGET_PROPERTIES(ioc-server-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 ######################################################
 if (ENABLE_TESTS)

@@ -31,7 +31,7 @@ TEST(TestObjectSegment, overlap)
 /****************************************************/
 TEST(TestObject, getBuffers_1)
 {
-	Object object(NULL, 10, 10);
+	Object object(NULL, NULL, 10, 10);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -41,7 +41,7 @@ TEST(TestObject, getBuffers_1)
 /****************************************************/
 TEST(TestObject, getBuffers_2)
 {
-	Object object(NULL, 10, 10);
+	Object object(NULL, NULL, 10, 10);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -55,7 +55,7 @@ TEST(TestObject, getBuffers_2)
 /****************************************************/
 TEST(TestObject, getBuffers_3)
 {
-	Object object(NULL, 10, 10);
+	Object object(NULL, NULL, 10, 10);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,300);
@@ -73,7 +73,7 @@ TEST(TestObject, getBuffers_3)
 /****************************************************/
 TEST(TestObject, getBuffers_4)
 {
-	Object object(NULL, 10, 10);
+	Object object(NULL, NULL, 10, 10);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -87,7 +87,7 @@ TEST(TestObject, getBuffers_4)
 /****************************************************/
 TEST(TestObject, getBuffers_5_alignement)
 {
-	Object object(NULL, 10, 10, 1000);
+	Object object(NULL, NULL, 10, 10, 1000);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -101,7 +101,7 @@ TEST(TestObject, getBuffers_5_alignement)
 /****************************************************/
 TEST(TestObject, getBuffers_6_alignement)
 {
-	Object object(NULL, 10, 10, 1000);
+	Object object(NULL, NULL, 10, 10, 1000);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);

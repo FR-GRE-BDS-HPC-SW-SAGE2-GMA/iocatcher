@@ -30,6 +30,14 @@ digraph IOCATCHER
 		label = "{Object|\l|\l}"
 	]
 
+	StorageBackend [
+		label = "{StorageBackend|\l|\l}"
+	]
+
+	StorageBackendMero [
+		label = "{StorageBackendMero|\l|\l}"
+	]
+
 	ConsistencyTracker [
 		label = "{ConsistencyTracker|\l|\l}"
 	]
@@ -114,6 +122,7 @@ digraph IOCATCHER
 	Hook -> HookRangeRegister
 	Hook -> HookRangeUnregister
 	Hook -> HookPingPong
+	StorageBackend -> StorageBackendMero
 
 	//composition
 	Server -> Config[arrowtail=odiamond]
@@ -122,12 +131,15 @@ digraph IOCATCHER
 	Server -> LibfabricDomain[arrowtail=diamond]
 	Server -> LibfabricConnection[arrowtail=diamond]
 	Server -> ServerStats[arrowtail=diamond]
+	Server -> StorageBackend[arrowtail=diamond]
 	LibfabricConnection -> ClientRegistry[arrowtail=diamond]
 	LibfabricConnection -> LibfabricDomain[arrowtail=odiamond]
 	LibfabricConnection -> Hook[arrowtail=diamond]
 	Container -> Object[arrowtail=diamond]
+	Container -> StorageBackend[arrowtail=odiamond]
 	Object -> ObjectSegment[arrowtail=diamond]
 	Object -> ConsistencyTracker[arrowtail=diamond]
+	Object -> StorageBackend[arrowtail=odiamond]
 	ConsistencyTracker -> ConsistencyRange[arrowtail=diamond]
 	ioc_client_t -> TcpClient[arrowtail=diamond]
 	ioc_client_t -> LibfabricDomain[arrowtail=diamond]

@@ -12,6 +12,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <cassert>
 #include "Server.hpp"
 #include "Consts.hpp"
+#include "../backends/StorageBackendMero.hpp"
 #include "../hooks/HookPingPong.hpp"
 #include "../hooks/HookFlush.hpp"
 #include "../hooks/HookRangeRegister.hpp"
@@ -67,8 +68,11 @@ Server::Server(const Config * config, const std::string & port)
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);
 
+	//spawn storage backend
+	this->storageBackend = new StorageBackendMero();
+
 	//create container
-	this->container = new Container(domain, 8*1024*1024);
+	this->container = new Container(storageBackend, domain, 8*1024*1024);
 
 	//register hooks
 	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());

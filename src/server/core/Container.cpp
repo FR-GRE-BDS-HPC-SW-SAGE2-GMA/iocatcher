@@ -17,8 +17,9 @@ using namespace IOC;
  * @param lfDomain Provide the libfabric domain to be used for memory registration to be ready for RDMA operations.
  * @param objectSegmentsAlignement Can setup a minimal size for object segments to get better performances.
 **/
-Container::Container(LibfabricDomain * lfDomain, size_t objectSegmentsAlignement)
+Container::Container(StorageBackend * storageBackend, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement)
 {
+	this->storageBackend = storageBackend;
 	this->lfDomain = lfDomain;
 	this->objectSegmentsAlignement = objectSegmentsAlignement;
 }
@@ -52,7 +53,7 @@ Object & Container::getObject(int64_t high, int64_t low)
 
 	//if not found or found
 	if (it == objects.end()) {
-		Object * obj = new Object(lfDomain, low, high, objectSegmentsAlignement);
+		Object * obj = new Object(this->storageBackend, lfDomain, low, high, objectSegmentsAlignement);
 		objects.emplace(id, obj);
 		return *obj;
 	} else {

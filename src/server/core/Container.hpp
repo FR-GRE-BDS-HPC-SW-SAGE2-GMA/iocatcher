@@ -13,6 +13,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <cstdlib>
 #include <map>
 #include "Object.hpp"
+#include "StorageBackend.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 
 /****************************************************/
@@ -27,7 +28,7 @@ namespace IOC
 class Container
 {
 	public:
-		Container(LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
+		Container(StorageBackend * storageBackend, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
 		~Container(void);
 		Object & getObject(int64_t low, int64_t high);
 		bool hasObject(int64_t low, int64_t high);
@@ -40,6 +41,8 @@ class Container
 		LibfabricDomain * lfDomain;
 		/** We can force a minimal size for the object segments to get better performance. **/
 		size_t objectSegmentsAlignement;
+		/** Keep track of the storage backend to use. **/
+		StorageBackend * storageBackend;
 };
 
 }

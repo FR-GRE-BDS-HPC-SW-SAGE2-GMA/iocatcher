@@ -15,6 +15,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "Config.hpp"
 #include "Container.hpp"
 #include "ServerStats.hpp"
+#include "StorageBackend.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 #include "../../base/network/LibfabricConnection.hpp"
 #include "../../base/network/TcpServer.hpp"
@@ -64,6 +65,8 @@ class Server
 		volatile bool statsRunning;
 		/** Pointer to the TCP server. **/
 		TcpServer * tcpServer;
+		/** Keep track of the storage backend in use. **/
+		StorageBackend * storageBackend;
 };
 
 }

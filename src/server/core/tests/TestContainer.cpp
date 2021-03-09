@@ -15,13 +15,13 @@ using namespace IOC;
 /****************************************************/
 TEST(TestContainer, constructor)
 {
-	Container container(NULL);
+	Container container(NULL, NULL);
 }
 
 /****************************************************/
 TEST(TestContainer, getObject)
 {
-	Container container(NULL);
+	Container container(NULL, NULL);
 	Object & obj1 = container.getObject(10,20);
 	Object & obj2 = container.getObject(10,21);
 	Object & obj3 = container.getObject(10,20);
@@ -33,7 +33,7 @@ TEST(TestContainer, getObject)
 /****************************************************/
 TEST(TestContainer, hasObject)
 {
-	Container container(NULL);
+	Container container(NULL, NULL);
 	ASSERT_FALSE(container.hasObject(10, 20));
 	container.getObject(10, 20);
 	ASSERT_TRUE(container.hasObject(10, 20));
@@ -43,7 +43,7 @@ TEST(TestContainer, hasObject)
 /****************************************************/
 TEST(TestContainer, onClientDisconnect)
 {
-	Container container(NULL);
+	Container container(NULL, NULL);
 	Object & obj1 = container.getObject(10,20);
 	Object & obj2 = container.getObject(10,21);
 

@@ -20,6 +20,7 @@ COPYRIGHT: 2020 Bull SAS
 //linux
 #include <sys/uio.h>
 //internal
+#include "StorageBackend.hpp"
 #include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 
@@ -70,7 +71,7 @@ typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 class Object
 {
 	public:
-		Object(LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement = 0);
+		Object(StorageBackend * backend, LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
@@ -82,6 +83,8 @@ class Object
 		ConsistencyTracker & getConsistencyTracker(void);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
+		ssize_t pwrite(int64_t high, int64_t low, void * buffer, size_t size, size_t offset);
+		ssize_t pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset);
 	private:
 		/** Libfabric domain to be used for meomry registration. **/
 		LibfabricDomain * domain;
@@ -100,6 +103,8 @@ class Object
 		ConsistencyTracker consistencyTracker;
 		/** ID of file creation on the NVDIMM. **/
 		int nvdimmId;
+		/** Keep track of the storage backend to be used to dump data. **/
+		StorageBackend * storageBackend;
 };
 
 /****************************************************/
