@@ -288,7 +288,7 @@ ssize_t Object::pwrite(int64_t high, int64_t low, void * buffer, size_t size, si
 ssize_t Object::pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
 {
 	if (this->storageBackend != NULL)
-		return this->pread(high, low, buffer, size, offset);
+		return this->storageBackend->pread(high, low, buffer, size, offset);
 	else
 		return size;
 }

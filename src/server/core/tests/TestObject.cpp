@@ -1,16 +1,17 @@
 /*****************************************************
-            PROJECT  : IO Catcher
-            LICENSE  : Apache 2.0
+			PROJECT  : IO Catcher
+			LICENSE  : Apache 2.0
 			COPYRIGHT: 2020 Bull SAS
-COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
 /****************************************************/
 #include <gtest/gtest.h>
 #include "../Object.hpp"
+#include "../../backends/StorageBackendGMock.hpp"
 
 /****************************************************/
 using namespace IOC;
+using namespace testing;
 
 /****************************************************/
 TEST(TestObjectSegment, overlap)
@@ -111,3 +112,67 @@ TEST(TestObject, getBuffers_6_alignement)
 	object.getBuffers(lst, 1000,1500);
 	EXPECT_EQ(2, lst.size());
 }
+
+/****************************************************/
+TEST(TestObject, data_load)
+{
+	StorageBackendGMock storage;
+	Object object(&storage, NULL, 10, 10);
+
+	//expect call to load
+	EXPECT_CALL(storage, pread(_, _, _, 500, 1000))
+		.Times(1)
+		.WillOnce(Return(500));
+
+	//make request
+	ObjectSegmentList lst;
+	object.getBuffers(lst, 1000,500);
+	EXPECT_EQ(1, lst.size());
+}
+
+/****************************************************/
+TEST(TestObject, data_create)
+{
+	StorageBackendGMock storage;
+	Object object(&storage, NULL, 10, 10);
+
+	//expect object create
+	EXPECT_CALL(storage, create(10,10))
+		.Times(1)
+		.WillOnce(Return(0));
+	
+	//call
+	object.create();
+}
+
+/****************************************************/
+TEST(TestObject, data_flush)
+{
+	StorageBackendGMock storage;
+	Object object(&storage, NULL, 10, 10);
+
+	//expect call to load
+	EXPECT_CALL(storage, pread(_, _, _, 500, 1000))
+		.Times(1)
+		.WillOnce(Return(500));
+
+	//make request
+	ObjectSegmentList lst;
+	object.getBuffers(lst, 1000,500);
+	EXPECT_EQ(1, lst.size());
+
+	//nothing to flush
+	object.flush(0,0);
+
+	//mark dirty
+	object.markDirty(1000, 500);
+
+	//expect call to write
+	EXPECT_CALL(storage, pwrite(_, _, _, 500, 1000))
+		.Times(1)
+		.WillOnce(Return(500));
+
+	//flush
+	object.flush(0,0);
+}
+
