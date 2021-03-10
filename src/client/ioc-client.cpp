@@ -217,6 +217,15 @@ int ioc_client_obj_range_unregister(ioc_client_t * client, int32_t id, int64_t h
 	return ret;
 }
 
+/****************************************************/
+int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low)
+{
+	LibfabricConnection * connection = ioc_client_get_connection(client);
+	int ret = obj_cow(*connection, orig_high, orig_low, dest_high, dest_low);
+	ioc_client_ret_connection(client, connection);
+	return ret;
+}
+
 }
 
 #endif //IOC_CLIENT_H

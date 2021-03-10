@@ -24,6 +24,7 @@ int obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, size_t
 int obj_create(LibfabricConnection &connection, int64_t high, int64_t low);
 int32_t obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write);
 int obj_range_unregister(LibfabricConnection &connection, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write);
+int obj_cow(LibfabricConnection &connection, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low);
 
 }
 

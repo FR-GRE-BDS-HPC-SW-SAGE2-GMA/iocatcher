@@ -198,3 +198,31 @@ TEST_F(TestClientServer, obj_register)
 	//unregister
 	ASSERT_EQ(0, ioc_client_obj_range_unregister(this->client, id, 10, 20, 0, 1024, true));
 }
+
+/****************************************************/
+TEST_F(TestClientServer, obj_cow)
+{
+	//setup buffer
+	const size_t size = 1024;
+	char buffer[size];
+	ssize_t res;
+	int status;
+	memset(buffer, 1, size);
+
+	//write object
+	res = ioc_client_obj_write(client, 10, 20, buffer, size, 0);
+	ASSERT_EQ(0, res);
+
+	//make copy on write
+	status = ioc_client_obj_cow(client, 10, 20, 10, 21);
+	ASSERT_EQ(0, status);
+
+	//read again cow object to check content
+	char buffer2[size];
+	ioc_client_obj_read(client, 10, 21, buffer2, size, 0);
+	ASSERT_EQ(0, res);
+
+	//check content
+	for (size_t i = 0 ; i < size ; i++)
+		ASSERT_EQ(1, buffer2[i]) << "index " << i;
+}

@@ -125,8 +125,9 @@ bool Container::makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow
 	auto it = objects.find(origId);	
 
 	//not found
-	if (it == objects.end())
+	if (it == objects.end()) {
 		return false;
+	}
 
 	//cow
 	Object * cowObj = it->second->makeCopyOnWrite(destHigh, destLow);

@@ -126,6 +126,15 @@ const char * ioc_client_provider_name(ioc_client_t * client);
  * @param value Define the new wanted state.
 **/
 void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
+/**
+ * Make a copy on write of an object.
+ * @param client Reference to the client connection handler to configure.
+ * @param orig_high High part of the original object ID.
+ * @param orig_low Low part of the origianl object ID.
+ * @param dest_high High part of the destination object ID.
+ * @param dest_how Low part of the destination object ID.
+**/
+int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low);
 
 /****************************************************/
 #ifdef __cplusplus

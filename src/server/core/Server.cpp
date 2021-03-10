@@ -20,6 +20,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "../hooks/HookObjectCreate.hpp"
 #include "../hooks/HookObjectRead.hpp"
 #include "../hooks/HookObjectWrite.hpp"
+#include "../hooks/HookObjectCow.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -82,6 +83,7 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->registerHook(IOC_LF_MSG_OBJ_CREATE, new HookObjectCreate(this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, new HookObjectRead(this->container, &this->stats));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_WRITE, new HookObjectWrite(this->container, &this->stats));
+	this->connection->registerHook(IOC_LF_MSG_OBJ_COW, new HookObjectCow(this->container));
 
 }
 

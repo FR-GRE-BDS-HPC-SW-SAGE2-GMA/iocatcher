@@ -341,3 +341,39 @@ int IOC::obj_create(LibfabricConnection &connection, int64_t high, int64_t low)
 	
 	return status;
 }
+
+/****************************************************/
+/**
+ * Make a copy on write of an object.
+ * @param connection Reference to the libfabric connection to use.
+ * @param orig_high High part of the original object ID.
+ * @param orig_low Low part of the origianl object ID.
+ * @param dest_high High part of the destination object ID.
+ * @param dest_low Low part of the destination object ID.
+**/
+int IOC::obj_cow(LibfabricConnection &connection, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low)
+{
+	//setup message request
+	LibfabricMessage msg;
+	memset(&msg, 0, sizeof(msg));
+	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_COW);
+	msg.data.objCow.origLow = orig_low;
+	msg.data.objCow.origHigh = orig_high;
+	msg.data.objCow.destLow = dest_low;
+	msg.data.objCow.destHigh = dest_high;
+
+	//send message
+	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+
+	//poll
+	LibfabricClientMessage serverResponse;
+	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_COW_ACK);
+	int status = serverResponse.message->data.response.status;
+	connection.repostRecive(serverResponse);
+
+	//check status
+	//if (status != 0)
+	//	printf("Invalid status create : %d\n", status);
+	
+	return status;
+}

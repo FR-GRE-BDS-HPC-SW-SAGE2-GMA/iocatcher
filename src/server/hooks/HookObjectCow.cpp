@@ -33,10 +33,10 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 
 	//create object
 	bool status = this->container->makeObjectCow(
-            clientMessage->data.objCow.origHigh, 
             clientMessage->data.objCow.origLow, 
-            clientMessage->data.objCow.destHigh, 
-            clientMessage->data.objCow.destLow
+			clientMessage->data.objCow.origHigh, 
+            clientMessage->data.objCow.destLow,
+			clientMessage->data.objCow.destHigh
     );
 
 	//fill response
