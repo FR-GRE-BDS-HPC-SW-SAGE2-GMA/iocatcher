@@ -13,6 +13,7 @@ set(SERVER_HOOKS_SRC HookPingPong.cpp
                      HookObjectCreate.cpp
                      HookObjectRead.cpp
                      HookObjectWrite.cpp
+                     HookObjectCow.cpp
 )
 
 ######################################################

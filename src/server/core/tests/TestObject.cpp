@@ -194,6 +194,10 @@ TEST(TestObject, data_cow)
 	ObjectSegmentList lst2;
 	object.getBuffers(lst2, 2000,500);
 
+	//fill
+	memset(lst1.front().ptr, 1, 500);
+	memset(lst2.front().ptr, 2, 500);
+
 	//mark one as dirty
 	object.markDirty(2000,500);
 
@@ -211,5 +215,28 @@ TEST(TestObject, data_cow)
 
 	//call
 	Object * cowObj = object.makeCopyOnWrite(20, 11);
+
+	//change oroginal segment
+	ObjectSegmentList lstorig1;
+	object.getBuffers(lstorig1, 1000,500);
+	ObjectSegmentList lstorig2;
+	object.getBuffers(lstorig2, 2000,500);
+	memset(lstorig1.front().ptr, 3, 500);
+	memset(lstorig2.front().ptr, 4, 500);
+
+	//get segments
+	ObjectSegmentList lstdest1;
+	cowObj->getBuffers(lstdest1, 1000,500);
+	ObjectSegmentList lstdest2;
+	cowObj->getBuffers(lstdest2, 2000,500);
+
+	//check mem content
+	char * ptr1 = (char*)lstdest1.front().ptr;
+	char * ptr2 = (char*)lstdest2.front().ptr;
+	for (size_t i = 0 ; i < 500 ; i++) {
+		ASSERT_EQ(1, ptr1[i]) << "Index " << i;
+		ASSERT_EQ(2, ptr2[i]) << "Index " << i;
+	}
+
 	delete cowObj;
 }

@@ -32,6 +32,7 @@ class Container
 		~Container(void);
 		Object & getObject(int64_t low, int64_t high);
 		bool hasObject(int64_t low, int64_t high);
+		bool makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow, int64_t destHigh);
 		void onClientDisconnect(uint64_t clientId);
 		void setObjectSegmentsAlignement(size_t alignement);
 	private:

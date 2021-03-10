@@ -81,7 +81,7 @@ enum LibfabricMessageType
 	/** Make a copy on write of an object **/
 	IOC_LF_MSG_OBJ_COW,
 	/** The answer for the copy on write operation.**/
-	IOC_LF_MSG_OBJ_ACK,
+	IOC_LF_MSG_OBJ_COW_ACK,
 };
 
 /****************************************************/
@@ -214,7 +214,7 @@ struct LibfabricObjectCow
 	int64_t destLow;
 	/** High part of the destination object ID. **/
 	int64_t destHigh;
-}
+};
 
 /****************************************************/
 /**

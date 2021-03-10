@@ -104,3 +104,43 @@ void Container::setObjectSegmentsAlignement(size_t alignement)
 {
 	this->objectSegmentsAlignement = alignement;
 }
+
+/****************************************************/
+/**
+ * Make a copy on write operation on the given object.
+ * @param origLow the low part of the origin object ID.
+ * @param origHigh the high part of the origin object ID.
+ * @param destLow the low part of the destination object ID.
+ * @param destHigh the high part of the destination object ID.
+ * @return True if the COW has been makde, false in case of error.
+**/
+bool Container::makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow, int64_t destHigh)
+{
+	//build id
+	ObjectId origId;
+	origId.low = destLow;
+	origId.high = destHigh;
+
+	//search
+	auto it = objects.find(origId);	
+
+	//not found
+	if (it == objects.end())
+		return false;
+
+	//cow
+	Object * cowObj = it->second->makeCopyOnWrite(destHigh, destLow);
+	if (cowObj == NULL)
+		return false;
+
+	//build id
+	ObjectId destId;
+	destId.low = destLow;
+	destId.high = destHigh;
+
+	//register
+	objects[destId] = cowObj;
+
+	//ok
+	return true;
+}
