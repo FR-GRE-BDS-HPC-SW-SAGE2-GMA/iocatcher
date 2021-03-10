@@ -152,7 +152,8 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	ObjectSegmentList tmp;
 	for (auto it : segments) {
 		if (it.offset > lastOffset) {
-			tmp.push_back(this->loadSegment(lastOffset, it.offset - lastOffset, load));
+			size_t size = it.offset - lastOffset;
+			tmp.push_back(this->loadSegment(lastOffset, size, load));
 		}
 		lastOffset = it.offset + it.size;
 	}
@@ -162,8 +163,10 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 		segments.push_back(it);
 
 	//load last
-	if (lastOffset < base + size) {
-		segments.push_back(this->loadSegment(lastOffset, base + size - lastOffset, load));
+	size_t endOffset = base + size;
+	if (lastOffset < endOffset) {
+		size_t size = endOffset - lastOffset;
+		segments.push_back(this->loadSegment(lastOffset, size, load));
 	}
 
 	//sort
@@ -208,6 +211,34 @@ static char * allocateNvdimm(const std::string & nvdimmPath, int64_t high, int64
 
 /****************************************************/
 /**
+ * Allocate memory to store data to be served.
+ * @param offset The offset of the segment in the object.
+ * @param size The size of the segment in the object.
+ * @return The memory address of the allocated segment.
+**/
+char * Object::allocateMem(size_t offset, size_t size)
+{
+	//vars
+	char * ptr = NULL;
+
+	//select the right source
+	if (this->nvdimmPaths.empty()) {
+		ptr = (char*)malloc(size);
+	} else {
+		ptr = allocateNvdimm(this->nvdimmPaths[this->nvdimmId], this->objectId.high, this->objectId.low, offset, size);
+		this->nvdimmId = (this->nvdimmId + 1) % this->nvdimmPaths.size();
+	}
+
+	//memory register for RDMA
+	if (this->domain != NULL)
+		this->domain->registerSegment(ptr, size, true, true, true);
+	
+	//rep
+	return ptr;
+}
+
+/****************************************************/
+/**
  * Load a segment for the given range. It will allocated its memory (on nvdimm if enabled),
  * then load the data from mero if enabled and register the segment to the libfabric 
  * domain for RDMA operations.
@@ -222,14 +253,7 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	segment.offset = offset;
 	segment.size = size;
 	segment.dirty = false;
-	if (this->nvdimmPaths.empty()) {
-		segment.ptr = (char*)malloc(size);
-	} else {
-		segment.ptr = allocateNvdimm(this->nvdimmPaths[this->nvdimmId], this->objectId.high, this->objectId.low, offset, size);
-		this->nvdimmId = (this->nvdimmId + 1) % this->nvdimmPaths.size();
-	}
-	if (this->domain != NULL)
-		this->domain->registerSegment(segment.ptr, segment.size, true, true, true);
+	segment.ptr = allocateMem(offset, size);
 	if (load) {
 		size_t status = this->pread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
 		assume(status == size, "Fail to helperPread from object !");
@@ -371,4 +395,52 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 	}
 
 	return iov;
+}
+
+/****************************************************/
+/**
+ * Create a copy of the current object in memory and on the remote server with
+ * the given new ID.
+ * @param high The high part of the object ID.
+ * @param low The low part of the object ID.
+**/
+Object * Object::makeCopyOnWrite(uint64_t high, uint64_t low)
+{
+	//spawn the new object
+	Object * cow = new Object(storageBackend, domain, low, high, alignement);
+
+	//Create
+	int createStatus = cow->create();
+	assume(createStatus == 0, "Failed to create object on the storage for COW !");
+
+	//loop on all segments
+	size_t cursor = 0;
+	for (auto & it : this->segmentMap) {
+		//if need to copy non loaded part make a copy on the sorage
+		if (cursor < it.second.offset) {
+			size_t copySize = it.second.offset - cursor;
+			ssize_t status = storageBackend->makeCowSegment(this->objectId.high, this->objectId.low, high, low, cursor, copySize);
+			assume(status == (ssize_t)copySize, "Fail to copy on write on the storage for COW !");
+		}
+
+		//we copy the segment locally
+		ObjectSegment & segment = cow->segmentMap[it.second.offset];
+		segment = it.second;
+
+		//make a copy of the memory data in a new segment
+		segment.ptr = cow->allocateMem(segment.offset, segment.size);
+		memcpy(segment.ptr, it.second.ptr, segment.size);
+
+		//if not dirty we flush
+		if (segment.dirty == false) {
+			ssize_t status = storageBackend->pwrite(high, low, segment.ptr, segment.size, segment.offset);
+			assume(status == (ssize_t)segment.size, "Fail to copy the COW non dirty elements !");
+		}
+
+		//move
+		cursor = it.second.offset + it.second.size;
+	}
+
+	//ret
+	return cow;
 }

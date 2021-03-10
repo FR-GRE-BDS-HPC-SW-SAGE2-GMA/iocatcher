@@ -81,10 +81,12 @@ class Object
 		void forceAlignement(size_t alignment);
 		static void setNvdimm(const std::vector<std::string> & paths);
 		ConsistencyTracker & getConsistencyTracker(void);
+		Object * makeCopyOnWrite(uint64_t high, uint64_t low);
 	private:
 		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
 		ssize_t pwrite(int64_t high, int64_t low, void * buffer, size_t size, size_t offset);
 		ssize_t pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset);
+		char * allocateMem(size_t offset, size_t size);
 	private:
 		/** Libfabric domain to be used for meomry registration. **/
 		LibfabricDomain * domain;

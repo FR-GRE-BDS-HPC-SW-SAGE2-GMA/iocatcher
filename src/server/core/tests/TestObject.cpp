@@ -117,10 +117,10 @@ TEST(TestObject, getBuffers_6_alignement)
 TEST(TestObject, data_load)
 {
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 10);
+	Object object(&storage, NULL, 10, 20);
 
 	//expect call to load
-	EXPECT_CALL(storage, pread(_, _, _, 500, 1000))
+	EXPECT_CALL(storage, pread(20, 10, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
@@ -134,10 +134,10 @@ TEST(TestObject, data_load)
 TEST(TestObject, data_create)
 {
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 10);
+	Object object(&storage, NULL, 10, 20);
 
 	//expect object create
-	EXPECT_CALL(storage, create(10,10))
+	EXPECT_CALL(storage, create(20,10))
 		.Times(1)
 		.WillOnce(Return(0));
 	
@@ -149,10 +149,10 @@ TEST(TestObject, data_create)
 TEST(TestObject, data_flush)
 {
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 10);
+	Object object(&storage, NULL, 10, 20);
 
 	//expect call to load
-	EXPECT_CALL(storage, pread(_, _, _, 500, 1000))
+	EXPECT_CALL(storage, pread(20, 10, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
@@ -168,7 +168,7 @@ TEST(TestObject, data_flush)
 	object.markDirty(1000, 500);
 
 	//expect call to write
-	EXPECT_CALL(storage, pwrite(_, _, _, 500, 1000))
+	EXPECT_CALL(storage, pwrite(20, 10, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
@@ -176,3 +176,40 @@ TEST(TestObject, data_flush)
 	object.flush(0,0);
 }
 
+/****************************************************/
+TEST(TestObject, data_cow)
+{
+	//spawn
+	StorageBackendGMock storage;
+	Object object(&storage, NULL, 10, 20);
+
+	//mock
+	EXPECT_CALL(storage, pread(20, 10, _, 500, _))
+		.Times(2)
+		.WillRepeatedly(Return(500));
+
+	//touch gangres
+	ObjectSegmentList lst1;
+	object.getBuffers(lst1, 1000,500);
+	ObjectSegmentList lst2;
+	object.getBuffers(lst2, 2000,500);
+
+	//mark one as dirty
+	object.markDirty(2000,500);
+
+	//mock
+	EXPECT_CALL(storage, create(20, 11));
+	EXPECT_CALL(storage, makeCowSegment(20, 10, 20, 11, 0, 1000))
+		.Times(1)
+		.WillOnce(Return(1000));
+	EXPECT_CALL(storage, makeCowSegment(20, 10, 20, 11, 1500, 500))
+		.Times(1)
+		.WillOnce(Return(500));(Return(500));
+	EXPECT_CALL(storage, pwrite(20, 11, _, 500, 1000))
+		.Times(1)
+		.WillOnce(Return(500));
+
+	//call
+	Object * cowObj = object.makeCopyOnWrite(20, 11);
+	delete cowObj;
+}

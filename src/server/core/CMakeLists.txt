@@ -6,7 +6,7 @@
 ######################################################
 
 ######################################################
-set(SERVER_CORE_SRC Object.cpp Container.cpp ConsistencyTracker.cpp Server.cpp Config.cpp)
+set(SERVER_CORE_SRC Object.cpp Container.cpp ConsistencyTracker.cpp Server.cpp Config.cpp StorageBackend.cpp)
 
 ######################################################
 add_library(ioc-server-core OBJECT ${SERVER_CORE_SRC})

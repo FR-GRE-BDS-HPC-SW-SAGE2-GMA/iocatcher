@@ -26,6 +26,7 @@ class StorageBackendGMock : public StorageBackend
 		MOCK_METHOD(ssize_t, pread, (int64_t high, int64_t low, void * buffer, size_t size, size_t offset), (override));
 		MOCK_METHOD(ssize_t, pwrite, (int64_t high, int64_t low, void * buffer, size_t size, size_t offset), (override));
 		MOCK_METHOD(int, create, (int64_t high, int64_t low), (override));
+		MOCK_METHOD(ssize_t, makeCowSegment, (int64_t highOrig, int64_t lowOrig, int64_t highDest, int64_t lowDest, size_t offset, size_t size), (override));
 };
 
 }

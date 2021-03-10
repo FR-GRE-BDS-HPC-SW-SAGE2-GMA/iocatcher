@@ -25,9 +25,9 @@ class StorageBackend
 {
 	public:
 		/** Default constructor of a storage backend. **/
-		StorageBackend(void){};
+		StorageBackend(void);
 		/** Default virtual destructor of a storage backend to enable inheritance. **/
-		virtual ~StorageBackend(void) {};
+		virtual ~StorageBackend(void);
 		/**
 		 * Helper function to make a read operation on a mero object.
 		 * @param high The high part of the object ID.
@@ -52,6 +52,7 @@ class StorageBackend
 		 * Make a mero object creation before accessing the object.
 		**/
 		virtual int create(int64_t high, int64_t low) = 0;
+		virtual ssize_t makeCowSegment(int64_t highOrig, int64_t lowOrig, int64_t highDest, int64_t lowDest, size_t offset, size_t size);
 };
 
 }
