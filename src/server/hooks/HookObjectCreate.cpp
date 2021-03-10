@@ -27,8 +27,13 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 	//printf
 	//printf("Get create object %ld:%ld\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
 
+	//create object ID
+	ObjectId objectId;
+	objectId.low = clientMessage->data.objCreate.low;
+	objectId.high = clientMessage->data.objCreate.high;
+
 	//create object
-	Object & object = this->container->getObject(clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
+	Object & object = this->container->getObject(objectId);
 	int ret = object.create();
 
 	//fill response

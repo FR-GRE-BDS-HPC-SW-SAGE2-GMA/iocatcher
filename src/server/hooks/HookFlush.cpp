@@ -27,8 +27,13 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, int
 	//printf
 	//printf("Get flush object %ld:%ld %lu->%lu\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low, clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
+	//create object ID
+	ObjectId objectId;
+	objectId.low = clientMessage->data.objFlush.low;
+	objectId.high = clientMessage->data.objFlush.high;
+
 	//flush object
-	Object & object = this->container->getObject(clientMessage->data.objFlush.high, clientMessage->data.objFlush.low);
+	Object & object = this->container->getObject(objectId);
 	int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 	//prepare message

@@ -707,12 +707,10 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 		}
 	} else {
 		//check auth
-		printf("checkAuth\n");
 		if (this->checkAuth(message, message->header.clientId, id) == false)
 			return false;
 		
 		//fill the struct
-		printf("setMessage\n");
 		clientMessage.message = message;
 		clientMessage.lfClientId = message->header.clientId;
 		clientMessage.msgBufferId = id;

@@ -65,17 +65,15 @@ bool ObjectSegment::overlap(size_t segBase, size_t segSize)
  * Constructor of an object.
  * @param storageBackend Pointer to the storage backend to be used to load/save data.
  * @param domain The libfabric domain to be used for memory registration.
- * @param low The low part of the object ID.
- * @param high The high part of the object ID.
+ * @param objectId The identifier of the object.
  * @param alignement The segment size alignement to be used.
 **/
-Object::Object(StorageBackend * storageBackend, LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement)
+Object::Object(StorageBackend * storageBackend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement)
 {
 	this->storageBackend = storageBackend;
 	this->alignement = alignement;
 	this->domain = domain;
-	this->objectId.low = low;
-	this->objectId.high = high;
+	this->objectId = objectId;
 	this->nvdimmId = 0;
 }
 
@@ -406,8 +404,11 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 **/
 Object * Object::makeCopyOnWrite(uint64_t high, uint64_t low)
 {
+	//object ids
+	ObjectId destId(high, low);
+
 	//spawn the new object
-	Object * cow = new Object(storageBackend, domain, low, high, alignement);
+	Object * cow = new Object(storageBackend, domain, destId, alignement);
 
 	//Create
 	int createStatus = cow->create();

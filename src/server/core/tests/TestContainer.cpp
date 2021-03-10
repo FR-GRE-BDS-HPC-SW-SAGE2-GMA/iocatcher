@@ -22,9 +22,9 @@ TEST(TestContainer, constructor)
 TEST(TestContainer, getObject)
 {
 	Container container(NULL, NULL);
-	Object & obj1 = container.getObject(10,20);
-	Object & obj2 = container.getObject(10,21);
-	Object & obj3 = container.getObject(10,20);
+	Object & obj1 = container.getObject(ObjectId(10,20));
+	Object & obj2 = container.getObject(ObjectId(10,21));
+	Object & obj3 = container.getObject(ObjectId(10,20));
 
 	EXPECT_NE(&obj1, &obj2);
 	EXPECT_EQ(&obj1, &obj3);
@@ -35,7 +35,7 @@ TEST(TestContainer, hasObject)
 {
 	Container container(NULL, NULL);
 	ASSERT_FALSE(container.hasObject(10, 20));
-	container.getObject(10, 20);
+	container.getObject(ObjectId(10, 20));
 	ASSERT_TRUE(container.hasObject(10, 20));
 
 }
@@ -44,8 +44,8 @@ TEST(TestContainer, hasObject)
 TEST(TestContainer, onClientDisconnect)
 {
 	Container container(NULL, NULL);
-	Object & obj1 = container.getObject(10,20);
-	Object & obj2 = container.getObject(10,21);
+	Object & obj1 = container.getObject(ObjectId(10,20));
+	Object & obj2 = container.getObject(ObjectId(10,21));
 
 	//client on obj1
 	obj1.getConsistencyTracker().registerRange(0, 100, 100, CONSIST_ACCESS_MODE_WRITE);

@@ -34,6 +34,10 @@ namespace IOC
 **/
 struct ObjectId
 {
+	/** Default constructor, do nothing. **/
+	ObjectId(void) {};
+	/** Constructor to set default values. **/
+	ObjectId(int64_t high, int64_t low) {this->high = high; this->low = low;};
 	/** The low part. **/
 	int64_t low;
 	/** The high part. **/
@@ -71,7 +75,7 @@ typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 class Object
 {
 	public:
-		Object(StorageBackend * backend, LibfabricDomain * domain, int64_t low, int64_t high, size_t alignement = 0);
+		Object(StorageBackend * backend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);

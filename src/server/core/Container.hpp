@@ -30,7 +30,7 @@ class Container
 	public:
 		Container(StorageBackend * storageBackend, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
 		~Container(void);
-		Object & getObject(int64_t low, int64_t high);
+		Object & getObject(const ObjectId & objectId);
 		bool hasObject(int64_t low, int64_t high);
 		bool makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow, int64_t destHigh);
 		void onClientDisconnect(uint64_t clientId);

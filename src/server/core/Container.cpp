@@ -37,24 +37,18 @@ Container::~Container(void)
 /****************************************************/
 /**
  * Get an object from its object ID. If not found it will be created.
- * @param high The high part of the object ID.
- * @param low The low part of the object ID.
+ * @param objectId The object ID to create.
  * @return A reference to the requested object.
 **/
-Object & Container::getObject(int64_t high, int64_t low)
+Object & Container::getObject(const ObjectId & objectId)
 {
-	//build id
-	ObjectId id;
-	id.low = low;
-	id.high = high;
-
 	//search
-	auto it = objects.find(id);
+	auto it = objects.find(objectId);
 
 	//if not found or found
 	if (it == objects.end()) {
-		Object * obj = new Object(this->storageBackend, lfDomain, low, high, objectSegmentsAlignement);
-		objects.emplace(id, obj);
+		Object * obj = new Object(this->storageBackend, lfDomain, objectId, objectSegmentsAlignement);
+		objects.emplace(objectId, obj);
 		return *obj;
 	} else {
 		return *it->second;

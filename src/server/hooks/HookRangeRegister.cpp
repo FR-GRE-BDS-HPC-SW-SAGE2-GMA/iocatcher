@@ -26,8 +26,13 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 /****************************************************/
 LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
+	//create object ID
+	ObjectId objectId;
+	objectId.low = clientMessage->data.registerRange.low;
+	objectId.high = clientMessage->data.registerRange.high;
+
 	//get object
-	Object & object = this->container->getObject(clientMessage->data.registerRange.high, clientMessage->data.registerRange.low);
+	Object & object = this->container->getObject(objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 	//check

@@ -32,7 +32,8 @@ TEST(TestObjectSegment, overlap)
 /****************************************************/
 TEST(TestObject, getBuffers_1)
 {
-	Object object(NULL, NULL, 10, 10);
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -42,7 +43,8 @@ TEST(TestObject, getBuffers_1)
 /****************************************************/
 TEST(TestObject, getBuffers_2)
 {
-	Object object(NULL, NULL, 10, 10);
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -56,7 +58,8 @@ TEST(TestObject, getBuffers_2)
 /****************************************************/
 TEST(TestObject, getBuffers_3)
 {
-	Object object(NULL, NULL, 10, 10);
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,300);
@@ -74,7 +77,8 @@ TEST(TestObject, getBuffers_3)
 /****************************************************/
 TEST(TestObject, getBuffers_4)
 {
-	Object object(NULL, NULL, 10, 10);
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -88,7 +92,8 @@ TEST(TestObject, getBuffers_4)
 /****************************************************/
 TEST(TestObject, getBuffers_5_alignement)
 {
-	Object object(NULL, NULL, 10, 10, 1000);
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId, 1000);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -102,7 +107,8 @@ TEST(TestObject, getBuffers_5_alignement)
 /****************************************************/
 TEST(TestObject, getBuffers_6_alignement)
 {
-	Object object(NULL, NULL, 10, 10, 1000);
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId, 1000);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500);
@@ -116,11 +122,12 @@ TEST(TestObject, getBuffers_6_alignement)
 /****************************************************/
 TEST(TestObject, data_load)
 {
+	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 20);
+	Object object(&storage, NULL, objectId);
 
 	//expect call to load
-	EXPECT_CALL(storage, pread(20, 10, _, 500, 1000))
+	EXPECT_CALL(storage, pread(10, 20, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
@@ -133,11 +140,12 @@ TEST(TestObject, data_load)
 /****************************************************/
 TEST(TestObject, data_create)
 {
+	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 20);
+	Object object(&storage, NULL, objectId);
 
 	//expect object create
-	EXPECT_CALL(storage, create(20,10))
+	EXPECT_CALL(storage, create(10,20))
 		.Times(1)
 		.WillOnce(Return(0));
 	
@@ -148,11 +156,12 @@ TEST(TestObject, data_create)
 /****************************************************/
 TEST(TestObject, data_flush)
 {
+	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 20);
+	Object object(&storage, NULL, objectId);
 
 	//expect call to load
-	EXPECT_CALL(storage, pread(20, 10, _, 500, 1000))
+	EXPECT_CALL(storage, pread(10, 20, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
@@ -168,7 +177,7 @@ TEST(TestObject, data_flush)
 	object.markDirty(1000, 500);
 
 	//expect call to write
-	EXPECT_CALL(storage, pwrite(20, 10, _, 500, 1000))
+	EXPECT_CALL(storage, pwrite(10, 20, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
@@ -180,11 +189,12 @@ TEST(TestObject, data_flush)
 TEST(TestObject, data_cow)
 {
 	//spawn
+	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, NULL, 10, 20);
+	Object object(&storage, NULL, objectId);
 
 	//mock
-	EXPECT_CALL(storage, pread(20, 10, _, 500, _))
+	EXPECT_CALL(storage, pread(10, 20, _, 500, _))
 		.Times(2)
 		.WillRepeatedly(Return(500));
 
@@ -202,19 +212,19 @@ TEST(TestObject, data_cow)
 	object.markDirty(2000,500);
 
 	//mock
-	EXPECT_CALL(storage, create(20, 11));
-	EXPECT_CALL(storage, makeCowSegment(20, 10, 20, 11, 0, 1000))
+	EXPECT_CALL(storage, create(10, 21));
+	EXPECT_CALL(storage, makeCowSegment(10, 20, 10, 21, 0, 1000))
 		.Times(1)
 		.WillOnce(Return(1000));
-	EXPECT_CALL(storage, makeCowSegment(20, 10, 20, 11, 1500, 500))
+	EXPECT_CALL(storage, makeCowSegment(10, 20, 10, 21, 1500, 500))
 		.Times(1)
 		.WillOnce(Return(500));(Return(500));
-	EXPECT_CALL(storage, pwrite(20, 11, _, 500, 1000))
+	EXPECT_CALL(storage, pwrite(10, 21, _, 500, 1000))
 		.Times(1)
 		.WillOnce(Return(500));
 
 	//call
-	Object * cowObj = object.makeCopyOnWrite(20, 11);
+	Object * cowObj = object.makeCopyOnWrite(10, 21);
 
 	//change oroginal segment
 	ObjectSegmentList lstorig1;

@@ -65,13 +65,16 @@ TEST_F(TestClientServer, obj_write)
 	char buffer[size];
 	memset(buffer, 1, size);
 
+	//object ID
+	ObjectId objectId(10, 20);
+
 	//write object
 	ASSERT_FALSE(this->server->getContainer().hasObject(10,20));
 	ioc_client_obj_write(client, 10, 20, buffer, size, 0);
 	ASSERT_TRUE(this->server->getContainer().hasObject(10,20));
 
 	//check meta
-	Object & object = this->server->getContainer().getObject(10,20);
+	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
 	ASSERT_EQ(1, segments.size());
@@ -94,6 +97,9 @@ TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 	char * buffer = new char[size];
 	memset(buffer, 1, size);
 
+	//object ID
+	ObjectId objectId(10, 20);
+
 	//set alignement to 0
 	this->server->getContainer().setObjectSegmentsAlignement(0);
 
@@ -102,7 +108,7 @@ TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 		ioc_client_obj_write(client, 10, 20, buffer+i, segSize, i);
 
 	//check meta
-	Object & object = this->server->getContainer().getObject(10,20);
+	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
 	ASSERT_EQ(segCnt, segments.size());
@@ -129,8 +135,11 @@ TEST_F(TestClientServer, obj_read)
 	char buffer[size];
 	memset(buffer, 0, size);
 
+	//object ID
+	ObjectId objectId(10, 20);
+
 	//setup object
-	Object & object = this->server->getContainer().getObject(10,20);
+	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
 	ObjectSegment & segment = (*segments.begin());
@@ -155,11 +164,14 @@ TEST_F(TestClientServer, obj_read_more_256_obj_segments)
 	char * buffer = new char[size];
 	memset(buffer, 0, size);
 
+	//object ID
+	ObjectId objectId(10, 20);
+
 	//set alignement to 0
 	this->server->getContainer().setObjectSegmentsAlignement(0);
 
 	//write multiple segments object
-	Object & object = this->server->getContainer().getObject(10,20);
+	Object & object = this->server->getContainer().getObject(objectId);
 	for (size_t i = 0 ; i < size ; i += segSize) {
 		ObjectSegmentList segments;
 		object.getBuffers(segments, i, segSize, false);
@@ -186,13 +198,16 @@ TEST_F(TestClientServer, obj_read_more_256_obj_segments)
 /****************************************************/
 TEST_F(TestClientServer, obj_register)
 {
+	//object ID
+	ObjectId objectId(10, 20);
+
 	//read object
 	int id = ioc_client_obj_range_register(this->client, 10, 20, 0, 1024, true);
 	ASSERT_EQ(1,id);
 	ASSERT_EQ(-1,ioc_client_obj_range_register(this->client, 10, 20, 0, 1024, true));
 
 	//check server state
-	Object & object = this->server->getContainer().getObject(10,20);
+	Object & object = this->server->getContainer().getObject(objectId);
 	EXPECT_TRUE(object.getConsistencyTracker().hasCollision(0, 1024, CONSIST_ACCESS_MODE_WRITE));
 
 	//unregister
