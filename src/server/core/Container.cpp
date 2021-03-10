@@ -111,6 +111,15 @@ bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId,
 		return false;
 	}
 
+	//if dest object already exist
+	auto itDest = objects.find(destId);
+	if (itDest != objects.end()) {
+		if (allowExist == false)
+			return false;
+		delete itDest->second;
+		itDest->second = NULL;
+	}
+
 	//cow
 	Object * cowObj = it->second->makeCopyOnWrite(destId, allowExist);
 	if (cowObj == NULL)
