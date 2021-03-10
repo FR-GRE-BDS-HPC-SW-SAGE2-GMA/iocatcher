@@ -253,10 +253,10 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 	segment.dirty = false;
 	segment.ptr = allocateMem(offset, size);
 	if (load) {
-		size_t status = this->pread(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+		size_t status = this->pread(segment.ptr, size, offset);
 		assume(status == size, "Fail to helperPread from object !");
 		if (status != size)
-			status = this->pwrite(this->objectId.high, this->objectId.low, segment.ptr, size, offset);
+			status = this->pwrite(segment.ptr, size, offset);
 		assume(status == size, "Fail to write to object !");
 	}
 	return segment;
@@ -274,7 +274,7 @@ int Object::flush(size_t offset, size_t size)
 	for (auto it : this->segmentMap) {
 		if (it.second.dirty) {
 			if (size == 0 || it.second.overlap(offset, size)) {
-				if (this->pwrite(this->objectId.high, this->objectId.low, it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
+				if (this->pwrite(it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
 					ret = -1;
 				it.second.dirty = false;
 			}
@@ -297,20 +297,20 @@ int Object::create(void)
 
 /****************************************************/
 /** Just a wrapper to check if we have a storage backend or not. **/
-ssize_t Object::pwrite(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
+ssize_t Object::pwrite(void * buffer, size_t size, size_t offset)
 {
 	if (this->storageBackend != NULL)
-		return this->storageBackend->pwrite(high, low, buffer, size, offset);
+		return this->storageBackend->pwrite(objectId.high, objectId.low, buffer, size, offset);
 	else
 		return size;
 }
 
 /****************************************************/
 /** Just a wrapper to check if we have a storage backend or not. **/
-ssize_t Object::pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
+ssize_t Object::pread(void * buffer, size_t size, size_t offset)
 {
 	if (this->storageBackend != NULL)
-		return this->storageBackend->pread(high, low, buffer, size, offset);
+		return this->storageBackend->pread(objectId.high, objectId.low, buffer, size, offset);
 	else
 		return size;
 }
@@ -399,16 +399,12 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 /**
  * Create a copy of the current object in memory and on the remote server with
  * the given new ID.
- * @param high The high part of the object ID.
- * @param low The low part of the object ID.
+ * @param targetObjectId The cow object id to create.
 **/
-Object * Object::makeCopyOnWrite(uint64_t high, uint64_t low)
+Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId)
 {
-	//object ids
-	ObjectId destId(high, low);
-
 	//spawn the new object
-	Object * cow = new Object(storageBackend, domain, destId, alignement);
+	Object * cow = new Object(storageBackend, domain, targetObjectId, alignement);
 
 	//Create
 	int createStatus = cow->create();
@@ -420,7 +416,7 @@ Object * Object::makeCopyOnWrite(uint64_t high, uint64_t low)
 		//if need to copy non loaded part make a copy on the sorage
 		if (cursor < it.second.offset) {
 			size_t copySize = it.second.offset - cursor;
-			ssize_t status = storageBackend->makeCowSegment(this->objectId.high, this->objectId.low, high, low, cursor, copySize);
+			ssize_t status = storageBackend->makeCowSegment(this->objectId.high, this->objectId.low, targetObjectId.high, targetObjectId.low, cursor, copySize);
 			assume(status == (ssize_t)copySize, "Fail to copy on write on the storage for COW !");
 		}
 
@@ -434,7 +430,7 @@ Object * Object::makeCopyOnWrite(uint64_t high, uint64_t low)
 
 		//if not dirty we flush
 		if (segment.dirty == false) {
-			ssize_t status = storageBackend->pwrite(high, low, segment.ptr, segment.size, segment.offset);
+			ssize_t status = storageBackend->pwrite(targetObjectId.high, targetObjectId.low, segment.ptr, segment.size, segment.offset);
 			assume(status == (ssize_t)segment.size, "Fail to copy the COW non dirty elements !");
 		}
 

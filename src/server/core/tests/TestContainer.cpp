@@ -33,10 +33,11 @@ TEST(TestContainer, getObject)
 /****************************************************/
 TEST(TestContainer, hasObject)
 {
+	ObjectId objectId(10, 20);
 	Container container(NULL, NULL);
-	ASSERT_FALSE(container.hasObject(10, 20));
-	container.getObject(ObjectId(10, 20));
-	ASSERT_TRUE(container.hasObject(10, 20));
+	ASSERT_FALSE(container.hasObject(objectId));
+	container.getObject(objectId);
+	ASSERT_TRUE(container.hasObject(objectId));
 
 }
 

@@ -58,19 +58,13 @@ Object & Container::getObject(const ObjectId & objectId)
 /****************************************************/
 /**
  * Check the existence of an object.
- * @param high The high part of the object ID.
- * @param low The low part of the object ID.
+ * @param objectId The object identifier we want to check.
  * @return True if the object exist, false otherwise.
 **/
-bool Container::hasObject(int64_t high, int64_t low)
+bool Container::hasObject(const ObjectId & objectId)
 {
-	//build id
-	ObjectId id;
-	id.low = low;
-	id.high = high;
-
 	//search
-	auto it = objects.find(id);
+	auto it = objects.find(objectId);
 
 	//ret
 	return it != objects.end();
@@ -102,21 +96,14 @@ void Container::setObjectSegmentsAlignement(size_t alignement)
 /****************************************************/
 /**
  * Make a copy on write operation on the given object.
- * @param origLow the low part of the origin object ID.
- * @param origHigh the high part of the origin object ID.
- * @param destLow the low part of the destination object ID.
- * @param destHigh the high part of the destination object ID.
+ * @param sourceId The ID of the source object.
+ * @param destId The ID object object to create in COW mode.
  * @return True if the COW has been makde, false in case of error.
 **/
-bool Container::makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow, int64_t destHigh)
+bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId)
 {
-	//build id
-	ObjectId origId;
-	origId.low = destLow;
-	origId.high = destHigh;
-
 	//search
-	auto it = objects.find(origId);	
+	auto it = objects.find(sourceId);	
 
 	//not found
 	if (it == objects.end()) {
@@ -124,14 +111,9 @@ bool Container::makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow
 	}
 
 	//cow
-	Object * cowObj = it->second->makeCopyOnWrite(destHigh, destLow);
+	Object * cowObj = it->second->makeCopyOnWrite(destId);
 	if (cowObj == NULL)
 		return false;
-
-	//build id
-	ObjectId destId;
-	destId.low = destLow;
-	destId.high = destHigh;
 
 	//register
 	objects[destId] = cowObj;

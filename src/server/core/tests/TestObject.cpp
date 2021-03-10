@@ -224,7 +224,8 @@ TEST(TestObject, data_cow)
 		.WillOnce(Return(500));
 
 	//call
-	Object * cowObj = object.makeCopyOnWrite(10, 21);
+	ObjectId cowId(10, 21);
+	Object * cowObj = object.makeCopyOnWrite(cowId);
 
 	//change oroginal segment
 	ObjectSegmentList lstorig1;

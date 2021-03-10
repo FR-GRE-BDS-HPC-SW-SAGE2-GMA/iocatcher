@@ -69,9 +69,9 @@ TEST_F(TestClientServer, obj_write)
 	ObjectId objectId(10, 20);
 
 	//write object
-	ASSERT_FALSE(this->server->getContainer().hasObject(10,20));
+	ASSERT_FALSE(this->server->getContainer().hasObject(objectId));
 	ioc_client_obj_write(client, 10, 20, buffer, size, 0);
-	ASSERT_TRUE(this->server->getContainer().hasObject(10,20));
+	ASSERT_TRUE(this->server->getContainer().hasObject(objectId));
 
 	//check meta
 	Object & object = this->server->getContainer().getObject(objectId);

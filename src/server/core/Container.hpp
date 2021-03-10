@@ -31,8 +31,8 @@ class Container
 		Container(StorageBackend * storageBackend, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
 		~Container(void);
 		Object & getObject(const ObjectId & objectId);
-		bool hasObject(int64_t low, int64_t high);
-		bool makeObjectCow(int64_t origLow, int64_t origHigh, int64_t destLow, int64_t destHigh);
+		bool hasObject(const ObjectId & objectId);
+		bool makeObjectCow(const ObjectId & sourceId, const ObjectId &destId);
 		void onClientDisconnect(uint64_t clientId);
 		void setObjectSegmentsAlignement(size_t alignement);
 	private:

@@ -30,14 +30,17 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
         clientMessage->data.objCow.origLow,
         clientMessage->data.objCow.destHigh, 
         clientMessage->data.objCow.destLow);
+	
+	//extract id
+	ObjectId sourceId;
+	sourceId.high = clientMessage->data.objCow.origHigh;
+	sourceId.low  = clientMessage->data.objCow.origLow;
+	ObjectId destId;
+	destId.high = clientMessage->data.objCow.destHigh;
+	destId.low  = clientMessage->data.objCow.destLow;
 
 	//create object
-	bool status = this->container->makeObjectCow(
-            clientMessage->data.objCow.origLow, 
-			clientMessage->data.objCow.origHigh, 
-            clientMessage->data.objCow.destLow,
-			clientMessage->data.objCow.destHigh
-    );
+	bool status = this->container->makeObjectCow(sourceId, destId);
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
