@@ -78,6 +78,10 @@ enum LibfabricMessageType
 	IOC_LF_MSG_OBJ_RANGE_UNREGISTER,
 	/** Server ack for the de-registration of the requested range. **/
 	IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK,
+	/** Make a copy on write of an object **/
+	IOC_LF_MSG_OBJ_COW,
+	/** The answer for the copy on write operation.**/
+	IOC_LF_MSG_OBJ_ACK,
 };
 
 /****************************************************/
@@ -198,6 +202,22 @@ struct LibfabricUnregisterRange
 
 /****************************************************/
 /**
+ * Message used to copy on write an object.
+**/
+struct LibfabricObjectCow
+{
+	/** Low part of the origin object ID. **/
+	int64_t origLow;
+	/** High part of the origin object ID. **/
+	int64_t origHigh;
+	/** Low part of the destination object ID. **/
+	int64_t destLow;
+	/** High part of the destination object ID. **/
+	int64_t destHigh;
+}
+
+/****************************************************/
+/**
  * Answer to most of the messages.
  * It can contain information about possible eager data contained following this
  * header.
@@ -237,6 +257,8 @@ struct LibfabricMessage
 		LibfabricRegisterRange registerRange;
 		/** Infos to register a mapping range. **/
 		LibfabricUnregisterRange unregisterRange;
+		/** Info to make a copy on write of an object. **/
+		LibfabricObjectCow objCow;
 	} data;
 };
 
