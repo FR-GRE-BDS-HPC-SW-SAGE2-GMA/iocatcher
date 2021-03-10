@@ -336,8 +336,9 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
  * @param connection Reference to the libfabric connection to use.
  * @param sourceObjectId ID of the source object.
  * @param destObjectId ID of the object to create.
+ * @param allowExist Allow if object already exist.
 **/
-int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId)
+int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist)
 {
 	//setup message request
 	LibfabricMessage msg;
@@ -345,6 +346,7 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_COW);
 	msg.data.objCow.sourceObjectId = sourceObjectId;
 	msg.data.objCow.destObjectId = sourceObjectId;
+	msg.data.objCow.allowExist = allowExist;
 
 	//send message
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);

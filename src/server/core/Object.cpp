@@ -400,15 +400,16 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
  * Create a copy of the current object in memory and on the remote server with
  * the given new ID.
  * @param targetObjectId The cow object id to create.
+ * @param allowExist Do not fail if the object already exist (fail to create)
 **/
-Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId)
+Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist)
 {
 	//spawn the new object
 	Object * cow = new Object(storageBackend, domain, targetObjectId, alignement);
 
 	//Create
 	int createStatus = cow->create();
-	assume(createStatus == 0, "Failed to create object on the storage for COW !");
+	assume(createStatus == 0 || allowExist, "Failed to create object on the storage for COW !");
 
 	//loop on all segments
 	size_t cursor = 0;

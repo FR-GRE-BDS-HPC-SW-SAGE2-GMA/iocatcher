@@ -36,7 +36,7 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 	LibfabricObjectId & destId = clientMessage->data.objCow.destObjectId;;
 
 	//create object
-	bool status = this->container->makeObjectCow(sourceId, destId);
+	bool status = this->container->makeObjectCow(sourceId, destId, clientMessage->data.objCow.allowExist);
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;

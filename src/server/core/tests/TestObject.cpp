@@ -225,7 +225,7 @@ TEST(TestObject, data_cow)
 
 	//call
 	ObjectId cowId(10, 21);
-	Object * cowObj = object.makeCopyOnWrite(cowId);
+	Object * cowObj = object.makeCopyOnWrite(cowId, true);
 
 	//change oroginal segment
 	ObjectSegmentList lstorig1;

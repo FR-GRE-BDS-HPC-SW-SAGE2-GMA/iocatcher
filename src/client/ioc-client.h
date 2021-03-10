@@ -133,8 +133,9 @@ void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
  * @param orig_low Low part of the origianl object ID.
  * @param dest_high High part of the destination object ID.
  * @param dest_how Low part of the destination object ID.
+ * @param alllow_exist Allow the destincation object to already exist.
 **/
-int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low);
+int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low, bool allow_exist);
 
 /****************************************************/
 #ifdef __cplusplus

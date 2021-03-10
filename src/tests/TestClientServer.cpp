@@ -229,7 +229,7 @@ TEST_F(TestClientServer, obj_cow)
 	ASSERT_EQ(0, res);
 
 	//make copy on write
-	status = ioc_client_obj_cow(client, 10, 20, 10, 21);
+	status = ioc_client_obj_cow(client, 10, 20, 10, 21, true);
 	ASSERT_EQ(0, status);
 
 	//read again cow object to check content

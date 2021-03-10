@@ -98,9 +98,10 @@ void Container::setObjectSegmentsAlignement(size_t alignement)
  * Make a copy on write operation on the given object.
  * @param sourceId The ID of the source object.
  * @param destId The ID object object to create in COW mode.
+ * @param allowExist Do not fail if the object already exist (fail to create)
  * @return True if the COW has been makde, false in case of error.
 **/
-bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId)
+bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist)
 {
 	//search
 	auto it = objects.find(sourceId);	
@@ -111,7 +112,7 @@ bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId)
 	}
 
 	//cow
-	Object * cowObj = it->second->makeCopyOnWrite(destId);
+	Object * cowObj = it->second->makeCopyOnWrite(destId, allowExist);
 	if (cowObj == NULL)
 		return false;
 

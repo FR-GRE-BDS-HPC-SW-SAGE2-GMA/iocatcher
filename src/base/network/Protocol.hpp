@@ -212,6 +212,8 @@ struct LibfabricObjectCow
 	LibfabricObjectId sourceObjectId;
 	/** The ID of the destication. */
 	LibfabricObjectId destObjectId;
+	/** If allow object to already exist. **/
+	bool allowExist;
 };
 
 /****************************************************/
