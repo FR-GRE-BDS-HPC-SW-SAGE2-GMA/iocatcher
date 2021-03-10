@@ -345,7 +345,7 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	memset(&msg, 0, sizeof(msg));
 	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_COW);
 	msg.data.objCow.sourceObjectId = sourceObjectId;
-	msg.data.objCow.destObjectId = sourceObjectId;
+	msg.data.objCow.destObjectId = destObjectId;
 	msg.data.objCow.allowExist = allowExist;
 
 	//send message
