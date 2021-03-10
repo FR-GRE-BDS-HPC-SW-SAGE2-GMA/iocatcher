@@ -23,6 +23,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "StorageBackend.hpp"
 #include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
+#include "../../base/network/Protocol.hpp"
 
 /****************************************************/
 namespace IOC
@@ -38,6 +39,8 @@ struct ObjectId
 	ObjectId(void) {};
 	/** Constructor to set default values. **/
 	ObjectId(int64_t high, int64_t low) {this->high = high; this->low = low;};
+	/** Constructor from a network object ID. **/
+	ObjectId(const LibfabricObjectId & objectId) {this->high = objectId.high; this->low = objectId.low;};
 	/** The low part. **/
 	int64_t low;
 	/** The high part. **/

@@ -157,14 +157,9 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 {
 	//printf
 	//printf("Get OBJ_READ %d\n", clientId);
-	
-	//create object ID
-	ObjectId objectId;
-	objectId.low = clientMessage->data.objReadWrite.low;
-	objectId.high = clientMessage->data.objReadWrite.high;
 
 	//get buffers from object
-	Object & object = this->container->getObject(objectId);
+	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
 	ObjectSegmentList segments;
 	object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, false);
 

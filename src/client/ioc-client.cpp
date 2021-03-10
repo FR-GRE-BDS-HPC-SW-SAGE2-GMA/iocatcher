@@ -146,8 +146,14 @@ void ioc_client_fini(ioc_client_t * client)
 /****************************************************/
 ssize_t ioc_client_obj_read(ioc_client_t * client, int64_t high, int64_t low, void* buffer, size_t size, size_t offset)
 {
+	//create object ID
+	LibfabricObjectId objectId;
+	objectId.low = low;
+	objectId.high = high;
+
+	//apply
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	ssize_t ret = obj_read(*connection, high, low, buffer, size, offset);
+	ssize_t ret = obj_read(*connection, objectId, buffer, size, offset);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }
@@ -155,8 +161,14 @@ ssize_t ioc_client_obj_read(ioc_client_t * client, int64_t high, int64_t low, vo
 /****************************************************/
 ssize_t ioc_client_obj_write(ioc_client_t * client, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset)
 {
+	//create object ID
+	LibfabricObjectId objectId;
+	objectId.low = low;
+	objectId.high = high;
+
+	//apply
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	ssize_t ret = obj_write(*connection, high, low, buffer, size, offset);
+	ssize_t ret = obj_write(*connection, objectId, buffer, size, offset);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }
@@ -172,8 +184,14 @@ void ioc_client_ping_pong(ioc_client_t * client, int cnt)
 /****************************************************/
 int ioc_client_obj_flush(ioc_client_t * client, int64_t high, int64_t low, uint64_t offset, uint64_t size)
 {
+	//create object ID
+	LibfabricObjectId objectId;
+	objectId.low = low;
+	objectId.high = high;
+
+	//aply
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_flush(*connection, high, low, offset, size);
+	int ret = obj_flush(*connection, objectId, offset, size);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }
@@ -181,8 +199,14 @@ int ioc_client_obj_flush(ioc_client_t * client, int64_t high, int64_t low, uint6
 /****************************************************/
 int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low)
 {
+	//create object ID
+	LibfabricObjectId objectId;
+	objectId.low = low;
+	objectId.high = high;
+
+	//apply
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_create(*connection, high, low);
+	int ret = obj_create(*connection, objectId);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }
@@ -202,8 +226,14 @@ void ioc_client_set_passive_wait(ioc_client_t * client, bool value)
 /****************************************************/
 int32_t ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size, bool write)
 {
+	//create object ID
+	LibfabricObjectId objectId;
+	objectId.low = low;
+	objectId.high = high;
+
+	//apply
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_range_register(*connection, high, low, offset, size, write);
+	int ret = obj_range_register(*connection, objectId, offset, size, write);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }
@@ -211,8 +241,14 @@ int32_t ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64
 /****************************************************/
 int ioc_client_obj_range_unregister(ioc_client_t * client, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write)
 {
+	//create object ID
+	LibfabricObjectId objectId;
+	objectId.low = low;
+	objectId.high = high;
+
+	//apply
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_range_unregister(*connection, id, high, low, offset, size, write);
+	int ret = obj_range_unregister(*connection, id, objectId, offset, size, write);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }
@@ -220,8 +256,16 @@ int ioc_client_obj_range_unregister(ioc_client_t * client, int32_t id, int64_t h
 /****************************************************/
 int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low)
 {
+	//create object ID
+	LibfabricObjectId sourceObjectId;
+	sourceObjectId.low = orig_low;
+	sourceObjectId.high = orig_high;
+	LibfabricObjectId destObjectId;
+	destObjectId.low = dest_low;
+	destObjectId.high = dest_high;
+
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	int ret = obj_cow(*connection, orig_high, orig_low, dest_high, dest_low);
+	int ret = obj_cow(*connection, sourceObjectId, destObjectId);
 	ioc_client_ret_connection(client, connection);
 	return ret;
 }

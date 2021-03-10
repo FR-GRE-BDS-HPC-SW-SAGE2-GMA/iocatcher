@@ -99,6 +99,18 @@ struct Iov
 
 /****************************************************/
 /**
+ * Define an object ID for all operations.
+**/
+struct LibfabricObjectId
+{
+	/** Low part of the object ID. **/
+	int64_t low;
+	/** High part of the object ID. **/
+	int64_t high;
+};
+
+/****************************************************/
+/**
  * Message header used by the low level protocol to identify the client and define
  * the mesage type. This is send in head of every message.
 **/
@@ -120,10 +132,8 @@ struct LibfabricMessageHeader
 **/
 struct LibfabricObjReadWriteInfos
 {
-	/** Low part of the object ID. **/
-	int64_t low;
-	/** High part of the object ID. **/
-	int64_t high;
+	/** The object ID to read or write **/
+	LibfabricObjectId objectId;
 	/** Description of the memory region the read from or write to so the server can make an RDMA operation. **/
 	Iov iov;
 	/** Offset in the object. **/
@@ -140,10 +150,8 @@ struct LibfabricObjReadWriteInfos
 **/
 struct LibfabricObjFlushInfos
 {
-	/** Low part of the object ID. **/
-	int64_t low;
-	/** High part of the object ID. **/
-	int64_t high;
+	/** The obejct ID to flus. **/
+	LibfabricObjectId objectId;
 	/** Offset of the flush operation. **/
 	uint64_t offset;
 	/** Size of the flush opration (can be 0 to say flush all). **/
@@ -156,10 +164,8 @@ struct LibfabricObjFlushInfos
 **/
 struct LibfabricObjCreateInfos
 {
-	/** Low part of the object ID. **/
-	int64_t low;
-	/** High part of the object ID. **/
-	int64_t high;
+	/** The object ID to create. **/
+	LibfabricObjectId objectId;
 };
 
 /****************************************************/
@@ -168,10 +174,8 @@ struct LibfabricObjCreateInfos
 **/
 struct LibfabricRegisterRange
 {
-	/** Low part of the object ID. **/
-	int64_t low;
-	/** High part of the object ID. **/
-	int64_t high;
+	/** The object ID for which to register range. **/
+	LibfabricObjectId objectId;
 	/** Offset of the range. **/
 	uint64_t offset;
 	/** Size of the range. **/
@@ -186,10 +190,8 @@ struct LibfabricRegisterRange
 **/
 struct LibfabricUnregisterRange
 {
-	/** Low part of the object ID. **/
-	int64_t low;
-	/** High part of the object ID. **/
-	int64_t high;
+	/** The object ID for which to de-register range. **/
+	LibfabricObjectId objectId;
 	/** Offset of the range to unregister. **/
 	uint64_t offset;
 	/** Size of the range to unregister. **/
@@ -206,14 +208,10 @@ struct LibfabricUnregisterRange
 **/
 struct LibfabricObjectCow
 {
-	/** Low part of the origin object ID. **/
-	int64_t origLow;
-	/** High part of the origin object ID. **/
-	int64_t origHigh;
-	/** Low part of the destination object ID. **/
-	int64_t destLow;
-	/** High part of the destination object ID. **/
-	int64_t destHigh;
+	/** The ID of the source. **/
+	LibfabricObjectId sourceObjectId;
+	/** The ID of the destication. */
+	LibfabricObjectId destObjectId;
 };
 
 /****************************************************/

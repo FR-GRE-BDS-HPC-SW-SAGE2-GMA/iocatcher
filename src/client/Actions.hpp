@@ -11,6 +11,7 @@
 /****************************************************/
 #include "../base/network/LibfabricDomain.hpp"
 #include "../base/network/LibfabricConnection.hpp"
+#include "../base/network/Protocol.hpp"
 
 /****************************************************/
 namespace IOC
@@ -18,13 +19,13 @@ namespace IOC
 
 /****************************************************/
 void ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, int cnt);
-ssize_t obj_read(LibfabricConnection &connection, int64_t high, int64_t low, void* buffer, size_t size, size_t offset);
-ssize_t obj_write(LibfabricConnection &connection, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset);
-int obj_flush(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size);
-int obj_create(LibfabricConnection &connection, int64_t high, int64_t low);
-int32_t obj_range_register(LibfabricConnection &connection, int64_t high, int64_t low, size_t offset, size_t size, bool write);
-int obj_range_unregister(LibfabricConnection &connection, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write);
-int obj_cow(LibfabricConnection &connection, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low);
+ssize_t obj_read(LibfabricConnection &connection, const LibfabricObjectId & objectId, void* buffer, size_t size, size_t offset);
+ssize_t obj_write(LibfabricConnection &connection, const LibfabricObjectId & objectId, const void* buffer, size_t size, size_t offset);
+int obj_flush(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size);
+int obj_create(LibfabricConnection &connection, const LibfabricObjectId & objectId);
+int32_t obj_range_register(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write);
+int obj_range_unregister(LibfabricConnection &connection, int32_t id, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write);
+int obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId);
 
 }
 

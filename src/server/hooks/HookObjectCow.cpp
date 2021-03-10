@@ -26,18 +26,14 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 {
 	//printf
 	printf("Get copy on write from %ld:%ld to %ld:%ld\n", 
-        clientMessage->data.objCow.origHigh, 
-        clientMessage->data.objCow.origLow,
-        clientMessage->data.objCow.destHigh, 
-        clientMessage->data.objCow.destLow);
+        clientMessage->data.objCow.sourceObjectId.high, 
+        clientMessage->data.objCow.sourceObjectId.low,
+        clientMessage->data.objCow.destObjectId.high, 
+        clientMessage->data.objCow.destObjectId.low);
 	
 	//extract id
-	ObjectId sourceId;
-	sourceId.high = clientMessage->data.objCow.origHigh;
-	sourceId.low  = clientMessage->data.objCow.origLow;
-	ObjectId destId;
-	destId.high = clientMessage->data.objCow.destHigh;
-	destId.low  = clientMessage->data.objCow.destLow;
+	LibfabricObjectId & sourceId = clientMessage->data.objCow.sourceObjectId;
+	LibfabricObjectId & destId = clientMessage->data.objCow.destObjectId;;
 
 	//create object
 	bool status = this->container->makeObjectCow(sourceId, destId);
