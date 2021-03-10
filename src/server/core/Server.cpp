@@ -12,7 +12,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <cassert>
 #include "Server.hpp"
 #include "Consts.hpp"
-#include "../backends/StorageBackendMero.hpp"
+#include "StorageBackend.hpp"
 #include "../hooks/HookPingPong.hpp"
 #include "../hooks/HookFlush.hpp"
 #include "../hooks/HookRangeRegister.hpp"
@@ -70,7 +70,7 @@ Server::Server(const Config * config, const std::string & port)
 		this->connection->setCheckClientAuth(true);
 
 	//spawn storage backend
-	this->storageBackend = new StorageBackendMero();
+	this->storageBackend = NULL;
 
 	//create container
 	this->container = new Container(storageBackend, domain, 8*1024*1024);
@@ -84,7 +84,6 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, new HookObjectRead(this->container, &this->stats));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_WRITE, new HookObjectWrite(this->container, &this->stats));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_COW, new HookObjectCow(this->container));
-
 }
 
 /****************************************************/
@@ -98,6 +97,16 @@ Server::~Server(void)
 	delete this->connection;
 	delete this->domain;
 	delete this->tcpServer;
+}
+
+/****************************************************/
+/**
+ * Attach a storage backend to the server.
+ * @param storageBackend Pointer to the backend to be used.
+**/
+void Server::setStorageBackend(StorageBackend * storageBackend)
+{
+	this->storageBackend = storageBackend;
 }
 
 /****************************************************/

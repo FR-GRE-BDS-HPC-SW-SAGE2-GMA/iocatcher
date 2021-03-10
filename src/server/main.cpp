@@ -23,6 +23,7 @@
 #include "core/Container.hpp"
 #ifndef NOMERO
 	#include "core/clovis_api.h"
+	#include "../backends/StorageBackendMero.hpp"
 #endif
 
 /****************************************************/
@@ -44,15 +45,18 @@ int main(int argc, const char ** argv)
 	}
 
 	//init mero
+	StorageBackend * storageBackend = NULL;
 	#ifndef NOMERO
 		printf("USING MERO RESSOURCE FILE: %s\n", config.meroRcFile.c_str());
 		c0appz_init(0, (char*)config.meroRcFile.c_str());
+		storageBackend = new StorageBackendMero();
 	#else
 		printf("NOT USING MERO\n");
 	#endif
 
 	//run server
 	Server server(&config, "8556");
+	server.setStorageBackend(storageBackend);
 
 	//setup hook
 	server.setOnClientConnect([](int id) {
@@ -62,6 +66,12 @@ int main(int argc, const char ** argv)
 	//run
 	server.startStatsThread();
 	server.poll();
+
+	//remove backend
+	if (storageBackend != NULL) {
+		server.setStorageBackend(NULL);
+		delete storageBackend;
+	}
 
 	//close clovis
 	#ifndef NOMERO

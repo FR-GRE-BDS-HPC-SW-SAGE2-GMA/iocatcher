@@ -38,6 +38,7 @@ class Server
 		void stop(void);
 		void setOnClientConnect(std::function<void(int id)> handler);
 		Container & getContainer(void) {return *this->container;};
+		void setStorageBackend(StorageBackend * storageBackend);
 	private:
 		//setups
 		void setupTcpServer(int port, int maxport);
