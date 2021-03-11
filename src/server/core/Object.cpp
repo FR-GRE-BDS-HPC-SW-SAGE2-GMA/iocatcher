@@ -61,6 +61,20 @@ bool ObjectSegment::overlap(size_t segBase, size_t segSize)
 }
 
 /****************************************************/
+ObjectSegmentDescr ObjectSegment::getSegmentDescr(void)
+{
+	//convert
+	ObjectSegmentDescr descr = {
+		.ptr = this->ptr,
+		.offset = this->offset,
+		.size = this->size
+	};
+
+	//ret
+	return descr;
+}
+
+/****************************************************/
 /**
  * Constructor of an object.
  * @param storageBackend Pointer to the storage backend to be used to load/save data.
@@ -141,7 +155,7 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	for (auto it : this->segmentMap) {
 		//if overlap
 		if (it.second.overlap(base, size)) {
-			segments.push_back(it.second);
+			segments.push_back(it.second.getSegmentDescr());
 		}
 	}
 
@@ -245,7 +259,7 @@ char * Object::allocateMem(size_t offset, size_t size)
  * @param load If need to load data from mero.
  * @return The loaded object segment.
 **/
-ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
+ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 {
 	ObjectSegment & segment = this->segmentMap[offset];
 	segment.offset = offset;
@@ -259,7 +273,7 @@ ObjectSegment Object::loadSegment(size_t offset, size_t size, bool load)
 			status = this->pwrite(segment.ptr, size, offset);
 		assume(status == size, "Fail to write to object !");
 	}
-	return segment;
+	return segment.getSegmentDescr();
 }
 
 /****************************************************/
@@ -319,7 +333,7 @@ ssize_t Object::pread(void * buffer, size_t size, size_t offset)
 /**
  * Permit to order the ranges to use in std::map
 **/
-bool IOC::operator< (const ObjectSegment & seg1, const ObjectSegment & seg2)
+bool IOC::operator< (const ObjectSegmentDescr & seg1, const ObjectSegmentDescr & seg2)
 {
 	return seg1.offset < seg2.offset;
 }

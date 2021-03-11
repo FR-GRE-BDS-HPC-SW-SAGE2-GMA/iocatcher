@@ -49,6 +49,20 @@ struct ObjectId
 
 /****************************************************/
 /**
+ * Shotrly represent a segment to be returned via getBuffers().
+**/
+struct ObjectSegmentDescr
+{
+	/** Address of the memory buffer storing this segment. **/
+	char * ptr;
+	/** Offset of this segment. **/
+	size_t offset;
+	/** Size of this segment. **/
+	size_t size;
+};
+
+/****************************************************/
+/**
  * Define an object segment. It match with what has been requested by clients
  * via read/write operations.
 **/
@@ -56,6 +70,7 @@ struct ObjectSegment
 {
 	//functions
 	bool overlap(size_t segBase, size_t segSize);
+	ObjectSegmentDescr getSegmentDescr(void);
 
 	//members
 	/** Address of the memory buffer storing this segment. **/
@@ -70,7 +85,7 @@ struct ObjectSegment
 
 /****************************************************/
 /** Define an object segment list. **/
-typedef std::list<ObjectSegment> ObjectSegmentList;
+typedef std::list<ObjectSegmentDescr> ObjectSegmentList;
 /** Define an object segment map identified by its offset. **/
 typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 
@@ -90,7 +105,7 @@ class Object
 		ConsistencyTracker & getConsistencyTracker(void);
 		Object * makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist);
 	private:
-		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
+		ObjectSegmentDescr loadSegment(size_t offset, size_t size, bool load = true);
 		ssize_t pwrite(void * buffer, size_t size, size_t offset);
 		ssize_t pread(void * buffer, size_t size, size_t offset);
 		char * allocateMem(size_t offset, size_t size);
@@ -117,7 +132,7 @@ class Object
 };
 
 /****************************************************/
-bool operator<(const ObjectSegment & seg1, const ObjectSegment & seg2);
+bool operator<(const ObjectSegmentDescr & seg1, const ObjectSegmentDescr & seg2);
 bool operator<(const ObjectId & objId1, const ObjectId & objId2);
 
 }

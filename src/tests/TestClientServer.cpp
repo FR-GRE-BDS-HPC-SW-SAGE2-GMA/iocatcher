@@ -78,7 +78,7 @@ TEST_F(TestClientServer, obj_write)
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
 	ASSERT_EQ(1, segments.size());
-	ObjectSegment & segment = (*segments.begin());
+	ObjectSegmentDescr & segment = (*segments.begin());
 	ASSERT_GE(segment.size, size);
 
 	//check content
@@ -112,7 +112,7 @@ TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
 	ASSERT_EQ(segCnt, segments.size());
-	ObjectSegment & segment = (*segments.begin());
+	ObjectSegmentDescr & segment = (*segments.begin());
 	ASSERT_GE(segment.size, segSize);
 
 	//send one
@@ -142,7 +142,7 @@ TEST_F(TestClientServer, obj_read)
 	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
-	ObjectSegment & segment = (*segments.begin());
+	ObjectSegmentDescr & segment = (*segments.begin());
 	char * ptr = (char*)segment.ptr;
 	memset(ptr, 1, size);
 
@@ -183,7 +183,7 @@ TEST_F(TestClientServer, obj_read_more_256_obj_segments)
 	ObjectSegmentList segments;
 	object.getBuffers(segments, 0, size, false);
 	ASSERT_EQ(segCnt, segments.size());
-	ObjectSegment & segment = (*segments.begin());
+	ObjectSegmentDescr & segment = (*segments.begin());
 	ASSERT_EQ(segment.size, segSize);
 
 	//send one
