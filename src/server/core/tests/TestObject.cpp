@@ -14,22 +14,6 @@ using namespace IOC;
 using namespace testing;
 
 /****************************************************/
-TEST(TestObjectSegment, overlap)
-{
-	//build
-	size_t offset = 1000;
-	size_t size = 500;
-	ObjectSegment seg(offset, size, NULL, false);
-
-	//check cases
-	EXPECT_TRUE(seg.overlap(1000,500));
-	EXPECT_TRUE(seg.overlap(800,500));
-	EXPECT_TRUE(seg.overlap(1200,500));
-	EXPECT_FALSE(seg.overlap(1500,500));
-	EXPECT_FALSE(seg.overlap(500,500));
-}
-
-/****************************************************/
 TEST(TestObject, getBuffers_1)
 {
 	ObjectId objectId(10, 20);
