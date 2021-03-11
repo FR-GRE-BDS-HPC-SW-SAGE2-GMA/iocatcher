@@ -436,7 +436,7 @@ Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExis
 
 		//if not dirty we flush
 		if (segment.isDirty() == false) {
-			ssize_t status = storageBackend->pwrite(targetObjectId.high, targetObjectId.low, segment.getBuffer(), segment.getSize(), segment.getOffset());
+			ssize_t status = cow->pwrite(segment.getBuffer(), segment.getSize(), segment.getOffset());
 			assume(status == (ssize_t)segment.getSize(), "Fail to copy the COW non dirty elements !");
 		}
 
