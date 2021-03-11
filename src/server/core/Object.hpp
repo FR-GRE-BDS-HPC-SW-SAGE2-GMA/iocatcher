@@ -20,6 +20,7 @@ COPYRIGHT: 2020 Bull SAS
 //linux
 #include <sys/uio.h>
 //internal
+#include "ObjectSegment.hpp"
 #include "StorageBackend.hpp"
 #include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
@@ -28,6 +29,13 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 namespace IOC
 {
+
+/****************************************************/
+enum ObjectAccessMode
+{
+	ACCESS_READ,
+	ACCESS_WRITE,
+};
 
 /****************************************************/
 /**
@@ -48,42 +56,6 @@ struct ObjectId
 };
 
 /****************************************************/
-/**
- * Shotrly represent a segment to be returned via getBuffers().
-**/
-struct ObjectSegmentDescr
-{
-	/** Address of the memory buffer storing this segment. **/
-	char * ptr;
-	/** Offset of this segment. **/
-	size_t offset;
-	/** Size of this segment. **/
-	size_t size;
-};
-
-/****************************************************/
-/**
- * Define an object segment. It match with what has been requested by clients
- * via read/write operations.
-**/
-struct ObjectSegment
-{
-	//functions
-	bool overlap(size_t segBase, size_t segSize);
-	ObjectSegmentDescr getSegmentDescr(void);
-
-	//members
-	/** Address of the memory buffer storing this segment. **/
-	char * ptr;
-	/** Offset of this segment. **/
-	size_t offset;
-	/** Size of this segment. **/
-	size_t size;
-	/** Store ditry state to know if we need to flush it or not. **/
-	bool dirty;
-};
-
-/****************************************************/
 /** Define an object segment list. **/
 typedef std::list<ObjectSegmentDescr> ObjectSegmentList;
 /** Define an object segment map identified by its offset. **/
@@ -95,7 +67,7 @@ class Object
 	public:
 		Object(StorageBackend * backend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
-		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
+		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
 		void markDirty(size_t base, size_t size);
 		int flush(size_t offset, size_t size);

@@ -76,7 +76,7 @@ TEST_F(TestClientServer, obj_write)
 	//check meta
 	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
-	object.getBuffers(segments, 0, size, false);
+	object.getBuffers(segments, 0, size, ACCESS_WRITE, false);
 	ASSERT_EQ(1, segments.size());
 	ObjectSegmentDescr & segment = (*segments.begin());
 	ASSERT_GE(segment.size, size);
@@ -110,7 +110,7 @@ TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 	//check meta
 	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
-	object.getBuffers(segments, 0, size, false);
+	object.getBuffers(segments, 0, size, ACCESS_WRITE, false);
 	ASSERT_EQ(segCnt, segments.size());
 	ObjectSegmentDescr & segment = (*segments.begin());
 	ASSERT_GE(segment.size, segSize);
@@ -141,7 +141,7 @@ TEST_F(TestClientServer, obj_read)
 	//setup object
 	Object & object = this->server->getContainer().getObject(objectId);
 	ObjectSegmentList segments;
-	object.getBuffers(segments, 0, size, false);
+	object.getBuffers(segments, 0, size, ACCESS_WRITE, false);
 	ObjectSegmentDescr & segment = (*segments.begin());
 	char * ptr = (char*)segment.ptr;
 	memset(ptr, 1, size);
@@ -174,14 +174,14 @@ TEST_F(TestClientServer, obj_read_more_256_obj_segments)
 	Object & object = this->server->getContainer().getObject(objectId);
 	for (size_t i = 0 ; i < size ; i += segSize) {
 		ObjectSegmentList segments;
-		object.getBuffers(segments, i, segSize, false);
+		object.getBuffers(segments, i, segSize, ACCESS_READ, false);
 		ASSERT_EQ(1, segments.size());
 		memset(segments.front().ptr, 1, segSize);
 	}
 
 	//check meta
 	ObjectSegmentList segments;
-	object.getBuffers(segments, 0, size, false);
+	object.getBuffers(segments, 0, size, ACCESS_READ, false);
 	ASSERT_EQ(segCnt, segments.size());
 	ObjectSegmentDescr & segment = (*segments.begin());
 	ASSERT_EQ(segment.size, segSize);

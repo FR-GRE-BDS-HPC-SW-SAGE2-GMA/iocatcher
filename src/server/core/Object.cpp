@@ -50,32 +50,6 @@ std::vector<std::string> IOC::Object::nvdimmPaths;
 
 /****************************************************/
 /**
- * Check if the given range overlap with the given segment.
- * @param segBase The base offset of the segment to test.
- * @param segSize The size of the segment to test.
- * @return True if the segment overlap, false otherwise.
-**/
-bool ObjectSegment::overlap(size_t segBase, size_t segSize)
-{
-	return (this->offset < segBase + segSize && this->offset + this->size > segBase);
-}
-
-/****************************************************/
-ObjectSegmentDescr ObjectSegment::getSegmentDescr(void)
-{
-	//convert
-	ObjectSegmentDescr descr = {
-		.ptr = this->ptr,
-		.offset = this->offset,
-		.size = this->size
-	};
-
-	//ret
-	return descr;
-}
-
-/****************************************************/
-/**
  * Constructor of an object.
  * @param storageBackend Pointer to the storage backend to be used to load/save data.
  * @param domain The libfabric domain to be used for memory registration.
@@ -115,7 +89,7 @@ void Object::markDirty(size_t base, size_t size)
 	for (auto & it : this->segmentMap) {
 		//if overlap
 		if (it.second.overlap(base, size)) {
-			it.second.dirty = true;
+			it.second.setDirty(true);
 		}
 	}
 }
@@ -139,9 +113,10 @@ void Object::forceAlignement(size_t alignment)
  * @param segments The list to fill.
  * @param base The base address of the range to consider.
  * @param size The size of the range to consider.
+ * @param accessMode Define the mode of access to know if we need to trigger copy-on-write.
  * @param load If need to load the segment if not present.
 **/
-void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load)
+void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load)
 {
 	//align
 	if (this->alignement > 0)  {
@@ -152,10 +127,24 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	}
 
 	//extract
-	for (auto it : this->segmentMap) {
+	for (auto & it : this->segmentMap) {
+		//to ease access
+		ObjectSegment & segment = it.second;
+
 		//if overlap
-		if (it.second.overlap(base, size)) {
-			segments.push_back(it.second.getSegmentDescr());
+		if (segment.overlap(base, size)) {
+			//check if need to cow
+			if (accessMode == ACCESS_WRITE && segment.isCow()) {
+				//allocate new mem
+				char * new_buffer = allocateMem(segment.getOffset(), segment.getSize());
+				bool isMmap = !this->nvdimmPaths.empty();
+
+				//make cow (the function make the copy)
+				segment.applyCow(new_buffer, segment.getSize(), isMmap);
+			}
+
+			//add to list
+			segments.push_back(segment.getSegmentDescr());
 		}
 	}
 
@@ -261,18 +250,24 @@ char * Object::allocateMem(size_t offset, size_t size)
 **/
 ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 {
-	ObjectSegment & segment = this->segmentMap[offset];
-	segment.offset = offset;
-	segment.size = size;
-	segment.dirty = false;
-	segment.ptr = allocateMem(offset, size);
+	//allocate memory
+	char * buffer = allocateMem(offset, size);
+	bool isMmap = !this->nvdimmPaths.empty();
+
+	//load data
 	if (load) {
-		size_t status = this->pread(segment.ptr, size, offset);
+		size_t status = this->pread(buffer, size, offset);
 		assume(status == size, "Fail to helperPread from object !");
 		if (status != size)
-			status = this->pwrite(segment.ptr, size, offset);
+			status = this->pwrite(buffer, size, offset);
 		assume(status == size, "Fail to write to object !");
 	}
+
+	//register
+	ObjectSegment & segment = this->segmentMap[offset];
+	segment = std::move(ObjectSegment(offset, size, buffer, isMmap));
+
+	//return descr
 	return segment.getSegmentDescr();
 }
 
@@ -285,12 +280,12 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 int Object::flush(size_t offset, size_t size)
 {
 	int ret = 0;
-	for (auto it : this->segmentMap) {
-		if (it.second.dirty) {
+	for (auto & it : this->segmentMap) {
+		if (it.second.isDirty()) {
 			if (size == 0 || it.second.overlap(offset, size)) {
-				if (this->pwrite(it.second.ptr, it.second.size, it.second.offset) != (ssize_t)it.second.size)
+				if (this->pwrite(it.second.getBuffer(), it.second.getSize(), it.second.getOffset()) != (ssize_t)it.second.getSize())
 					ret = -1;
-				it.second.dirty = false;
+				it.second.setDirty(false);
 			}
 		}
 	}
@@ -429,28 +424,24 @@ Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExis
 	size_t cursor = 0;
 	for (auto & it : this->segmentMap) {
 		//if need to copy non loaded part make a copy on the sorage
-		if (cursor < it.second.offset) {
-			size_t copySize = it.second.offset - cursor;
+		if (cursor < it.second.getOffset()) {
+			size_t copySize = it.second.getOffset() - cursor;
 			ssize_t status = storageBackend->makeCowSegment(this->objectId.high, this->objectId.low, targetObjectId.high, targetObjectId.low, cursor, copySize);
 			assume(status == (ssize_t)copySize, "Fail to copy on write on the storage for COW !");
 		}
 
-		//we copy the segment locally
-		ObjectSegment & segment = cow->segmentMap[it.second.offset];
-		segment = it.second;
-
-		//make a copy of the memory data in a new segment
-		segment.ptr = cow->allocateMem(segment.offset, segment.size);
-		memcpy(segment.ptr, it.second.ptr, segment.size);
+		//we make the segment in cow mode
+		ObjectSegment & segment = cow->segmentMap[it.second.getOffset()];
+		segment.makeCowOf(it.second);
 
 		//if not dirty we flush
-		if (segment.dirty == false) {
-			ssize_t status = storageBackend->pwrite(targetObjectId.high, targetObjectId.low, segment.ptr, segment.size, segment.offset);
-			assume(status == (ssize_t)segment.size, "Fail to copy the COW non dirty elements !");
+		if (segment.isDirty() == false) {
+			ssize_t status = storageBackend->pwrite(targetObjectId.high, targetObjectId.low, segment.getBuffer(), segment.getSize(), segment.getOffset());
+			assume(status == (ssize_t)segment.getSize(), "Fail to copy the COW non dirty elements !");
 		}
 
 		//move
-		cursor = it.second.offset + it.second.size;
+		cursor = it.second.getOffset() + it.second.getSize();
 	}
 
 	//ret
