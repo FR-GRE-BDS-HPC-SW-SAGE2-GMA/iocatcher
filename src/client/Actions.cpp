@@ -46,11 +46,15 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 
 	//send
 	for (int i = 0 ; i < cnt ; i++) {
+		//send message
 		connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 		//poll server response
 		LibfabricClientMessage serverResponse;
-		connection.pollMessage(serverResponse, IOC_LF_MSG_PONG);
+		bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_PONG);
+		assume(hasMessage, "Fail to get message from pollMessage !");
+
+		///repost message
 		connection.repostRecive(serverResponse);
 	}
 
@@ -98,7 +102,8 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 
 	//poll server response
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//get status
 	int status = serverResponse.message->data.response.status;
@@ -170,7 +175,10 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 
 	//poll server response
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
+
+	//extract status and repost buffers
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
 	connection.getDomain().retMsgBuffer(msg);
@@ -210,7 +218,10 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 
 	//poll
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_FLUSH_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_FLUSH_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
+
+	//extract status & repost buffer
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
 
@@ -249,7 +260,10 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 
 	//poll
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
+
+	//extract status
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
 
@@ -288,7 +302,10 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 
 	//poll
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
+
+	//extract status & repost buffer
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
 
@@ -319,7 +336,10 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 
 	//poll
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_CREATE_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_CREATE_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
+
+	//extract status & report buffer
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
 
@@ -353,7 +373,10 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 
 	//poll
 	LibfabricClientMessage serverResponse;
-	connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_COW_ACK);
+	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_COW_ACK);
+	assume(hasMessage, "Fail to get message from pollMessage !");
+
+	//extrace status & repost message
 	int status = serverResponse.message->data.response.status;
 	connection.repostRecive(serverResponse);
 
