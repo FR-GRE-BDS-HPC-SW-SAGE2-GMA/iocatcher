@@ -35,6 +35,7 @@ class Container
 		bool makeObjectCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist);
 		void onClientDisconnect(uint64_t clientId);
 		void setObjectSegmentsAlignement(size_t alignement);
+		void setStorageBackend(StorageBackend * storageBackend);
 	private:
 		/** List ob objects identified by their object ID. **/
 		std::map<ObjectId, Object*> objects;

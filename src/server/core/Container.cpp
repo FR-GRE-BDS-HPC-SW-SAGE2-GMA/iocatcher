@@ -36,6 +36,21 @@ Container::~Container(void)
 
 /****************************************************/
 /**
+ * Change the storage backend (also applied to all existing objects).
+ * @param storageBackend The new backend to be used.
+**/
+void Container::setStorageBackend(StorageBackend * storageBackend)
+{
+	//setup local
+	this->storageBackend = storageBackend;
+
+	//apply on existing objects
+	for (auto & it: this->objects)
+		it.second->setStorageBackend(storageBackend);
+}
+
+/****************************************************/
+/**
  * Get an object from its object ID. If not found it will be created.
  * @param objectId The object ID to create.
  * @return A reference to the requested object.

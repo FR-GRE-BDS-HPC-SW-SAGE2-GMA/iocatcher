@@ -107,6 +107,7 @@ Server::~Server(void)
 void Server::setStorageBackend(StorageBackend * storageBackend)
 {
 	this->storageBackend = storageBackend;
+	this->container->setStorageBackend(storageBackend);
 }
 
 /****************************************************/
