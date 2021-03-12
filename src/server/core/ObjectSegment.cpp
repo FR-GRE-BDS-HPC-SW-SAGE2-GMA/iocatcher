@@ -23,13 +23,15 @@ using namespace IOC;
  * @param buffer Address of the buffer to be tracked (can be NULL for unit tests).
  * @param size Size of the buffer to be tracked (to know how to call munmap()).
  * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
+ * @param domain Pointer to the libfabric domain to know how to unregister the memory. Can be NULL for tests.
 **/
-ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, bool isMmap)
+ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, bool isMmap, LibfabricDomain * domain)
 {
 	//setup
 	this->buffer = buffer;
 	this->size = size;
 	this->isMmap = isMmap;
+	this->domain = domain;
 }
 
 /****************************************************/
@@ -41,8 +43,12 @@ ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, bool isMmap
 ObjectSegmentMemory::~ObjectSegmentMemory(void)
 {
 	//nothing to do
-	if (buffer == NULL)
+	if (buffer == nullptr)
 		return;
+
+	//unregister
+	if (this->domain != nullptr)
+		this->domain->unregisterSegment(this->buffer, this->size);
 
 	//free
 	if (isMmap) {
@@ -72,11 +78,11 @@ ObjectSegment::ObjectSegment(void)
  * @param buffer Address of the buffer to be tracked (can be NULL for unit tests).
  * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
 **/
-ObjectSegment::ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap)
+ObjectSegment::ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap, LibfabricDomain * domain)
 {
 	this->offset = offset;
 	this->dirty = false;
-	this->memory = std::make_shared<ObjectSegmentMemory>(buffer, size, isMmap);
+	this->memory = std::make_shared<ObjectSegmentMemory>(buffer, size, isMmap, domain);
 }
 
 /****************************************************/
@@ -134,7 +140,7 @@ void ObjectSegment::makeCowOf(ObjectSegment & orig)
  * @param size Size of the allocated segment for safety check.
  * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
 **/
-void ObjectSegment::applyCow(char * new_ptr, size_t size, bool isMmap)
+void ObjectSegment::applyCow(char * new_ptr, size_t size, bool isMmap, LibfabricDomain * domain)
 {
 	//check
 	assert(this->memory != nullptr);
@@ -146,7 +152,7 @@ void ObjectSegment::applyCow(char * new_ptr, size_t size, bool isMmap)
 	memcpy(new_ptr, this->memory->getBuffer(), size);
 
 	//override the shared pointer
-	this->memory = std::make_shared<ObjectSegmentMemory>(new_ptr, memory->getSize(), isMmap);
+	this->memory = std::make_shared<ObjectSegmentMemory>(new_ptr, memory->getSize(), isMmap, domain);
 }
 
 /****************************************************/

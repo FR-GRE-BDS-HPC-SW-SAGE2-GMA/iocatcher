@@ -140,7 +140,7 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 				bool isMmap = !this->nvdimmPaths.empty();
 
 				//make cow (the function make the copy)
-				segment.applyCow(new_buffer, segment.getSize(), isMmap);
+				segment.applyCow(new_buffer, segment.getSize(), isMmap, domain);
 			}
 
 			//add to list
@@ -265,7 +265,7 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 
 	//register
 	ObjectSegment & segment = this->segmentMap[offset];
-	segment = std::move(ObjectSegment(offset, size, buffer, isMmap));
+	segment = std::move(ObjectSegment(offset, size, buffer, isMmap, domain));
 
 	//return descr
 	return segment.getSegmentDescr();

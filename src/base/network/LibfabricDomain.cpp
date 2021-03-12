@@ -163,8 +163,9 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	region.mr = nullptr;
 
 	//checks
-	assert(ptr != NULL);
+	assert(ptr != nullptr);
 	assert(size > 0);
+	assert(getMR(ptr, size) == nullptr);
 
 	//access
 	uint64_t accessFlag = 0;
@@ -273,8 +274,12 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
 		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
 		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
-			if ((char*)ptr+size > (char*)it->ptr + it->size)
-				DAQ_WARNING("Caution, a segment from libfabric not completetly fit with the request which is larger.");
+			if ((char*)ptr+size > (char*)it->ptr + it->size) {
+				DAQ_WARNING_ARG("Caution, a segment from libfabric not completetly fit with the request which is larger : wanted: %1:%2:%3, found: %4:%5:%6")
+					.arg(ptr).arg(size).arg((void*)((char*)ptr+size))
+					.arg(it->ptr).arg(it->size).arg((void*)((char*)it->ptr+it->size))
+					.end();
+			}
 			mr = &(*it);
 			break;
 		}

@@ -13,6 +13,8 @@ COPYRIGHT: 2020 Bull SAS
 #include <cstdlib>
 #include <memory>
 #include <cassert>
+//intenral
+#include <base/network/LibfabricDomain.hpp>
 
 /****************************************************/
 namespace IOC
@@ -41,7 +43,7 @@ struct ObjectSegmentDescr
 class ObjectSegmentMemory
 {
 	public:
-		ObjectSegmentMemory(char * buffer, size_t size, bool isMmap);
+		ObjectSegmentMemory(char * buffer, size_t size, bool isMmap, LibfabricDomain * domain);
 		~ObjectSegmentMemory(void);
 		char * getBuffer(void) {return this->buffer;};
 		size_t getSize(void) {return this->size;}
@@ -52,6 +54,8 @@ class ObjectSegmentMemory
 		size_t size;
 		/** To remember is allocated by malloc() of mmap(). **/
 		bool isMmap;
+		/** Libfabric domain to know how to de-register the segment. **/
+		LibfabricDomain * domain;
 };
 
 /****************************************************/
@@ -64,7 +68,7 @@ class ObjectSegment
 	public:
 		ObjectSegment(void);
 		ObjectSegment(ObjectSegment && orig) = default;
-		ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap);
+		ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap, LibfabricDomain * domain);
 		bool overlap(size_t segBase, size_t segSize);
 		ObjectSegmentDescr getSegmentDescr(void);
 		size_t getSize(void) {assert(memory != nullptr); return this->memory->getSize();};
@@ -73,7 +77,7 @@ class ObjectSegment
 		void setDirty(bool value) {this->dirty = value;};
 		char * getBuffer(void) {assert(memory != nullptr); return this->memory->getBuffer();};
 		void makeCowOf(ObjectSegment & orig);
-		void applyCow(char * new_ptr, size_t size, bool isMmap);
+		void applyCow(char * new_ptr, size_t size, bool isMmap, LibfabricDomain * domain);
 		ObjectSegment & operator=(ObjectSegment && orig) = default;
 		bool isCow(void);
 	private:

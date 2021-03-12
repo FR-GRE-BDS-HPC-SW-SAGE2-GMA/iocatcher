@@ -23,7 +23,7 @@ TEST(TestObjectSegment, value_constructor)
 {
 	//build orig
 	void * buffer = malloc(64);
-	ObjectSegment segment(512, 64, (char*)buffer, false);
+	ObjectSegment segment(512, 64, (char*)buffer, false, nullptr);
 
 	//test
 	EXPECT_EQ(64, segment.getSize());
@@ -38,7 +38,7 @@ TEST(TestObjectSegment, move_constructor)
 {
 	//build orig
 	void * buffer = malloc(64);
-	ObjectSegment orig(512, 64, (char*)buffer, false);
+	ObjectSegment orig(512, 64, (char*)buffer, false, nullptr);
 
 	//make move
 	ObjectSegment second(std::move(orig));
@@ -57,7 +57,7 @@ TEST(TestObjectSegment, overlap)
 	//build
 	size_t offset = 1000;
 	size_t size = 500;
-	ObjectSegment segment(offset, size, NULL, false);
+	ObjectSegment segment(offset, size, nullptr, false, nullptr);
 
 	//check cases
 	EXPECT_TRUE(segment.overlap(1000,500));
@@ -72,7 +72,7 @@ TEST(TestObjectSegment, getSegmentDescr)
 {
 	//build orig
 	void * buffer = malloc(64);
-	ObjectSegment segment(512, 64, (char*)buffer, false);
+	ObjectSegment segment(512, 64, (char*)buffer, false, nullptr);
 
 	//get descr
 	ObjectSegmentDescr descr = segment.getSegmentDescr();
@@ -87,7 +87,7 @@ TEST(TestObjectSegment, getSegmentDescr)
 TEST(TestObjectSegment, get_set_params)
 {
 	//build orig
-	ObjectSegment segment(512, 64, NULL, false);
+	ObjectSegment segment(512, 64, nullptr, false, nullptr);
 
 	//get descr
 	EXPECT_EQ(64, segment.getSize());
@@ -105,7 +105,7 @@ TEST(TestObjectSegment, cow_support)
 {
 	//build orig
 	void * buffer = malloc(64);
-	ObjectSegment orig(512, 64, (char*)buffer, false);
+	ObjectSegment orig(512, 64, (char*)buffer, false, nullptr);
 	orig.setDirty(true);
 	ASSERT_EQ(buffer, (void*)orig.getBuffer());
 
@@ -126,7 +126,7 @@ TEST(TestObjectSegment, cow_support)
 
 	//apply cow
 	void * new_buffer = malloc(64);
-	cow.applyCow((char*)new_buffer, 64, false);
+	cow.applyCow((char*)new_buffer, 64, false, nullptr);
 
 	//check orig
 	ASSERT_EQ(buffer, (void*)orig.getBuffer());
@@ -142,7 +142,7 @@ TEST(TestObjectSegment, move_operator)
 {
 	//build orig
 	void * buffer = malloc(64);
-	ObjectSegment orig(512, 64, (char*)buffer, false);
+	ObjectSegment orig(512, 64, (char*)buffer, false, nullptr);
 
 	//make move
 	ObjectSegment second = std::move(orig);
