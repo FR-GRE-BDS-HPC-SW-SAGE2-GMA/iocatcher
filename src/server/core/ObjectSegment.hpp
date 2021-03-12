@@ -33,6 +33,11 @@ struct ObjectSegmentDescr
 };
 
 /****************************************************/
+/**
+ * Keep track of a memory space to store data for the ObjectSegment.
+ * Its goal is to handle free operation when used in a std::shared_ptr.
+ * It also handle both allocation cases via malloc() or mmap().
+**/
 class ObjectSegmentMemory
 {
 	public:
@@ -41,8 +46,11 @@ class ObjectSegmentMemory
 		char * getBuffer(void) {return this->buffer;};
 		size_t getSize(void) {return this->size;}
 	private:
+		/** Keep track of the buffer address, can be NULL for none (for unit tests). **/
 		char * buffer;
+		/** Size of the buffer to know how to call munmap(). **/
 		size_t size;
+		/** To remember is allocated by malloc() of mmap(). **/
 		bool isMmap;
 };
 

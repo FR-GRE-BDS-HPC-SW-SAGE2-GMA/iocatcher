@@ -18,6 +18,12 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Constructor of the memory tracker.
+ * @param buffer Address of the buffer to be tracked (can be NULL for unit tests).
+ * @param size Size of the buffer to be tracked (to know how to call munmap()).
+ * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
+**/
 ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, bool isMmap)
 {
 	//setup
@@ -27,6 +33,11 @@ ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, bool isMmap
 }
 
 /****************************************************/
+/**
+ * Destructor of the memory tracker. It frees the memory using either
+ * free() or munmap() depening on the state of isMmap. Do nothing
+ * if the buffer pointer is NULL.
+**/
 ObjectSegmentMemory::~ObjectSegmentMemory(void)
 {
 	//nothing to do
@@ -43,6 +54,9 @@ ObjectSegmentMemory::~ObjectSegmentMemory(void)
 }
 
 /****************************************************/
+/**
+ * Default constructor, it sets everything to NULL of zero.
+**/
 ObjectSegment::ObjectSegment(void)
 {
 	this->memory = nullptr;
@@ -51,6 +65,13 @@ ObjectSegment::ObjectSegment(void)
 }
 
 /****************************************************/
+/**
+ * Construct an object segment.
+ * @param offset The offset of the segment in the object.
+ * @param size Size of the buffer to be tracked (to know how to call munmap()).
+ * @param buffer Address of the buffer to be tracked (can be NULL for unit tests).
+ * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
+**/
 ObjectSegment::ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap)
 {
 	this->offset = offset;
@@ -72,6 +93,9 @@ bool ObjectSegment::overlap(size_t segBase, size_t segSize)
 }
 
 /****************************************************/
+/**
+ * Build a segment descriptor from the current object segment.
+**/
 ObjectSegmentDescr ObjectSegment::getSegmentDescr(void)
 {
 	//check
@@ -89,6 +113,12 @@ ObjectSegmentDescr ObjectSegment::getSegmentDescr(void)
 }
 
 /****************************************************/
+/**
+ * Make the current segment a COW segment of the given origin so it
+ * will share the same memory buffer until first write access on one
+ * of the two segments.
+ * @param orig Reference to the original segment to share.
+**/
 void ObjectSegment::makeCowOf(ObjectSegment & orig)
 {
 	this->memory = orig.memory;
@@ -97,11 +127,19 @@ void ObjectSegment::makeCowOf(ObjectSegment & orig)
 }
 
 /****************************************************/
+/**
+ * Function to be called on a first write access to a shared COW segment.
+ * @param new_ptr Define the new memory address to be used to store data.
+ * This function is in charge of copying the data in.
+ * @param size Size of the allocated segment for safety check.
+ * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
+**/
 void ObjectSegment::applyCow(char * new_ptr, size_t size, bool isMmap)
 {
 	//check
 	assert(this->memory != nullptr);
 	assert(this->memory->getSize() == size);
+	assert(this->isCow());
 	assert(new_ptr != NULL);
 
 	//copy content
@@ -112,6 +150,9 @@ void ObjectSegment::applyCow(char * new_ptr, size_t size, bool isMmap)
 }
 
 /****************************************************/
+/**
+ * Return true if the segment use a shared COW memory region, false otherwise.
+**/
 bool ObjectSegment::isCow(void)
 {
 	return !memory.unique();

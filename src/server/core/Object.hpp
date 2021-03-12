@@ -31,9 +31,15 @@ namespace IOC
 {
 
 /****************************************************/
+/**
+ * Define the access mode for getBuffers() operation to known
+ * it we need to trigger COW or not.
+**/
 enum ObjectAccessMode
 {
+	/** Declare a read access, do not trigger COW. **/
 	ACCESS_READ,
+	/** Declare a write access, trigger COW on shared segments. **/
 	ACCESS_WRITE,
 };
 
