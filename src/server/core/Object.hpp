@@ -82,6 +82,7 @@ class Object
 		static void setNvdimm(const std::vector<std::string> & paths);
 		ConsistencyTracker & getConsistencyTracker(void);
 		Object * makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist);
+		void setStorageBackend(StorageBackend * storageBackend);
 	private:
 		ObjectSegmentDescr loadSegment(size_t offset, size_t size, bool load = true);
 		ssize_t pwrite(void * buffer, size_t size, size_t offset);

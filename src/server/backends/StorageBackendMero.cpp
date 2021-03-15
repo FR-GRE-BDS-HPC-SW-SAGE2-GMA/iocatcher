@@ -16,6 +16,27 @@
 
 /****************************************************/
 using namespace IOC;
+using namespace std;
+
+/****************************************************/
+/* This value is fixed based on the HW that you run,
+ * 50 for VM execution and 25 for Juelich prototype execution has been tested OK
+ * Just a bit of explanation here:
+ * Internally, MERO is splitting the write ops into data units
+ * There is an arbitrary limitation within on the number of data units
+ * that could be written in a single MERO ops.
+ *
+ * An error on the IO size limitation overhead looks like this:
+ * mero[XXXX]:  eb80  ERROR  [clovis/io_req.c:452:ioreq_iosm_handle_executed]  iro_dgmode_write() failed, rc=-7
+ *
+ * A data unit size is directly based on the layout id of the object
+ * Default layout id (defined in clovis config) for this example is 9 which leads to a data units size of 1MB
+ * A value of 50 means that we can write up to 50MB (50 data units of 1MB) per ops
+*/
+#ifndef CLOVIS_MAX_DATA_UNIT_PER_OPS
+	#define CLOVIS_MAX_DATA_UNIT_PER_OPS  50
+#endif
+
 
 /****************************************************/
 #ifndef NOMERO
@@ -234,8 +255,8 @@ ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, siz
 		};
 
 		if (ret == 0) {
-			//cout << "[Success] Executing the MERO helperPwrite op, object ID="<< m_object_id << ", size=" << size
-			//			<< ", offset=" << offset << endl;
+			cout << "[Success] Executing the MERO helperPwrite op, object ID="<< m_object_id << ", size=" << size
+						<< ", offset=" << offset << endl;
 			return size;
 		} else {
 			cerr << "[Failed] Error executing the MERO helperPwrite op, object ID=" << m_object_id << " , size=" << size

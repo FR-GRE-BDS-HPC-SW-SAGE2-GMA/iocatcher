@@ -20,24 +20,6 @@ COPYRIGHT: 2020 Bull SAS
 #include "Object.hpp"
 #include "../../base/common/Debug.hpp"
 
-/* This value is fixed based on the HW that you run, 
- * 50 for VM execution and 25 for Juelich prototype execution has been tested OK
- * Just a bit of explanation here: 
- * Internally, MERO is splitting the write ops into data units 
- * There is an arbitrary limitation within on the number of data units
- * that could be written in a single MERO ops. 
- * 
- * An error on the IO size limitation overhead looks like this: 
- * mero[XXXX]:  eb80  ERROR  [clovis/io_req.c:452:ioreq_iosm_handle_executed]  iro_dgmode_write() failed, rc=-7
- * 
- * A data unit size is directly based on the layout id of the object
- * Default layout id (defined in clovis config) for this example is 9 which leads to a data units size of 1MB
- * A value of 50 means that we can write up to 50MB (50 data units of 1MB) per ops
-*/
-#ifndef CLOVIS_MAX_DATA_UNIT_PER_OPS
-	#define CLOVIS_MAX_DATA_UNIT_PER_OPS  50
-#endif
-
 /****************************************************/
 using namespace IOC;
 using namespace std;
@@ -72,6 +54,16 @@ Object::Object(StorageBackend * storageBackend, LibfabricDomain * domain, const 
 const ObjectId & Object::getObjectId(void)
 {
 	return this->objectId;
+}
+
+/****************************************************/
+/**
+ * Change the storage backend in use.
+ * @param storageBackend The new backend.
+**/
+void Object::setStorageBackend(StorageBackend * storageBackend)
+{
+	this->storageBackend = storageBackend;
 }
 
 /****************************************************/
@@ -257,10 +249,11 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 	//load data
 	if (load) {
 		size_t status = this->pread(buffer, size, offset);
-		assume(status == size, "Fail to helperPread from object !");
-		if (status != size)
+		assumeArg(status == size, "Fail to helperPread from object (%1) !").arg(status).end();
+		if (status != size) {
 			status = this->pwrite(buffer, size, offset);
-		assume(status == size, "Fail to write to object !");
+			assumeArg(status == size, "Fail to write to object (%1) !").arg(status).end();
+		}
 	}
 
 	//register

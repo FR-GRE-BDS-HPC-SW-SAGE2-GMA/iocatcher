@@ -18,12 +18,13 @@
 #include <cstdlib>
 #include <sys/uio.h>
 //local
+#include "base/common/Debug.hpp"
 #include "core/Config.hpp"
 #include "core/Server.hpp"
 #include "core/Container.hpp"
 #ifndef NOMERO
-	#include "core/clovis_api.h"
-	#include "../backends/StorageBackendMero.hpp"
+	#include "backends/clovis_api.h"
+	#include "backends/StorageBackendMero.hpp"
 #endif
 
 /****************************************************/
@@ -48,7 +49,8 @@ int main(int argc, const char ** argv)
 	StorageBackend * storageBackend = NULL;
 	#ifndef NOMERO
 		printf("USING MERO RESSOURCE FILE: %s\n", config.meroRcFile.c_str());
-		c0appz_init(0, (char*)config.meroRcFile.c_str());
+		int status = c0appz_init(0, (char*)config.meroRcFile.c_str());
+		assume(status == 0, "Failed to connect to Mero !");
 		storageBackend = new StorageBackendMero();
 	#else
 		printf("NOT USING MERO\n");
