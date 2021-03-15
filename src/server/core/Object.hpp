@@ -20,6 +20,7 @@ COPYRIGHT: 2020 Bull SAS
 //linux
 #include <sys/uio.h>
 //internal
+#include "ObjectSegment.hpp"
 #include "StorageBackend.hpp"
 #include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
@@ -28,6 +29,19 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 namespace IOC
 {
+
+/****************************************************/
+/**
+ * Define the access mode for getBuffers() operation to known
+ * it we need to trigger COW or not.
+**/
+enum ObjectAccessMode
+{
+	/** Declare a read access, do not trigger COW. **/
+	ACCESS_READ,
+	/** Declare a write access, trigger COW on shared segments. **/
+	ACCESS_WRITE,
+};
 
 /****************************************************/
 /**
@@ -48,29 +62,8 @@ struct ObjectId
 };
 
 /****************************************************/
-/**
- * Define an object segment. It match with what has been requested by clients
- * via read/write operations.
-**/
-struct ObjectSegment
-{
-	//functions
-	bool overlap(size_t segBase, size_t segSize);
-
-	//members
-	/** Address of the memory buffer storing this segment. **/
-	char * ptr;
-	/** Offset of this segment. **/
-	size_t offset;
-	/** Size of this segment. **/
-	size_t size;
-	/** Store ditry state to know if we need to flush it or not. **/
-	bool dirty;
-};
-
-/****************************************************/
 /** Define an object segment list. **/
-typedef std::list<ObjectSegment> ObjectSegmentList;
+typedef std::list<ObjectSegmentDescr> ObjectSegmentList;
 /** Define an object segment map identified by its offset. **/
 typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 
@@ -80,7 +73,7 @@ class Object
 	public:
 		Object(StorageBackend * backend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
-		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, bool load = true);
+		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
 		void markDirty(size_t base, size_t size);
 		int flush(size_t offset, size_t size);
@@ -90,7 +83,7 @@ class Object
 		ConsistencyTracker & getConsistencyTracker(void);
 		Object * makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist);
 	private:
-		ObjectSegment loadSegment(size_t offset, size_t size, bool load = true);
+		ObjectSegmentDescr loadSegment(size_t offset, size_t size, bool load = true);
 		ssize_t pwrite(void * buffer, size_t size, size_t offset);
 		ssize_t pread(void * buffer, size_t size, size_t offset);
 		char * allocateMem(size_t offset, size_t size);
@@ -117,7 +110,7 @@ class Object
 };
 
 /****************************************************/
-bool operator<(const ObjectSegment & seg1, const ObjectSegment & seg2);
+bool operator<(const ObjectSegmentDescr & seg1, const ObjectSegmentDescr & seg2);
 bool operator<(const ObjectId & objId1, const ObjectId & objId2);
 
 }

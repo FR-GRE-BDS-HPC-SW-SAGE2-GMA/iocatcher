@@ -175,7 +175,7 @@ LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection
 	//get buffers from object
 	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
 	ObjectSegmentList segments;
-	object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+	object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_READ);
 
 	//eager or rdma
 	if (clientMessage->data.objReadWrite.size <= IOC_EAGER_MAX_READ) {
