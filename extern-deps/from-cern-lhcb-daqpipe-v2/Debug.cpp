@@ -56,6 +56,7 @@ static DebugCategoryMap ref;
 DebugCategoryMap * Debug::catMap = &ref;
 int Debug::catMaxWidth = 0;
 int Debug::rank = -1;
+bool Debug::disabled = true;
 
 /*******************  FUNCTION  *********************/
 /**
@@ -109,7 +110,7 @@ void Debug::setRank(int rank)
 /**
  * Emit the message.
 **/
-void Debug::end()
+bool Debug::end()
 {
 	this->emitted = true;
 	std::stringstream buf;
@@ -162,6 +163,9 @@ void Debug::end()
 			exit(EXIT_FAILURE);
 			break;
 	}
+
+	//need to return somthing for the triad trick
+	return true;
 }
 
 /*******************  FUNCTION  *********************/
@@ -191,6 +195,9 @@ void Debug::enableCat ( const std::string& cat )
 	
 	//set
 	(*catMap)[cat] = true;
+
+	//enable debug messages
+	disabled = false;
 }
 
 /*******************  FUNCTION  *********************/
@@ -226,6 +233,7 @@ bool Debug::showCat ( const char* cat )
 void Debug::enableAll ()
 {
 	catMap = nullptr;
+	disabled = false;
 }
 
 /*******************  FUNCTION  *********************/

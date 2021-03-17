@@ -68,7 +68,7 @@ class Debug : public FormattedMessage
 		Debug(const char * format,const char * file,int line,DebugLevel level = MESSAGE_DEBUG, const char * category = nullptr);
 		Debug(const char * format,DebugLevel level = MESSAGE_DEBUG,const char * category = nullptr);
 		virtual ~Debug();
-		virtual void end();
+		virtual bool end();
 		static void enableCat(const std::string & cat);
 		static void enableAll();
 		static bool showCat(const char * cat);
@@ -76,6 +76,7 @@ class Debug : public FormattedMessage
 		static void setVerbosity(const std::string & value);
 		static const DebugCategoryMap* getCatMap();
 		static void setRank(int rank);
+		static bool isDisabled(void) {return Debug::disabled;};
 	protected:
 		/** Category (only for DEBUG level), nullptr otherwise. **/
 		const char * cat;
@@ -93,6 +94,8 @@ class Debug : public FormattedMessage
 		static int catMaxWidth;
 		/** Store current rank to prefix output **/
 		static int rank;
+		/** Define if debug messages are disabled an need to be skiped. **/
+		static bool disabled;
 };
 
 /*********************  CLASS  **********************/
@@ -121,6 +124,7 @@ class DebugDummy
 		std::string toString() const {return "";};
 		void toStream(std::ostream & out) const {};
 		void end(){};
+		static bool isDisabled(void) {return true;};
 };
 
 /********************  MACROS  **********************/
@@ -154,9 +158,9 @@ inline Debug fatal(const char * format)   {return Debug(format,MESSAGE_FATAL);  
 #define DAQ_MESSAGE_ARG(x)   DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_NORMAL   )
 #define DAQ_INFO_ARG(x)      DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_INFO     )
 #ifdef NDEBUG
-	#define DAQ_DEBUG_ARG(cat,x) DAQ::DebugDummy(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
+	#define DAQ_DEBUG_ARG(cat,x) (true)?false:DAQ::DebugDummy(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
 #else
-	#define DAQ_DEBUG_ARG(cat,x) DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
+	#define DAQ_DEBUG_ARG(cat,x) (DAQ::Debug::isDisabled())?false:DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
 #endif
 
 /********************  MACROS  **********************/
@@ -186,7 +190,7 @@ inline Debug fatal(const char * format)   {return Debug(format,MESSAGE_FATAL);  
  * @param check Condition to be checked.
  * @param format Message to print if condition is not valid.
 **/
-#define assumeArg(check,format) if (!(check)) DAQ_FATAL_ARG(format)
+#define assumeArg(check,format) (check)?true:DAQ_FATAL_ARG(format)
 
 /********************  MACROS  **********************/
 #define DAQ_TO_STRING(x) #x
