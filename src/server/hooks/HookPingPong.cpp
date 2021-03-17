@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookPingPong.hpp"
 
@@ -14,6 +15,11 @@ using namespace IOC;
 /****************************************************/
 LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
+	//debug
+	IOC_DEBUG_ARG("hook:ping", "Get ping message from client %1")
+		.arg(lfClientId)
+		.end();
+
 	//prepare answer
 	LibfabricMessage * msg = new LibfabricMessage;
 	msg->header.type = IOC_LF_MSG_PONG;

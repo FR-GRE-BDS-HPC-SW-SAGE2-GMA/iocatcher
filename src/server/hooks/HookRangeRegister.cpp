@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookRangeRegister.hpp"
 
@@ -26,6 +27,14 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 /****************************************************/
 LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
+	//debug
+	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4")
+		.arg(clientMessage->data.registerRange.objectId)
+		.arg(clientMessage->data.registerRange.offset)
+		.arg(clientMessage->data.registerRange.size)
+		.arg(lfClientId)
+		.end();
+
 	//get object
 	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();

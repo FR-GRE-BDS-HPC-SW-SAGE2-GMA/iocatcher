@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookObjectCow.hpp"
 
@@ -24,12 +25,12 @@ HookObjectCow::HookObjectCow(Container * container)
 /****************************************************/
 LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
-	//printf
-	printf("Get copy on write from %ld:%ld to %ld:%ld\n", 
-        clientMessage->data.objCow.sourceObjectId.high, 
-        clientMessage->data.objCow.sourceObjectId.low,
-        clientMessage->data.objCow.destObjectId.high, 
-        clientMessage->data.objCow.destObjectId.low);
+	//debug
+	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3\n")
+		.arg(clientMessage->data.objCow.sourceObjectId)
+		.arg(clientMessage->data.objCow.destObjectId)
+		.arg(lfClientId)
+		.end();
 	
 	//extract id
 	LibfabricObjectId & sourceId = clientMessage->data.objCow.sourceObjectId;

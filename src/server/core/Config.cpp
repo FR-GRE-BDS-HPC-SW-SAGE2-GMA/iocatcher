@@ -78,10 +78,10 @@ static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 		case 'p': config->activePolling = true; break;
 		case 'a': config->clientAuth = false; break;
 		case 'v':
-			if (optarg == nullptr)
+			if (arg == nullptr)
 				DAQ::Debug::enableAll();
 			else
-				DAQ::Debug::setVerbosity(optarg);
+				DAQ::Debug::setVerbosity(arg);
 			break;
 		case ARGP_KEY_NO_ARGS: argp_usage (state); break;
 		case ARGP_KEY_ARG: 

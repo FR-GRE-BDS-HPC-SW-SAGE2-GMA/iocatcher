@@ -11,6 +11,9 @@
 #define IOC_PROTOCOL_HPP
 
 /****************************************************/
+//std
+#include <ostream>
+//internal
 #include <from-cern-lhcb-daqpipe-v2/Debug.hpp>
 
 /****************************************************/
@@ -261,6 +264,9 @@ struct LibfabricMessage
 		LibfabricObjectCow objCow;
 	} data;
 };
+
+/****************************************************/
+std::ostream & operator <<(std::ostream & out, const LibfabricObjectId & objectId);
 
 }
 

@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookObjectCreate.hpp"
 
@@ -24,8 +25,11 @@ HookObjectCreate::HookObjectCreate(Container * container)
 /****************************************************/
 LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
-	//printf
-	//printf("Get create object %ld:%ld\n", clientMessage->data.objCreate.high, clientMessage->data.objCreate.low);
+	//debug
+	IOC_DEBUG_ARG("hook:obj:create", "Get create object %1 from client %2")
+		.arg(clientMessage->data.objCreate.objectId)
+		.arg(lfClientId)
+		.end();
 
 	//create object
 	Object & object = this->container->getObject(clientMessage->data.objCreate.objectId);

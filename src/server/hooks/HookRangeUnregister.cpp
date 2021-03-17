@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookRangeUnregister.hpp"
 
@@ -26,6 +27,15 @@ HookRangeUnregister::HookRangeUnregister(const Config * config, Container * cont
 /****************************************************/
 LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
+	//debug
+	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 on object %2 (%3->%4) from client %5")
+		.arg(clientMessage->data.unregisterRange.id)
+		.arg(clientMessage->data.registerRange.objectId)
+		.arg(clientMessage->data.registerRange.offset)
+		.arg(clientMessage->data.registerRange.size)
+		.arg(lfClientId)
+		.end();
+
 	//get object
 	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
