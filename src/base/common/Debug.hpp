@@ -32,7 +32,7 @@ namespace IOC
  * @param cat The category of the message.
  * @param message The message to print.
 **/
-#define IOC_DEBUG(cat,message) DAQ_DEBUG(cat,x)
+#define IOC_DEBUG(cat,message) DAQ_DEBUG(cat,message)
 /**
  * Display the given error message and pursue.
  * @param message Message to display.
