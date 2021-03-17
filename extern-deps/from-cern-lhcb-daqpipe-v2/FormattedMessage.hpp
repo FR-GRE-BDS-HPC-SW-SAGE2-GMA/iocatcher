@@ -53,7 +53,7 @@ class FormattedMessage
 		FormattedMessage & argUnit1024(unsigned long value,const char * unit = "", int staticUnit = -1);
 		std::string toString() const;
 		void toStream(std::ostream & out) const;
-		virtual bool end();
+		virtual void end();
 	public:
 		friend std::ostream & operator << (std::ostream & out,const FormattedMessage & message);
 	protected:

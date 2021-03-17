@@ -56,9 +56,8 @@ FormattedMessage::FormattedMessage(const std::string & format)
  * Nothing to do, only support for inheritance usage. This function can be extended
  * to provided error reporting (throw exception or print and exit program)
 **/
-bool FormattedMessage::end()
+void FormattedMessage::end()
 {
-	return true;
 }
 
 /*******************  FUNCTION  *********************/

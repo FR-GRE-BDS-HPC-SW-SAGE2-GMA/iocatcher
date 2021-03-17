@@ -110,7 +110,7 @@ void Debug::setRank(int rank)
 /**
  * Emit the message.
 **/
-bool Debug::end()
+void Debug::end()
 {
 	this->emitted = true;
 	std::stringstream buf;
@@ -163,9 +163,6 @@ bool Debug::end()
 			exit(EXIT_FAILURE);
 			break;
 	}
-
-	//need to return somthing for the triad trick
-	return true;
 }
 
 /*******************  FUNCTION  *********************/
