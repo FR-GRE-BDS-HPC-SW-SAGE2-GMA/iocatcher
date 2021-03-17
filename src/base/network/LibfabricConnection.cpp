@@ -796,6 +796,13 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	msg->header.type = IOC_LF_MSG_ASSIGN_ID;
 	msg->header.clientId = epId;
 
+	//debug
+	IOC_DEBUG_ARG("client:libfabric", "Recive client in libfabric tcpId=%1, lfId=%2")
+		.arg(message->header.clientId)
+		.arg(epId)
+		.end();
+
+	//send response
 	this->sendMessage(msg, sizeof (*msg), epId, [msg](void){
 		delete msg;
 		return LF_WAIT_LOOP_KEEP_WAITING;

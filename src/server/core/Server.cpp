@@ -21,6 +21,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "../hooks/HookObjectRead.hpp"
 #include "../hooks/HookObjectWrite.hpp"
 #include "../hooks/HookObjectCow.hpp"
+#include "base/common/Debug.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -141,7 +142,6 @@ void Server::setupTcpServer(int port, int maxport)
 		this->tcpServer->loop([this, &distribution, &rdGenerator, &cntConnections](uint64_t* id, uint64_t* key, TcpClientInfo* client){
 			*id = cntConnections++;
 			*key = distribution(rdGenerator);
-			//printf("=======> ID=%lu, KEY=%lu\n", *id, *key);
 			this->onClientConnect(*id, *key);
 		},[this](TcpClientInfo* client){
 			this->onClientDisconnect(client->id);
@@ -228,7 +228,10 @@ void Server::stop(void)
 **/
 void Server::onClientConnect(uint64_t tcpClientId, uint64_t key)
 {
-	printf("Client connect ID=%lu, key=%lu\n", tcpClientId, key);
+	IOC_DEBUG_ARG("client:tcp", "Client connect, assign tcpId=%1, key=%2")
+		.arg(tcpClientId)
+		.arg(key)
+		.end();
 	connection->getClientRegistry().registerClient(tcpClientId, key);
 }
 
@@ -239,7 +242,7 @@ void Server::onClientConnect(uint64_t tcpClientId, uint64_t key)
 **/
 void Server::onClientDisconnect(uint64_t tcpClientId)
 {
-	printf("Client disconnect ID=%lu\n", tcpClientId);
+	IOC_DEBUG_ARG("client:tcp", "Client disconnect tcpId=%1").arg(tcpClientId).end();
 	connection->getClientRegistry().disconnectClient(tcpClientId);
 	container->onClientDisconnect(tcpClientId);
 }

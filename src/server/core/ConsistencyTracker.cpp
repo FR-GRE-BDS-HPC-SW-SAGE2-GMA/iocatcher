@@ -6,6 +6,7 @@ COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "ConsistencyTracker.hpp"
 
 /****************************************************/
@@ -141,10 +142,17 @@ void ConsistencyTracker::clientDisconnect(uint64_t tcpClientId)
 		std::lock_guard<std::mutex> guard(this->mutex);
 
 		for (auto it = ranges.begin() ; it != ranges.end() ; ) {
-			if (it->tcpClientId == tcpClientId)
+			if (it->tcpClientId == tcpClientId) {
+				IOC_DEBUG_ARG("range:disconnect", "Auto remove range=%1 from client=%2 range=%3->%4 due do disconnection")
+					.arg(it->id)
+					.arg(it->tcpClientId)
+					.arg(it->offset)
+					.arg(it->size)
+					.end();
 				it = ranges.erase(it);
-			else
+			} else {
 				++it;
+			}
 		}
 	}
 }

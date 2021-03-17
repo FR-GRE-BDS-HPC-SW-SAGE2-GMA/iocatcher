@@ -62,7 +62,7 @@ int main(int argc, const char ** argv)
 
 	//setup hook
 	server.setOnClientConnect([](int id) {
-		printf("Get client %d\n", id);
+		IOC_DEBUG_ARG("client:libfabric", "Get client %1").arg(id).end();
 	});
 
 	//run
