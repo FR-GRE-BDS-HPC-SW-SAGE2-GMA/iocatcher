@@ -26,7 +26,7 @@ HookObjectCow::HookObjectCow(Container * container)
 LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
-	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3\n")
+	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3")
 		.arg(clientMessage->data.objCow.sourceObjectId)
 		.arg(clientMessage->data.objCow.destObjectId)
 		.arg(lfClientId)
