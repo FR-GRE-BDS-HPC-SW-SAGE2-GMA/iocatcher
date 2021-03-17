@@ -27,14 +27,6 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 /****************************************************/
 LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
-	//debug
-	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4")
-		.arg(clientMessage->data.registerRange.objectId)
-		.arg(clientMessage->data.registerRange.offset)
-		.arg(clientMessage->data.registerRange.size)
-		.arg(lfClientId)
-		.end();
-
 	//get object
 	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
@@ -46,6 +38,15 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
 		status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+	
+	//debug
+	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
+		.arg(clientMessage->data.registerRange.objectId)
+		.arg(clientMessage->data.registerRange.offset)
+		.arg(clientMessage->data.registerRange.size)
+		.arg(lfClientId)
+		.arg(status)
+		.end();
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
