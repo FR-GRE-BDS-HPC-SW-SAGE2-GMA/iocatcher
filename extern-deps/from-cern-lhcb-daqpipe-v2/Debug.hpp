@@ -72,6 +72,7 @@ class Debug : public FormattedMessage
 		static void enableCat(const std::string & cat);
 		static void enableAll();
 		static bool showCat(const char * cat);
+		static bool showParentsCat(const char * cat);
 		static void showList();
 		static void setVerbosity(const std::string & value);
 		static const DebugCategoryMap* getCatMap();
