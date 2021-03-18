@@ -25,6 +25,16 @@ StorageBackend::~StorageBackend(void)
 /****************************************************/
 ssize_t StorageBackend::makeCowSegment(int64_t highOrig, int64_t lowOrig, int64_t highDest, int64_t lowDest, size_t offset, size_t size)
 {
+	//debug
+	IOC_DEBUG_ARG("storage-backend", "Apply manual COW on segment %1:%2 -> %3:%4 [%5,%6]")
+		.arg(highOrig)
+		.arg(lowOrig)
+		.arg(highDest)
+		.arg(lowDest)
+		.arg(offset)
+		.arg(size)
+		.end();
+
 	//allocate tmp buffer
 	char * buffer = new char[size];
 

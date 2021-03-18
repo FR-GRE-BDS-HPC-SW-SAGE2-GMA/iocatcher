@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookFlush.hpp"
 
@@ -24,8 +25,13 @@ HookFlush::HookFlush(Container * container)
 /****************************************************/
 LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
-	//printf
-	//printf("Get flush object %ld:%ld %lu->%lu\n", clientMessage->data.objFlush.high, clientMessage->data.objFlush.low, clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
+	//debug
+	IOC_DEBUG_ARG("hook:obj:flush", "Get flush object %1 on %2->%3 from client %4")
+		.arg(clientMessage->data.objFlush.objectId)
+		.arg(clientMessage->data.objFlush.offset)
+		.arg(clientMessage->data.objFlush.size)
+		.arg(lfClientId)
+		.end();
 
 	//flush object
 	Object & object = this->container->getObject(clientMessage->data.objFlush.objectId);

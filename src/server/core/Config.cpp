@@ -11,6 +11,7 @@ COPYRIGHT: 2020 Bull SAS
 //linux
 #include <argp.h>
 //internal
+#include "base/common/Debug.hpp"
 #include "Config.hpp"
 
 /****************************************************/
@@ -27,6 +28,7 @@ static struct argp_option options[] = {
 	{ "no-consistency-check", 'c', 0, 0, "Disable consistency check."},
 	{ "active-polling", 'p', 0, 0, "Enable active polling."},
 	{ "no-auth", 'a', 0, 0, "Disable client auth."},
+	{ "verbose", 'v', "CATEGORIES", 0, "Enable verbose mode and optionaly provide a filter. Can use 'all' or '*' or 'cat1,cat2...'."},
 	{ 0 } 
 };
 
@@ -75,6 +77,12 @@ static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 		case 'c': config->consistencyCheck = false; break;
 		case 'p': config->activePolling = true; break;
 		case 'a': config->clientAuth = false; break;
+		case 'v':
+			if (arg == nullptr)
+				DAQ::Debug::enableAll();
+			else
+				DAQ::Debug::setVerbosity(arg);
+			break;
 		case ARGP_KEY_NO_ARGS: argp_usage (state); break;
 		case ARGP_KEY_ARG: 
 			if (config->listenIP.empty())

@@ -56,6 +56,7 @@ static DebugCategoryMap ref;
 DebugCategoryMap * Debug::catMap = &ref;
 int Debug::catMaxWidth = 0;
 int Debug::rank = -1;
+bool Debug::disabled = true;
 
 /*******************  FUNCTION  *********************/
 /**
@@ -191,6 +192,9 @@ void Debug::enableCat ( const std::string& cat )
 	
 	//set
 	(*catMap)[cat] = true;
+
+	//enable debug messages
+	disabled = false;
 }
 
 /*******************  FUNCTION  *********************/
@@ -211,12 +215,53 @@ bool Debug::showCat ( const char* cat )
 	} else {
 		DebugCategoryMap::const_iterator it = catMap->find(cat);
 		if (it == catMap->end()) {
-			(*catMap)[cat] = false;
-			return false;
+			bool parentStatus = showParentsCat(cat);
+			(*catMap)[cat] = parentStatus;
+			return parentStatus;
 		} else {
 			return it->second;
 		}
 	}
+}
+
+/*******************  FUNCTION  *********************/
+bool Debug::showParentsCat(const char * cat)
+{
+	//trivial
+	if (cat == NULL)
+		return false;
+
+	//check
+	if (strlen(cat) >= 64) {
+		DAQ_FATAL_ARG("Category name is too long and overpass the 64 character limit: '%1' !")
+			.arg(cat)
+			.end();
+	}
+	
+	//loop until end
+	char buffer[64];
+	char * bufferCursor = buffer;
+	while(*cat != '\0'){
+		//go until end or : or .
+		while(*cat != '\0' && *cat != ':' && *cat != '.')
+			*(bufferCursor++) = *(cat++);
+
+		//mark end
+		*bufferCursor = '\0';
+		
+		//if separator check if parent is enabled
+		if (*cat == ':' || *cat == '.') {
+			if (catMap->find(buffer) != catMap->end())
+				return true;
+			else
+				*(bufferCursor++) = *(cat++);
+		} else {
+			return false;
+		}
+	}
+
+	//not enabled
+	return false;
 }
 
 /*******************  FUNCTION  *********************/
@@ -226,6 +271,7 @@ bool Debug::showCat ( const char* cat )
 void Debug::enableAll ()
 {
 	catMap = nullptr;
+	disabled = false;
 }
 
 /*******************  FUNCTION  *********************/

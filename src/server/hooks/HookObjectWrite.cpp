@@ -9,6 +9,7 @@
 #include <cstring>
 #include <cassert>
 //local
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookObjectWrite.hpp"
 #include "../core/Consts.hpp"
@@ -155,8 +156,13 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 /****************************************************/
 LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
-	//printf
-	//printf("Get OBJ_READ %d\n", clientId);
+	//debug
+	IOC_DEBUG_ARG("hook:obj:write", "Get object write on %1 for %2->%3 from client %4")
+		.arg(clientMessage->data.objReadWrite.objectId)
+		.arg(clientMessage->data.objReadWrite.offset)
+		.arg(clientMessage->data.objReadWrite.size)
+		.arg(lfClientId)
+		.end();
 
 	//get buffers from object
 	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);

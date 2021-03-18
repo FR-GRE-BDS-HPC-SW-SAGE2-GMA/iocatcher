@@ -58,7 +58,6 @@ FormattedMessage::FormattedMessage(const std::string & format)
 **/
 void FormattedMessage::end()
 {
-	
 }
 
 /*******************  FUNCTION  *********************/

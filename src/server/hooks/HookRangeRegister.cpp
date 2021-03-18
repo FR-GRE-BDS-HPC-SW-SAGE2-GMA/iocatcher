@@ -5,6 +5,7 @@
 *****************************************************/
 
 /****************************************************/
+#include "base/common/Debug.hpp"
 #include "base/network/LibfabricConnection.hpp"
 #include "HookRangeRegister.hpp"
 
@@ -37,6 +38,15 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
 		status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+	
+	//debug
+	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
+		.arg(clientMessage->data.registerRange.objectId)
+		.arg(clientMessage->data.registerRange.offset)
+		.arg(clientMessage->data.registerRange.size)
+		.arg(lfClientId)
+		.arg(status)
+		.end();
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;

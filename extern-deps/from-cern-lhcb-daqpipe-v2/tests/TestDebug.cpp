@@ -32,6 +32,24 @@ TEST(DEBUG,debugCat)
 }
 
 /*******************  FUNCTION  *********************/
+TEST(Debug,showParentsCat_one_level)
+{
+	EXPECT_FALSE(Debug::showParentsCat("parent1:test1"));
+	EXPECT_FALSE(Debug::showParentsCat("parent1.test1"));
+	Debug::enableCat("parent1");
+	EXPECT_TRUE(Debug::showParentsCat("parent1:test1"));
+	EXPECT_TRUE(Debug::showParentsCat("parent1.test1"));
+}
+
+/*******************  FUNCTION  *********************/
+TEST(Debug,showParentsCat_two_level)
+{
+	EXPECT_FALSE(Debug::showParentsCat("parent2:parent3:test1"));
+	Debug::enableCat("parent2:parent3");
+	EXPECT_TRUE(Debug::showParentsCat("parent2:parent3:test1"));
+}
+
+/*******************  FUNCTION  *********************/
 TEST(DEBUG,warn)
 {
 	DAQ_WARNING("test debug");

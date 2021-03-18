@@ -7,6 +7,7 @@
 /****************************************************/
 //std
 #include <iostream>
+#include "base/common/Debug.hpp"
 #include "StorageBackendMero.hpp"
 #ifndef NOMERO
 	extern "C" {
@@ -159,8 +160,11 @@ ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size
 		};
 
 		if (ret == 0) {
-			cout << "[Success] Executing the MERO helperPread op, object ID="<< m_object_id << ", size=" << size
-					<< ", offset=" << offset << endl;
+			IOC_DEBUG_ARG("mero", "Success executing the MERO helperPread op, object ID=%1, offset=%3, size=%2")
+				.arg(m_object_id)
+				.arg(offset)
+				.arg(size)
+				.end();
 			return size;
 		} else {
 			cerr << "[Failed] Error executing the MERO helperPread op, object ID=" << m_object_id << " , size=" << size
@@ -255,8 +259,11 @@ ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, siz
 		};
 
 		if (ret == 0) {
-			cout << "[Success] Executing the MERO helperPwrite op, object ID="<< m_object_id << ", size=" << size
-						<< ", offset=" << offset << endl;
+			IOC_DEBUG_ARG("mero", "Success executing the MERO helperWrite op, object ID=%1, offset=%3, size=%2")
+				.arg(m_object_id)
+				.arg(offset)
+				.arg(size)
+				.end();
 			return size;
 		} else {
 			cerr << "[Failed] Error executing the MERO helperPwrite op, object ID=" << m_object_id << " , size=" << size
