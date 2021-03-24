@@ -119,9 +119,9 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	}
 
 	//extract
-	for (auto & it : this->segmentMap) {
+	for (auto it = this->segmentMap.lower_bound(base) ; it != this->segmentMap.end() && it->first < base + size ; ++it) {
 		//to ease access
-		ObjectSegment & segment = it.second;
+		ObjectSegment & segment = it->second;
 
 		//if overlap
 		if (segment.overlap(base, size)) {
