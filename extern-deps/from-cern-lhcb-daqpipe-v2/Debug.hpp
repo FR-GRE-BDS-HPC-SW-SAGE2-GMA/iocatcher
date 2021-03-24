@@ -162,7 +162,7 @@ inline void debugSkip(void){};
 #define DAQ_MESSAGE_ARG(x)   DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_NORMAL   )
 #define DAQ_INFO_ARG(x)      DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_INFO     )
 #ifdef NDEBUG
-	#define DAQ_DEBUG_ARG(cat,x) (true)?false:DAQ::DebugDummy(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
+	#define DAQ_DEBUG_ARG(cat,x) (true)?DAQ::debugSkip():DAQ::DebugDummy(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
 #else
 	#define DAQ_DEBUG_ARG(cat,x) (DAQ::Debug::isDisabled())?DAQ::debugSkip():DAQ::Debug(x,DAQ_CODE_LOCATION,DAQ::MESSAGE_DEBUG,cat)
 #endif
