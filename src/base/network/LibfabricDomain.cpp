@@ -219,11 +219,6 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 	//checks
 	assert(ptr != NULL);
 
-	//get mr
-	fid_mr* mr = getFidMR(ptr,size);
-	assert(mr != NULL);
-	fi_close(&mr->fid);
-
 	//remove from list
 	segmentMutex.lock();
 
@@ -233,6 +228,7 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 	//if found, erase
 	if (it != segments.end()) {
 		if (it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr) {
+			fi_close(&it->second.mr->fid);
 			segments.erase(it);
 		} else {
 			IOC_FATAL_ARG("Fail to find segment to unregister, one found does not match: %1 (%2).").arg(ptr).arg(size).end();
