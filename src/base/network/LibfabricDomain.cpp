@@ -93,15 +93,20 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 **/
 LibfabricDomain::~LibfabricDomain(void)
 {
-	//free msg buffers
-	this->msgBuffersMutex.lock();
-	for (auto it : this->msgBuffers) {
-		this->unregisterSegment(it, this->msgBufferSize);
-		free(it);
-	}
-	this->msgBuffers.clear();
-	this->msgBuffersMutex.unlock();
+	//CRITICAL SECTION
+	{
+		//take lock
+		std::lock_guard<std::mutex> guard(this->msgBuffersMutex);
 
+		//free msg buffers
+		for (auto it : this->msgBuffers) {
+			this->unregisterSegment(it, this->msgBufferSize);
+			free(it);
+		}
+		this->msgBuffers.clear();
+	}
+
+	//close
 	fi_close(&domain->fid);
 	fi_close(&fabric->fid);
 	fi_freeinfo(fi);
@@ -182,24 +187,24 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	//keep key tracking
 	static int cnt = 0;
 
-	//lock
-	segmentMutex.lock();
+	//CRITICAL SECTION
+	{
+		//lock
+		std::lock_guard<std::mutex> guard(this->segmentMutex);
 
-	//reg into ofi
-	int ret = fi_mr_reg(domain, ptr, size, accessFlag, flags, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
-	LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
+		//reg into ofi
+		int ret = fi_mr_reg(domain, ptr, size, accessFlag, flags, cnt++/*TOTO*/, 0, &(region.mr), nullptr);
+		LIBFABRIC_CHECK_STATUS("fi_mr_reg",ret);
 
-	//update page table
-	/*struct iovec iov2;
-	iov2.iov_base = ptr;
-	iov2.iov_len = size;
-	ret = fi_mr_refresh(region.mr, &iov2, 1, 0);
-	LIBFABRIC_CHECK_STATUS("fi_mr_refresh",ret);*/
+		//update page table
+		/*struct iovec iov2;
+		iov2.iov_base = ptr;
+		iov2.iov_len = size;
+		ret = fi_mr_refresh(region.mr, &iov2, 1, 0);
+		LIBFABRIC_CHECK_STATUS("fi_mr_refresh",ret);*/
 
-	segments[(char*)ptr+size-1] = region;
-
-	//unlock
-	segmentMutex.unlock();
+		segments[(char*)ptr+size-1] = region;
+	}
 
 	Iov iov;
 	iov.addr = (virtMrMode) ? ptr : 0;
@@ -219,26 +224,25 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 	//checks
 	assert(ptr != NULL);
 
-	//remove from list
-	segmentMutex.lock();
+	//CRITICAL SECTION
+	{
+		//lock
+		std::lock_guard<std::mutex> guard(this->segmentMutex);
 
-	//quick search
-	auto it = segments.lower_bound(ptr);
+		//quick search
+		auto it = segments.lower_bound(ptr);
 
-	//if found, erase
-	if (it != segments.end()) {
-		if (it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr) {
-			fi_close(&it->second.mr->fid);
-			segments.erase(it);
-		} else {
-			IOC_FATAL_ARG("Fail to find segment to unregister, one found does not match: %1 (%2).").arg(ptr).arg(size).end();
-		}
-	} else {
-		IOC_FATAL_ARG("Fail to find segment to unregister: %1 (%2).").arg(ptr).arg(size).end();
+		//check
+		assumeArg(it != segments.end(),"Fail to find segment to unregister: %1 (%2).")
+			.arg(ptr).arg(size).end();
+		assumeArg(it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr, 
+			"Fail to find segment to unregister, one found does not match: %1 (%2).")
+				.arg(ptr).arg(size).end();
+
+		//close & erase
+		fi_close(&it->second.mr->fid);
+		segments.erase(it);
 	}
-
-	//unlock
-	segmentMutex.unlock();
 }
 
 /****************************************************/
@@ -277,26 +281,28 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 
 	//search
 	MemoryRegion * mr = nullptr;
-	segmentMutex.lock();
 
-	//quick search
-	auto it = segments.lower_bound(ptr);
+	//CRITICAL SECTION
+	{
+		//take lock
+		std::lock_guard<std::mutex> guard(this->segmentMutex);
+	
+		//quick search
+		auto it = segments.lower_bound(ptr);
 
-	//if found
-	if (it != segments.end()) {
-		if (it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr) {
-			if ((char*)ptr+size > (char*)it->second.ptr + it->second.size) {
-				DAQ_WARNING_ARG("Caution, a segment from libfabric not completetly fit with the request which is larger : wanted: %1:%2:%3, found: %4:%5:%6")
-					.arg(ptr).arg(size).arg((void*)((char*)ptr+size))
-					.arg(it->second.ptr).arg(it->second.size).arg((void*)((char*)it->second.ptr+it->second.size))
-					.end();
+		//if found
+		if (it != segments.end()) {
+			if (it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr) {
+				if ((char*)ptr+size > (char*)it->second.ptr + it->second.size) {
+					DAQ_WARNING_ARG("Caution, a segment from libfabric not completetly fit with the request which is larger : wanted: %1:%2:%3, found: %4:%5:%6")
+						.arg(ptr).arg(size).arg((void*)((char*)ptr+size))
+						.arg(it->second.ptr).arg(it->second.size).arg((void*)((char*)it->second.ptr+it->second.size))
+						.end();
+				}
+				mr = &(it->second);
 			}
-			mr = &(it->second);
 		}
 	}
-
-	//unlock
-	segmentMutex.unlock();
 
 	//return 
 	return mr;
@@ -324,10 +330,10 @@ void * LibfabricDomain::getMsgBuffer(void)
 	//vars
 	void * res = NULL;
 
-	//critical section
+	//CRITICAL SECTION
 	{
-		//lock
-		msgBuffersMutex.lock();
+		//take lock
+		std::lock_guard<std::mutex> guard(this->msgBuffersMutex);
 
 		//check if need to allocate one
 		if (this->msgBuffers.empty()) {
@@ -338,9 +344,6 @@ void * LibfabricDomain::getMsgBuffer(void)
 			res = this->msgBuffers.back();
 			this->msgBuffers.pop_back();
 		}
-
-		//unlock
-		msgBuffersMutex.unlock();
 	}
 
 	//ret
@@ -358,16 +361,13 @@ void LibfabricDomain::retMsgBuffer(void * buffer)
 	//check
 	assume(buffer != NULL, "Fail to return NULL buffer !");
 
-	//critical section
+	//CRITICAL SECTION
 	{
-		//lock
-		msgBuffersMutex.lock();
+		//take lock
+		std::lock_guard<std::mutex> guard(this->msgBuffersMutex);
 
 		//append
 		this->msgBuffers.push_back(buffer);
-
-		//unlock
-		msgBuffersMutex.unlock();
 	}
 }
 
