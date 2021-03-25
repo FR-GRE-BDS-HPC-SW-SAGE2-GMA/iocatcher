@@ -104,6 +104,25 @@ TEST(TestObject, getBuffers_6_alignement)
 }
 
 /****************************************************/
+TEST(TestObject, getBuffers_7_check_addr)
+{
+	ObjectId objectId(10, 20);
+	Object object(NULL, NULL, objectId, 0);
+
+	ObjectSegmentList lst;
+	object.getBuffers(lst, 1000,500, ACCESS_READ);
+	EXPECT_EQ(1, lst.size());
+	void * ptr1 = lst.front().ptr;
+
+	ObjectSegmentList lst2;
+	object.getBuffers(lst2, 1200,1000, ACCESS_READ);
+	EXPECT_EQ(2, lst2.size());
+
+	void * ptr2 = lst2.front().ptr;
+	EXPECT_EQ(ptr1, ptr2);
+}
+
+/****************************************************/
 TEST(TestObject, data_load)
 {
 	ObjectId objectId(10, 20);

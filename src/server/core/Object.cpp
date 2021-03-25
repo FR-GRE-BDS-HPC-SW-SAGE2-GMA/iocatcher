@@ -256,8 +256,8 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 		}
 	}
 
-	//register
-	ObjectSegment & segment = this->segmentMap[offset];
+	//register using end address to be able to use lower_bound() to quick search
+	ObjectSegment & segment = this->segmentMap[offset+size-1];
 	segment = std::move(ObjectSegment(offset, size, buffer, isMmap, domain));
 
 	//return descr
@@ -424,7 +424,7 @@ Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExis
 		}
 
 		//we make the segment in cow mode
-		ObjectSegment & segment = cow->segmentMap[it.second.getOffset()];
+		ObjectSegment & segment = cow->segmentMap[it.first];
 		segment.makeCowOf(it.second);
 
 		//if not dirty we flush
