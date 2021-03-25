@@ -196,7 +196,9 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	ret = fi_mr_refresh(region.mr, &iov2, 1, 0);
 	LIBFABRIC_CHECK_STATUS("fi_mr_refresh",ret);*/
 
-	segments.push_back(region);
+	segments[(char*)ptr+size-1] = region;
+
+	//unlock
 	segmentMutex.unlock();
 
 	Iov iov;
@@ -224,13 +226,22 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 
 	//remove from list
 	segmentMutex.lock();
-	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
-		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
-		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
+
+	//quick search
+	auto it = segments.lower_bound(ptr);
+
+	//if found, erase
+	if (it != segments.end()) {
+		if (it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr) {
 			segments.erase(it);
-			break;
+		} else {
+			IOC_FATAL_ARG("Fail to find segment to unregister, one found does not match: %1 (%2).").arg(ptr).arg(size).end();
 		}
+	} else {
+		IOC_FATAL_ARG("Fail to find segment to unregister: %1 (%2).").arg(ptr).arg(size).end();
 	}
+
+	//unlock
 	segmentMutex.unlock();
 }
 
@@ -271,20 +282,27 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 	//search
 	MemoryRegion * mr = nullptr;
 	segmentMutex.lock();
-	for (auto it = segments.begin() ; it != segments.end() ; ++it) {
-		//printf("Search %p => %p - %lu\n", ptr, it->ptr, it->size);
-		if (it->ptr <= ptr && (char*)it->ptr + it->size > ptr) {
-			if ((char*)ptr+size > (char*)it->ptr + it->size) {
+
+	//quick search
+	auto it = segments.lower_bound(ptr);
+
+	//if found
+	if (it != segments.end()) {
+		if (it->second.ptr <= ptr && (char*)it->second.ptr + it->second.size > ptr) {
+			if ((char*)ptr+size > (char*)it->second.ptr + it->second.size) {
 				DAQ_WARNING_ARG("Caution, a segment from libfabric not completetly fit with the request which is larger : wanted: %1:%2:%3, found: %4:%5:%6")
 					.arg(ptr).arg(size).arg((void*)((char*)ptr+size))
-					.arg(it->ptr).arg(it->size).arg((void*)((char*)it->ptr+it->size))
+					.arg(it->second.ptr).arg(it->second.size).arg((void*)((char*)it->second.ptr+it->second.size))
 					.end();
 			}
-			mr = &(*it);
-			break;
+			mr = &(it->second);
 		}
 	}
+
+	//unlock
 	segmentMutex.unlock();
+
+	//return 
 	return mr;
 }
 

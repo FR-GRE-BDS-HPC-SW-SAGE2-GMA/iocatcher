@@ -12,6 +12,7 @@
 //std
 #include <string>
 #include <list>
+#include <map>
 #include <mutex>
 //libfabric
 #include <rdma/fabric.h>
@@ -74,8 +75,8 @@ class LibfabricDomain
 		fid_fabric *fabric;
 		/** libfabric domain to be used. **/
 		fid_domain *domain;
-		/** List of memory regions registered for RDMA transfers. **/
-		std::list<MemoryRegion> segments;
+		/** List of memory regions registered for RDMA transfers. Index point the last bytes of the segment. **/
+		std::map<void*, MemoryRegion> segments;
 		/** 
 		 * Boolean to know the memory region mode to know if we need to send
 		 * to the remote node the absolute address of the semgement for RDMA
