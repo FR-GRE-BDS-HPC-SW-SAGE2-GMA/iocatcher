@@ -17,6 +17,7 @@
 
 /********************  HEADERS  *********************/
 #include <map>
+#include <functional>
 #include "FormattedMessage.hpp"
 
 /*******************  NAMESPACE  ********************/
@@ -78,6 +79,7 @@ class Debug : public FormattedMessage
 		static const DebugCategoryMap* getCatMap();
 		static void setRank(int rank);
 		static bool isDisabled(void) {return Debug::disabled;};
+		static void setBeforeAbortHandler(std::function<void(const std::string& message)> handler);
 	protected:
 		/** Category (only for DEBUG level), nullptr otherwise. **/
 		const char * cat;
@@ -97,6 +99,8 @@ class Debug : public FormattedMessage
 		static int rank;
 		/** Define if debug messages are disabled an need to be skiped. **/
 		static bool disabled;
+		/** Handler to be called before aborting. **/
+		static std::function<void(const std::string& message)> beforeAbort;
 };
 
 /*********************  CLASS  **********************/

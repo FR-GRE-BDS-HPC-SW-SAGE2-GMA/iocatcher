@@ -495,3 +495,68 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 	EXPECT_TRUE(gotError);
 	EXPECT_TRUE(sendMessage);
 }
+
+/****************************************************/
+// Connect and client send a message.
+TEST(TestLibfabricConnection, broadcastErrrorMessage)
+{
+	int gotConnection = 0;
+	int gotErrorMessage = 0;
+
+	//server
+	std::thread server([&gotConnection]{
+		LibfabricDomain domain("127.0.0.1", "8446", true);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection++;
+		});
+
+		//wait connection
+		while (gotConnection < 2) 
+			connection.poll(false);
+
+		//send error and exit
+		domain.setMsgBuffeSize(1024*1024);
+		connection.broadcastErrrorMessage("This is a test error !");
+	});
+
+	//client
+	std::thread client1([&gotErrorMessage]{
+		LibfabricDomain domain("127.0.0.1", "8446", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		//hook
+		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage](LibfabricConnection * connection, int clientId, size_t bufferId, void * buffer){
+			gotErrorMessage++;
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+		//poll unit message to be sent
+		connection.poll(true);
+	});
+
+	//client
+	std::thread client2([&gotErrorMessage]{
+		LibfabricDomain domain("127.0.0.1", "8446", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		//hook
+		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage](LibfabricConnection * connection, int clientId, size_t bufferId, void * buffer){
+			gotErrorMessage++;
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+		//poll unit message to be sent
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client1.join();
+	client2.join();
+
+	//check
+	ASSERT_EQ(2, gotConnection);
+	ASSERT_EQ(2, gotErrorMessage);
+}

@@ -66,6 +66,7 @@ Server::Server(const Config * config, const std::string & port)
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, false);
 	//this->connection = new LibfabricConnection(this->domain, !config->activePolling);
+	assert(IOC_EAGER_MAX_WRITE < 1024*1024 - sizeof(LibfabricMessage));
 	this->connection->postRecives(1024*1024, 64);
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);
@@ -85,6 +86,11 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->registerHook(IOC_LF_MSG_OBJ_READ, new HookObjectRead(this->container, &this->stats));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_WRITE, new HookObjectWrite(this->container, &this->stats));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_COW, new HookObjectCow(this->container));
+
+	//set error dispatch
+	DAQ::Debug::setBeforeAbortHandler([this](const std::string & message){
+		this->connection->broadcastErrrorMessage(message);
+	});
 }
 
 /****************************************************/

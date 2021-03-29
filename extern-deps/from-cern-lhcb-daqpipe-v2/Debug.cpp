@@ -57,6 +57,7 @@ DebugCategoryMap * Debug::catMap = &ref;
 int Debug::catMaxWidth = 0;
 int Debug::rank = -1;
 bool Debug::disabled = true;
+std::function<void(const std::string& message)> Debug::beforeAbort;
 
 /*******************  FUNCTION  *********************/
 /**
@@ -144,6 +145,8 @@ void Debug::end()
 				//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 				buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 				std::cout << buf.str();
+				if (beforeAbort)
+					beforeAbort(buf.str());
 				abort();
 			#endif
 		case MESSAGE_WARNING:
@@ -160,6 +163,8 @@ void Debug::end()
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cerr << buf.str();
+			if (beforeAbort)
+				beforeAbort(buf.str());
 			exit(EXIT_FAILURE);
 			break;
 	}
@@ -290,6 +295,12 @@ void Debug::showList ()
 		}
 	}
 	DAQ_INFO(buffer.c_str());
+}
+
+/*******************  FUNCTION  *********************/
+void Debug::setBeforeAbortHandler(std::function<void(const std::string& message)> handler)
+{
+	Debug::beforeAbort = handler;
 }
 
 /********************** CONSTS **********************/
