@@ -54,11 +54,6 @@ Server::Server(const Config * config, const std::string & port)
 	this->statsRunning = false;
 	//this->setOnClientConnect([](int id){});
 
-	//setup tcp server
-	int tcpPort = atoi(port.c_str()) + 1;
-	printf("Server on port %s/%d\n", port.c_str(), tcpPort);
-	this->setupTcpServer(tcpPort, tcpPort);
-
 	//setup domain
 	this->domain = new LibfabricDomain(config->listenIP, port, true);
 	this->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
@@ -69,6 +64,11 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->postRecives(1024*1024, 64);
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);
+
+	//setup tcp server
+	int tcpPort = atoi(port.c_str()) + 1;
+	printf("Server on port %s/%d\n", port.c_str(), tcpPort);
+	this->setupTcpServer(tcpPort, tcpPort);
 
 	//spawn storage backend
 	this->storageBackend = NULL;
