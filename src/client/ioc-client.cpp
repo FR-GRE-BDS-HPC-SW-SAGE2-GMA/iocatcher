@@ -83,10 +83,17 @@ static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
 		}
 	}
 
+	//calc recive size
+	size_t recvSize = sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ);
+
+	//to have enougth room for error message transmissions
+	if (recvSize < 4096)
+		recvSize = 4096;
+
 	//setup connection
 	LibfabricConnection * connection = new LibfabricConnection(client->domain, client->passive_wait);
 	connection->setTcpClientInfos(client->clientConnInfo.clientId, client->clientConnInfo.key);
-	connection->postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+	connection->postRecives(recvSize, 2);
 	connection->joinServer();
 	connection->setUsed(true);
 

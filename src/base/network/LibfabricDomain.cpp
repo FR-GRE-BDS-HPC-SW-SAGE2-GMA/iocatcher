@@ -37,6 +37,9 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	assert(serverIp.empty() == false);
 	assert(port.empty() == false);
 
+	//defaults
+	this->msgBufferSize = 0;
+
 	//allocate fi
 	struct fi_info *hints;
 	hints = fi_allocinfo();
@@ -369,6 +372,15 @@ void LibfabricDomain::retMsgBuffer(void * buffer)
 		//append
 		this->msgBuffers.push_back(buffer);
 	}
+}
+
+/****************************************************/
+/**
+ * Return the size of the message buffer being allocated.
+**/
+size_t LibfabricDomain::getMsgBufferSize(void)
+{
+	return this->msgBufferSize;
 }
 
 }

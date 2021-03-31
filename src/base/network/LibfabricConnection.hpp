@@ -104,6 +104,7 @@ class LibfabricConnection
 		void poll(bool waitMsg);
 		bool pollMessage(LibfabricClientMessage & clientMessage, LibfabricMessageType expectedMessageType);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
+		void broadcastErrrorMessage(const std::string & message);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
 		void sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId);
 		void rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
@@ -185,6 +186,8 @@ class LibfabricConnection
 		ClientRegistry clientRegistry;
 		/** Enable of disable client authentication checking. **/
 		bool checkClientAuth;
+		/** To be used when broacasting a crash message. **/
+		bool disableReceive;
 };
 
 }

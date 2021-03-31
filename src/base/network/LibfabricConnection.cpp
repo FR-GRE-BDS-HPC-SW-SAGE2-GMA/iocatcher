@@ -67,6 +67,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool passiv
 	this->tcpClientId = 0;
 	this->tcpClientKey = 0;
 	this->checkClientAuth = false;
+	this->disableReceive = false;
 
 	//extract
 	fi_info *fi = lfDomain->getFiInfo();
@@ -234,6 +235,50 @@ void LibfabricConnection::joinServer(void)
 
 	//wait send
 	this->poll(true);
+}
+
+/****************************************************/
+/**
+ * Function to be used in case of crash to send an error
+ * message to all clients before exit. It disable handling
+ * of all recived messages before sending the message.
+ * @param message The message to be sent.
+**/
+void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
+{
+	//allocate buffer
+	const size_t size = sizeof(LibfabricMessageHeader) + message.size() + 1;
+	void * buffer = malloc(size);
+
+	//disable reception
+	this->disableReceive = true;
+
+	//counter
+	int count = this->remoteLiAddr.size();
+
+	//build message to send
+	LibfabricMessage * lfMessage = static_cast<LibfabricMessage*>(buffer);
+	this->fillProtocolHeader(lfMessage->header, IOC_LF_MSG_FATAL_ERROR);
+
+	//push message
+	memcpy(&lfMessage->data, message.c_str(), message.size() + 1);
+
+	//send to all
+	size_t cnt = this->remoteLiAddr.size();
+	for (auto & it : this->remoteLiAddr) {
+		this->sendMessage(buffer, size, it.first, [](){
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+	}
+
+	//wait all
+	while (cnt > 0){
+		this->poll(true);
+		cnt--;
+	}
+
+	//free mem
+	free(buffer);
 }
 
 /****************************************************/
@@ -468,8 +513,9 @@ void LibfabricConnection::poll(bool waitMsg)
 		int status = pollForCompletion(this->cq, &entry, this->passivePolling);
 		if (status == 1) {
 			if (entry.flags & FI_RECV) {
-				if (this->onRecv((size_t)entry.op_context))
-					break;
+				if (disableReceive == false)
+					if (this->onRecv((size_t)entry.op_context))
+						break;
 			} else if (entry.op_context != IOC_LF_NO_WAKEUP_POST_ACTION) {
 				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
 				LibfabricActionResult status = action->runPostAction();
@@ -655,20 +701,34 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 					.end();
 			}
 			break;
+		case IOC_LF_MSG_FATAL_ERROR:
+			{
+				//find handler
+				auto it = this->hooks.find(message->header.type);
+
+				//handle
+				if (it != this->hooks.end())
+					return it->second->onMessage(this, message->header.clientId, id, message);
+				else
+					IOC_FATAL_ARG("Server has send error message !\n%s").arg((char*)&message->data).end();
+				break;
+			}
 		default:
-			//check auth
-			if (this->checkAuth(message, message->header.clientId, id) == false)
-				return LF_WAIT_LOOP_UNBLOCK;
+			{
+				//check auth
+				if (this->checkAuth(message, message->header.clientId, id) == false)
+					return LF_WAIT_LOOP_UNBLOCK;
 
-			//find handler
-			auto it = this->hooks.find(message->header.type);
+				//find handler
+				auto it = this->hooks.find(message->header.type);
 
-			//handle
-			if (it != this->hooks.end())
-				return it->second->onMessage(this, message->header.clientId, id, message);
-			else
-				IOC_FATAL_ARG("Invalid message type %1").arg(message->header.type).end();
-			break;
+				//handle
+				if (it != this->hooks.end())
+					return it->second->onMessage(this, message->header.clientId, id, message);
+				else
+					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.type).end();
+				break;
+			}
 	}
 
 	//continue
@@ -705,6 +765,9 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 				.end();
 			return false;
 		}
+	} else if (message->header.type == IOC_LF_MSG_FATAL_ERROR) {
+		IOC_FATAL_ARG("Server has send error message !\n%1").arg((char*)&message->data).end();
+		return false;
 	} else {
 		//check auth
 		if (this->checkAuth(message, message->header.clientId, id) == false)

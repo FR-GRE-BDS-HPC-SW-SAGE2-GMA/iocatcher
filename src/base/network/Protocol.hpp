@@ -53,6 +53,8 @@ enum LibfabricMessageType
 	IOC_LF_MSG_ASSIGN_ID,
 	/** If recive a message with wrong auth the server will respond with this message. **/
 	IOC_LF_MSG_BAD_AUTH,
+	/** Message saying an error append on the server and lead to a crash. **/
+	IOC_LF_MSG_FATAL_ERROR,
 	/** Limit of the low level protocol IDs, after this value this is app protocol IDs. **/
 	IOC_LF_MSG_MAX,
 	/** Message ping for ping pong (send by client). **/

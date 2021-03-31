@@ -26,8 +26,12 @@ int main(int argc, char ** argv)
 	//setup
 	ioc_client_t * client = ioc_client_init(argv[1], "8556");
 
+	//do one ping pong to check server is joint and working
+	printf("Run one ping pong\n");
+	ioc_client_ping_pong(client, 1);
+
 	//do ping pong
-	printf("Run ping pong\n");
+	printf("Run many ping pong\n");
 	ioc_client_ping_pong(client, 100000);
 
 	//create object
