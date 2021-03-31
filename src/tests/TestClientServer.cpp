@@ -58,10 +58,40 @@ TEST_F(TestClientServer, pingpong)
 }
 
 /****************************************************/
-TEST_F(TestClientServer, obj_write)
+TEST_F(TestClientServer, obj_write_eager)
 {
 	//setup buffer
 	const size_t size = 1024;
+	char buffer[size];
+	memset(buffer, 1, size);
+
+	//object ID
+	ObjectId objectId(10, 20);
+
+	//write object
+	ASSERT_FALSE(this->server->getContainer().hasObject(objectId));
+	ioc_client_obj_write(client, 10, 20, buffer, size, 0);
+	ASSERT_TRUE(this->server->getContainer().hasObject(objectId));
+
+	//check meta
+	Object & object = this->server->getContainer().getObject(objectId);
+	ObjectSegmentList segments;
+	object.getBuffers(segments, 0, size, ACCESS_WRITE, false);
+	ASSERT_EQ(1, segments.size());
+	ObjectSegmentDescr & segment = (*segments.begin());
+	ASSERT_GE(segment.size, size);
+
+	//check content
+	char * ptr = (char*)segment.ptr;
+	for (size_t i = 0 ; i < size ; i++)
+		ASSERT_EQ(1, ptr[i]) << "index " << i;
+}
+
+/****************************************************/
+TEST_F(TestClientServer, obj_write_rdma)
+{
+	//setup buffer
+	const size_t size = 2*1024*1024;
 	char buffer[size];
 	memset(buffer, 1, size);
 
@@ -128,10 +158,37 @@ TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 }
 
 /****************************************************/
-TEST_F(TestClientServer, obj_read)
+TEST_F(TestClientServer, obj_read_eaeger)
 {
 	//setup buffer
 	const size_t size = 1024;
+	char buffer[size];
+	memset(buffer, 0, size);
+
+	//object ID
+	ObjectId objectId(10, 20);
+
+	//setup object
+	Object & object = this->server->getContainer().getObject(objectId);
+	ObjectSegmentList segments;
+	object.getBuffers(segments, 0, size, ACCESS_WRITE, false);
+	ObjectSegmentDescr & segment = (*segments.begin());
+	char * ptr = (char*)segment.ptr;
+	memset(ptr, 1, size);
+
+	//read object
+	ioc_client_obj_read(client, 10, 20, buffer, size, 0);
+
+	//check content
+	for (size_t i = 0 ; i < size ; i++)
+		ASSERT_EQ(1, buffer[i]) << "index " << i;
+}
+
+/****************************************************/
+TEST_F(TestClientServer, obj_read_rdma)
+{
+	//setup buffer
+	const size_t size = 2*1024*1024;
 	char buffer[size];
 	memset(buffer, 0, size);
 
