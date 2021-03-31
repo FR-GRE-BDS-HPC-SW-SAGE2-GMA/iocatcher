@@ -8,6 +8,7 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 //std
 #include <cstdlib>
+#include <thread>
 //linux
 #include <argp.h>
 //internal
