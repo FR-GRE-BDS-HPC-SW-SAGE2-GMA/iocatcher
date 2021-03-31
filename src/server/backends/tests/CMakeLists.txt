@@ -1,0 +1,22 @@
+######################################################
+#            PROJECT  : lhcb-daqpipe                 #
+#            VERSION  : 2.5.0-dev                    #
+#            AUTHOR   : Valat Sébastien - CERN       #
+#            LICENSE  : Apache 2.0                   #
+#            COPYRIGHT: 2020 Bull SAS                #
+######################################################
+
+######################################################
+#Use gtest
+include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
+include_directories(../)
+
+######################################################
+set(TEST_NAMES TestMemoryBackendMalloc)
+
+######################################################
+FOREACH(test_name ${TEST_NAMES})
+	add_executable(${test_name} ${test_name}.cpp)
+	target_link_libraries(${test_name} ${GTEST_BOTH_LIBRARIES} ${GMOCK_BOTH_LIBRARIES} serverlib)
+	ioc_add_test(${test_name} ${test_name})
+ENDFOREACH(test_name)

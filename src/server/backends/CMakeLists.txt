@@ -6,7 +6,9 @@
 ######################################################
 
 ######################################################
-set(SERVER_BACKEND_SRC StorageBackendMero.cpp)
+set(SERVER_BACKEND_SRC StorageBackendMero.cpp
+                       MemoryBackendMalloc.cpp
+)
 
 ######################################################
 if (MERO_FOUND)
@@ -22,6 +24,6 @@ SET_TARGET_PROPERTIES(ioc-server-backends-no-mero PROPERTIES COMPILE_FLAGS "${ME
 target_compile_definitions(ioc-server-backends-no-mero PUBLIC -DNOMERO)
 
 ######################################################
-#if (ENABLE_TESTS)
-#	add_subdirectory(tests)
-#endif (ENABLE_TESTS)
+if (ENABLE_TESTS)
+	add_subdirectory(tests)
+endif (ENABLE_TESTS)
