@@ -20,20 +20,20 @@ namespace IOC
 
 /****************************************************/
 /**
- * Implement memory backend using nvdimm memory. The class
- * support batch allocation and group allocation in a limiited
- * number of files to avoid sqaushing the fd limit.
+ * Implement memory backend using nvdimm memory. This class
+ * implement only the file allocation strategy which only grow
+ * the nvdimm file, it requires to be embedded into a 
+ * MemoryBackendCache to be efficient.
 **/
 class MemoryBackendNvdimm: public MemoryBackend
 {
 	public:
 		MemoryBackendNvdimm(LibfabricDomain * lfDomain, const std::string & directory);
 		virtual ~MemoryBackendNvdimm(void);
+		size_t getFileSize(void) const;
 	public:
 		virtual void * allocate(size_t size);
 		virtual void deallocate(void * addr, size_t size);
-	private:
-		bool isLocalMemory(void * ptr, size_t size);
 	private:
 		/** directory in which to store the nvdimm data. **/
 		std::string directory;
@@ -41,10 +41,8 @@ class MemoryBackendNvdimm: public MemoryBackend
 		int fileFD;
 		/** Current size of the file. **/
 		size_t fileSize;
-		/** Keep track of the free memory. **/
-		std::map<size_t, std::list<void*>> freeLists;
-		/** register the allocated ranges. **/
-		std::map<void*, size_t> rangesTracker;
+		/** Count allocated chuncks **/
+		size_t chunks;
 };
 
 }

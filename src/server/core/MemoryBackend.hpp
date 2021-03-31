@@ -31,6 +31,7 @@ class MemoryBackend
 		virtual ~MemoryBackend(void);
 		virtual void * allocate(size_t size) = 0;
 		virtual void deallocate(void * addr, size_t size) = 0;
+		LibfabricDomain * getLfDomain(void);
 	protected:
 		/** Keep track of the libfabric domain for memory registration/deregistration. **/
 		LibfabricDomain * lfDomain;

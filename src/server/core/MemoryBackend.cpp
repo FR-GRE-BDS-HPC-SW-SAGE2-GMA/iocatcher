@@ -30,3 +30,12 @@ MemoryBackend::~MemoryBackend(void)
 {
 	//nothing to do
 }
+
+/****************************************************/
+/**
+ * Return the libfabric domain in use.
+**/
+LibfabricDomain * MemoryBackend::getLfDomain(void)
+{
+	return this->lfDomain;
+}
