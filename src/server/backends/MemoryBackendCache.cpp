@@ -95,7 +95,6 @@ void MemoryBackendCache::deallocate(void * addr, size_t size)
 	//check
 	assert(addr != NULL);
 	assert(size > 0);
-	assert(size % 4096 == 0);
 
 	//check
 	assert(isLocalMemory(addr, size));
