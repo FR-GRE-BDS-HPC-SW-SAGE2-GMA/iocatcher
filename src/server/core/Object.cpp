@@ -440,3 +440,32 @@ Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExis
 	//ret
 	return cow;
 }
+
+/****************************************************/
+/**
+ * If can get a uniq segment directly return the pointer starting at the given offset.
+ * This is more to unit tests.
+ * @param base The base offset from where to start.
+ * @param size The size of the desired segment.
+ * @param accessMode The mode of access.
+ * @param load If need to load the data before returning.
+**/
+void * Object::getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMode, bool load)
+{
+	//get list
+	ObjectSegmentList segments;
+	this->getBuffers(segments, base, size, accessMode, load);
+
+	//check has only one
+	assumeArg(segments.size() == 1, "Fail to get a uniq segment, got %1").arg(segments.size()).end();
+
+	//get ptr
+	ObjectSegmentDescr segment = segments.front();
+	char * ptr = (char*)segment.ptr;
+
+	//apply offset
+	ptr += base - segment.offset;
+
+	//return
+	return ptr;
+}
