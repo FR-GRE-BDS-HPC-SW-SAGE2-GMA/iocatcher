@@ -91,7 +91,7 @@ TEST_F(TestClientServer, obj_write_eager)
 TEST_F(TestClientServer, obj_write_rdma)
 {
 	//setup buffer
-	const size_t size = 2*1024*1024;
+	const size_t size = 4*1024*1024;
 	char buffer[size];
 	memset(buffer, 1, size);
 
@@ -188,7 +188,7 @@ TEST_F(TestClientServer, obj_read_eaeger)
 TEST_F(TestClientServer, obj_read_rdma)
 {
 	//setup buffer
-	const size_t size = 2*1024*1024;
+	const size_t size = 4*1024*1024;
 	char buffer[size];
 	memset(buffer, 0, size);
 
