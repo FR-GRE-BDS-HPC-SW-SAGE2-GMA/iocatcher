@@ -21,6 +21,6 @@ add_library(ioc-server-hooks OBJECT ${SERVER_HOOKS_SRC})
 SET_TARGET_PROPERTIES(ioc-server-hooks PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 ######################################################
-#if (ENABLE_TESTS)
-#	add_subdirectory(tests)
-#endif (ENABLE_TESTS)
+if (ENABLE_TESTS)
+	add_subdirectory(tests)
+endif (ENABLE_TESTS)

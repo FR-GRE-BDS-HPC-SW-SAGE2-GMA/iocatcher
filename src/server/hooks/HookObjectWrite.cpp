@@ -122,15 +122,19 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 		//compute copy size to stay in data limits
 		size_t copySize = segment.size;
 		size_t offset = 0;
-		if (cur + copySize > dataSize) {
-			copySize = dataSize - cur;
-		}
 		if (baseOffset > segment.offset) {
 			offset = baseOffset - segment.offset;
 			copySize -= offset;
 		}
+		assert(copySize <= segment.size);
+		if (cur + copySize > dataSize) {
+			copySize = dataSize - cur;
+		}
 
 		//copy
+		assert(offset < segment.size);
+		assert(copySize <= segment.size);
+		assert(copySize <= segment.size - offset);
 		memcpy(segment.ptr + offset, data + cur, copySize);
 
 		//progress

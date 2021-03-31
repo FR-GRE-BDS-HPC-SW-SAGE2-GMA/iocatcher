@@ -73,6 +73,7 @@ class Object
 	public:
 		Object(StorageBackend * backend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
+		void * getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
 		void markDirty(size_t base, size_t size);

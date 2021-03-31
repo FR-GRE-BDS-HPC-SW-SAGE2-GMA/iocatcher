@@ -33,11 +33,11 @@ namespace IOC
 /**
  * Max eager size for write operation. After this do RDMA.
 **/
-#define IOC_EAGER_MAX_WRITE (0*256*1024)
+#define IOC_EAGER_MAX_WRITE (32*1024)
 /**
  * Max eager size for read operation. After this ro RDMA.
 **/
-#define IOC_EAGER_MAX_READ (0*256*1024)
+#define IOC_EAGER_MAX_READ (32*1024)
 
 /****************************************************/
 /**
