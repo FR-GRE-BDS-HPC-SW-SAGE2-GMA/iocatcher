@@ -17,8 +17,9 @@ using namespace IOC;
  * @param lfDomain Provide the libfabric domain to be used for memory registration to be ready for RDMA operations.
  * @param objectSegmentsAlignement Can setup a minimal size for object segments to get better performances.
 **/
-Container::Container(StorageBackend * storageBackend, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement)
+Container::Container(StorageBackend * storageBackend, MemoryBackend * memBack, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement)
 {
+	this->memoryBackend = memBack;
 	this->storageBackend = storageBackend;
 	this->lfDomain = lfDomain;
 	this->objectSegmentsAlignement = objectSegmentsAlignement;
@@ -51,6 +52,21 @@ void Container::setStorageBackend(StorageBackend * storageBackend)
 
 /****************************************************/
 /**
+ * Change the memory backend (also applied to all existing objects).
+ * @param memoryBackend The new backend to be used.
+**/
+void Container::setMemoryBackend(MemoryBackend * memoryBackend)
+{
+	//setup local
+	this->memoryBackend = memoryBackend;
+
+	//apply on existing objects
+	for (auto & it: this->objects)
+		it.second->setMemoryBackend(memoryBackend);
+}
+
+/****************************************************/
+/**
  * Get an object from its object ID. If not found it will be created.
  * @param objectId The object ID to create.
  * @return A reference to the requested object.
@@ -62,7 +78,7 @@ Object & Container::getObject(const ObjectId & objectId)
 
 	//if not found or found
 	if (it == objects.end()) {
-		Object * obj = new Object(this->storageBackend, lfDomain, objectId, objectSegmentsAlignement);
+		Object * obj = new Object(this->storageBackend, this->memoryBackend, lfDomain, objectId, objectSegmentsAlignement);
 		objects.emplace(objectId, obj);
 		return *obj;
 	} else {

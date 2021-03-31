@@ -14,6 +14,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <memory>
 #include <cassert>
 //intenral
+#include "MemoryBackend.hpp"
 #include <base/network/LibfabricDomain.hpp>
 
 /****************************************************/
@@ -43,7 +44,7 @@ struct ObjectSegmentDescr
 class ObjectSegmentMemory
 {
 	public:
-		ObjectSegmentMemory(char * buffer, size_t size, bool isMmap, LibfabricDomain * domain);
+		ObjectSegmentMemory(char * buffer, size_t size, MemoryBackend * memoryBackend);
 		~ObjectSegmentMemory(void);
 		char * getBuffer(void) {return this->buffer;};
 		size_t getSize(void) {return this->size;}
@@ -52,10 +53,8 @@ class ObjectSegmentMemory
 		char * buffer;
 		/** Size of the buffer to know how to call munmap(). **/
 		size_t size;
-		/** To remember is allocated by malloc() of mmap(). **/
-		bool isMmap;
-		/** Libfabric domain to know how to de-register the segment. **/
-		LibfabricDomain * domain;
+		/** Keep track of the memory backend to know how to free. ***/
+		MemoryBackend * memoryBackend;
 };
 
 /****************************************************/
@@ -68,7 +67,7 @@ class ObjectSegment
 	public:
 		ObjectSegment(void);
 		ObjectSegment(ObjectSegment && orig) = default;
-		ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap, LibfabricDomain * domain);
+		ObjectSegment(size_t offset, size_t size, char * buffer, MemoryBackend * memoryBackend);
 		bool overlap(size_t segBase, size_t segSize);
 		ObjectSegmentDescr getSegmentDescr(void);
 		size_t getSize(void) {assert(memory != nullptr); return this->memory->getSize();};
@@ -77,7 +76,7 @@ class ObjectSegment
 		void setDirty(bool value) {this->dirty = value;};
 		char * getBuffer(void) {assert(memory != nullptr); return this->memory->getBuffer();};
 		void makeCowOf(ObjectSegment & orig);
-		void applyCow(char * new_ptr, size_t size, bool isMmap, LibfabricDomain * domain);
+		void applyCow(char * new_ptr, size_t size, MemoryBackend * memoryBackend);
 		ObjectSegment & operator=(ObjectSegment && orig) = default;
 		bool isCow(void);
 	private:

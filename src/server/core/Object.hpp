@@ -21,6 +21,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <sys/uio.h>
 //internal
 #include "ObjectSegment.hpp"
+#include "MemoryBackend.hpp"
 #include "StorageBackend.hpp"
 #include "ConsistencyTracker.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
@@ -71,7 +72,7 @@ typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 class Object
 {
 	public:
-		Object(StorageBackend * backend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
+		Object(StorageBackend * backend, MemoryBackend * memBackend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
@@ -79,15 +80,14 @@ class Object
 		int flush(size_t offset, size_t size);
 		int create(void);
 		void forceAlignement(size_t alignment);
-		static void setNvdimm(const std::vector<std::string> & paths);
 		ConsistencyTracker & getConsistencyTracker(void);
 		Object * makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist);
 		void setStorageBackend(StorageBackend * storageBackend);
+		void setMemoryBackend(MemoryBackend * memoryBackend);
 	private:
 		ObjectSegmentDescr loadSegment(size_t offset, size_t size, bool load = true);
 		ssize_t pwrite(void * buffer, size_t size, size_t offset);
 		ssize_t pread(void * buffer, size_t size, size_t offset);
-		char * allocateMem(size_t offset, size_t size);
 	private:
 		/** Libfabric domain to be used for meomry registration. **/
 		LibfabricDomain * domain;
@@ -95,19 +95,14 @@ class Object
 		ObjectId objectId;
 		/** List of segments hosted by this object. **/
 		ObjectSegmentMap segmentMap;
-		/** 
-		 * Paths to nvdim to allocate memory on it.
-		 * @todo Make cleaner code avoiding this static.
-		**/
-		static std::vector<std::string> nvdimmPaths;
 		/** Base alignement to use. **/
 		size_t alignement;
 		/** Consistency tracker to track ranges mapped by clients and guaranty exclusive write access. **/
 		ConsistencyTracker consistencyTracker;
-		/** ID of file creation on the NVDIMM. **/
-		int nvdimmId;
 		/** Keep track of the storage backend to be used to dump data. **/
 		StorageBackend * storageBackend;
+		/** Keep track of the memory backend used to allocate memory. **/
+		MemoryBackend * memoryBackend;
 };
 
 /****************************************************/

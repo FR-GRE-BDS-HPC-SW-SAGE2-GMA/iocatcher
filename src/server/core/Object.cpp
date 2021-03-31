@@ -26,25 +26,19 @@ using namespace std;
 
 /****************************************************/
 /**
- * Store the list of paths to create nvdimm files. Shared between all objects.
-**/
-std::vector<std::string> IOC::Object::nvdimmPaths;
-
-/****************************************************/
-/**
  * Constructor of an object.
  * @param storageBackend Pointer to the storage backend to be used to load/save data.
  * @param domain The libfabric domain to be used for memory registration.
  * @param objectId The identifier of the object.
  * @param alignement The segment size alignement to be used.
 **/
-Object::Object(StorageBackend * storageBackend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement)
+Object::Object(StorageBackend * storageBackend, MemoryBackend * memBack, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement)
 {
+	this->memoryBackend = memBack;
 	this->storageBackend = storageBackend;
 	this->alignement = alignement;
 	this->domain = domain;
 	this->objectId = objectId;
-	this->nvdimmId = 0;
 }
 
 /****************************************************/
@@ -64,6 +58,16 @@ const ObjectId & Object::getObjectId(void)
 void Object::setStorageBackend(StorageBackend * storageBackend)
 {
 	this->storageBackend = storageBackend;
+}
+
+/****************************************************/
+/**
+ * Change the memory backend in use.
+ * @param storageBackend The new backend.
+**/
+void Object::setMemoryBackend(MemoryBackend * memoryBackend)
+{
+	this->memoryBackend = memoryBackend;
 }
 
 /****************************************************/
@@ -128,11 +132,10 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 			//check if need to cow
 			if (accessMode == ACCESS_WRITE && segment.isCow()) {
 				//allocate new mem
-				char * new_buffer = allocateMem(segment.getOffset(), segment.getSize());
-				bool isMmap = !this->nvdimmPaths.empty();
+				void * new_buffer = this->memoryBackend->allocate(segment.getSize());
 
 				//make cow (the function make the copy)
-				segment.applyCow(new_buffer, segment.getSize(), isMmap, domain);
+				segment.applyCow((char*)new_buffer, segment.getSize(), this->memoryBackend);
 			}
 
 			//add to list
@@ -168,70 +171,6 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 
 /****************************************************/
 /**
- * Helper function to allocate an nvdimm stores buffer for the given range.
- * @param nvdimmPath Where to store the object.
- * @param high The high part of the object ID.
- * @param low The low part of the object ID.
- * @param offset The offset of the given range.
- * @param size The size of the range (which define the size of the allocation).
- * @return Address of the allocated segment.
-**/
-static char * allocateNvdimm(const std::string & nvdimmPath, int64_t high, int64_t low, size_t offset, size_t size)
-{
-	//open
-	char fname[1024];
-	sprintf(fname, "%s/ioc-%ld:%ld-%lu.raw", nvdimmPath.c_str(), high, low, offset);
-	unlink(fname);
-	int fd = open(fname, O_CREAT|O_RDWR);
-	assume(fd >= 0, "Fail to open nvdimm file !");
-
-	//truncate
-	//printf("%d %lu\n", fd, size);
-	int status = ftruncate(fd, size);
-	assumeArg(status == 0, "Fail to ftruncate: %1").argStrErrno().end();
-
-	//mmap
-	void * ptr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	assumeArg(ptr != MAP_FAILED, "Fail to mmap : %1").argStrErrno().end();
-	memset(ptr, 0, size);
-
-	//madvie
-	//status = madvise(ptr, size, MADV_DONTFORK);
-	//assumeArg(status != 0, "Fail to madvise: %1").argStrErrno().end();
-
-	return (char*)ptr;
-}
-
-/****************************************************/
-/**
- * Allocate memory to store data to be served.
- * @param offset The offset of the segment in the object.
- * @param size The size of the segment in the object.
- * @return The memory address of the allocated segment.
-**/
-char * Object::allocateMem(size_t offset, size_t size)
-{
-	//vars
-	char * ptr = NULL;
-
-	//select the right source
-	if (this->nvdimmPaths.empty()) {
-		ptr = (char*)malloc(size);
-	} else {
-		ptr = allocateNvdimm(this->nvdimmPaths[this->nvdimmId], this->objectId.high, this->objectId.low, offset, size);
-		this->nvdimmId = (this->nvdimmId + 1) % this->nvdimmPaths.size();
-	}
-
-	//memory register for RDMA
-	if (this->domain != NULL)
-		this->domain->registerSegment(ptr, size, true, true, true);
-	
-	//rep
-	return ptr;
-}
-
-/****************************************************/
-/**
  * Load a segment for the given range. It will allocated its memory (on nvdimm if enabled),
  * then load the data from mero if enabled and register the segment to the libfabric 
  * domain for RDMA operations.
@@ -243,8 +182,7 @@ char * Object::allocateMem(size_t offset, size_t size)
 ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 {
 	//allocate memory
-	char * buffer = allocateMem(offset, size);
-	bool isMmap = !this->nvdimmPaths.empty();
+	char* buffer = (char*)this->memoryBackend->allocate(size);
 
 	//load data
 	if (load) {
@@ -258,7 +196,7 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 
 	//register using end address to be able to use lower_bound() to quick search
 	ObjectSegment & segment = this->segmentMap[offset+size-1];
-	segment = std::move(ObjectSegment(offset, size, buffer, isMmap, domain));
+	segment = std::move(ObjectSegment(offset, size, buffer, this->memoryBackend));
 
 	//return descr
 	return segment.getSegmentDescr();
@@ -342,15 +280,6 @@ bool IOC::operator<(const ObjectId & objId1, const ObjectId & objId2)
 
 /****************************************************/
 /**
- * Set the nvdimm paths.
-**/
-void IOC::Object::setNvdimm(const std::vector<std::string> & paths)
-{
-	Object::nvdimmPaths = paths;
-}
-
-/****************************************************/
-/**
  * Return the consistency tracker.
 **/
 ConsistencyTracker & Object::getConsistencyTracker(void)
@@ -407,7 +336,7 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist)
 {
 	//spawn the new object
-	Object * cow = new Object(storageBackend, domain, targetObjectId, alignement);
+	Object * cow = new Object(storageBackend, memoryBackend, domain, targetObjectId, alignement);
 
 	//Create
 	int createStatus = cow->create();

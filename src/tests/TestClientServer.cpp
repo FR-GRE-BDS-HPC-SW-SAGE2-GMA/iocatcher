@@ -91,7 +91,7 @@ TEST_F(TestClientServer, obj_write)
 TEST_F(TestClientServer, obj_write_more_256_obj_segments)
 {
 	//setup buffer
-	const size_t size = 1024*1024;
+	const size_t size = 4*1024*1024;
 	const size_t segCnt = 512;
 	const size_t segSize = size / segCnt;
 	char * buffer = new char[size];
@@ -158,7 +158,7 @@ TEST_F(TestClientServer, obj_read)
 TEST_F(TestClientServer, obj_read_more_256_obj_segments)
 {
 	//setup buffer
-	const size_t size = 1024*1024;
+	const size_t size = 4*1024*1024;
 	const size_t segCnt = 512;
 	const size_t segSize = size / segCnt;
 	char * buffer = new char[size];

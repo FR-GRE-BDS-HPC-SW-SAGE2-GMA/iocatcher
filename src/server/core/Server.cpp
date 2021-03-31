@@ -22,6 +22,10 @@ COPYRIGHT: 2020 Bull SAS
 #include "../hooks/HookObjectWrite.hpp"
 #include "../hooks/HookObjectCow.hpp"
 #include "base/common/Debug.hpp"
+#include "../backends/MemoryBackendCache.hpp"
+#include "../backends/MemoryBackendRoundRobin.hpp"
+#include "../backends/MemoryBackendNvdimm.hpp"
+#include "../backends/MemoryBackendMalloc.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -73,9 +77,10 @@ Server::Server(const Config * config, const std::string & port)
 
 	//spawn storage backend
 	this->storageBackend = NULL;
+	this->memoryBackend = new MemoryBackendCache(new MemoryBackendMalloc(domain));
 
 	//create container
-	this->container = new Container(storageBackend, domain, 8*1024*1024);
+	this->container = new Container(storageBackend, memoryBackend, domain, 8*1024*1024);
 
 	//register hooks
 	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());
@@ -101,6 +106,7 @@ Server::~Server(void)
 {
 	this->stop();
 	delete this->container;
+	delete this->memoryBackend;
 	delete this->connection;
 	delete this->domain;
 	delete this->tcpServer;
@@ -115,6 +121,24 @@ void Server::setStorageBackend(StorageBackend * storageBackend)
 {
 	this->storageBackend = storageBackend;
 	this->container->setStorageBackend(storageBackend);
+}
+
+/****************************************************/
+/**
+ * Attach a memory backend to the server.
+ * @param memoryBackend Pointer to the backend to be used.
+**/
+void Server::setMemoryBackend(MemoryBackend * memoryBackend)
+{
+	//keep old to delete
+	MemoryBackend * old = this->memoryBackend;
+
+	//replace in chiles
+	this->memoryBackend = memoryBackend;
+	this->container->setMemoryBackend(memoryBackend);
+
+	//delete old
+	delete old;
 }
 
 /****************************************************/
@@ -251,4 +275,26 @@ void Server::onClientDisconnect(uint64_t tcpClientId)
 	IOC_DEBUG_ARG("client:tcp", "Client disconnect tcpId=%1").arg(tcpClientId).end();
 	connection->getClientRegistry().disconnectClient(tcpClientId);
 	container->onClientDisconnect(tcpClientId);
+}
+
+/****************************************************/
+void Server::setNvdimm(const std::vector<std::string> & nvdimmPaths)
+{
+	//set root round robin backend
+	MemoryBackendRoundRobin * backend = new MemoryBackendRoundRobin();
+
+	//loop to add all childs
+	for (auto & it : nvdimmPaths) {
+		//allocate low level backend
+		MemoryBackendNvdimm * lowLevelBackend = new MemoryBackendNvdimm(this->domain, it);
+
+		//setup cache
+		MemoryBackendCache * cache = new MemoryBackendCache(lowLevelBackend);
+
+		//register to round robin
+		backend->registerBackend(cache);
+	}
+
+	//setup
+	this->setMemoryBackend(backend);
 }

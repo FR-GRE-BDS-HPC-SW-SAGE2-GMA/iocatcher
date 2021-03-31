@@ -16,6 +16,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "Container.hpp"
 #include "ServerStats.hpp"
 #include "StorageBackend.hpp"
+#include "MemoryBackend.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 #include "../../base/network/LibfabricConnection.hpp"
 #include "../../base/network/TcpServer.hpp"
@@ -39,6 +40,8 @@ class Server
 		void setOnClientConnect(std::function<void(int id)> handler);
 		Container & getContainer(void) {return *this->container;};
 		void setStorageBackend(StorageBackend * storageBackend);
+		void setMemoryBackend(MemoryBackend * MemoryBackend);
+		void setNvdimm(const std::vector<std::string> & nvdimmPaths);
 	private:
 		//setups
 		void setupTcpServer(int port, int maxport);
@@ -68,6 +71,8 @@ class Server
 		TcpServer * tcpServer;
 		/** Keep track of the storage backend in use. **/
 		StorageBackend * storageBackend;
+		/** Keep track of the memory backend in use. **/
+		MemoryBackend * memoryBackend;
 };
 
 }
