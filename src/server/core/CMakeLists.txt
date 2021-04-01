@@ -12,6 +12,7 @@ set(SERVER_CORE_SRC Object.cpp
                     ConsistencyTracker.cpp
                     Server.cpp Config.cpp
                     StorageBackend.cpp
+                    MemoryBackend.cpp
 )
 
 ######################################################
