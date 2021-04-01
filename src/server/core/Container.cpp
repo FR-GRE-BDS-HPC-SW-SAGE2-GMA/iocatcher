@@ -78,7 +78,7 @@ Object & Container::getObject(const ObjectId & objectId)
 
 	//if not found or found
 	if (it == objects.end()) {
-		Object * obj = new Object(this->storageBackend, this->memoryBackend, lfDomain, objectId, objectSegmentsAlignement);
+		Object * obj = new Object(this->storageBackend, this->memoryBackend, objectId, objectSegmentsAlignement);
 		objects.emplace(objectId, obj);
 		return *obj;
 	} else {

@@ -19,7 +19,7 @@ TEST(TestObject, getBuffers_1)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId);
+	Object object(NULL, &mback, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500, ACCESS_READ);
@@ -31,7 +31,7 @@ TEST(TestObject, getBuffers_2)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId);
+	Object object(NULL, &mback, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500, ACCESS_READ);
@@ -47,7 +47,7 @@ TEST(TestObject, getBuffers_3)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId);
+	Object object(NULL, &mback, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,300, ACCESS_READ);
@@ -67,7 +67,7 @@ TEST(TestObject, getBuffers_4)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId);
+	Object object(NULL, &mback, objectId);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500, ACCESS_READ);
@@ -83,7 +83,7 @@ TEST(TestObject, getBuffers_5_alignement)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId, 1000);
+	Object object(NULL, &mback, objectId, 1000);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500, ACCESS_READ);
@@ -99,7 +99,7 @@ TEST(TestObject, getBuffers_6_alignement)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId, 1000);
+	Object object(NULL, &mback, objectId, 1000);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500, ACCESS_READ);
@@ -115,7 +115,7 @@ TEST(TestObject, getBuffers_7_check_addr)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Object object(NULL, &mback, NULL, objectId, 0);
+	Object object(NULL, &mback, objectId, 0);
 
 	ObjectSegmentList lst;
 	object.getBuffers(lst, 1000,500, ACCESS_READ);
@@ -136,7 +136,7 @@ TEST(TestObject, data_load)
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, &mback, NULL, objectId);
+	Object object(&storage, &mback, objectId);
 
 	//expect call to load
 	EXPECT_CALL(storage, pread(10, 20, _, 500, 1000))
@@ -155,7 +155,7 @@ TEST(TestObject, data_create)
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, &mback, NULL, objectId);
+	Object object(&storage, &mback, objectId);
 
 	//expect object create
 	EXPECT_CALL(storage, create(10,20))
@@ -172,7 +172,7 @@ TEST(TestObject, data_flush)
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, &mback, NULL, objectId);
+	Object object(&storage, &mback, objectId);
 
 	//expect call to load
 	EXPECT_CALL(storage, pread(10, 20, _, 500, 1000))
@@ -206,7 +206,7 @@ TEST(TestObject, data_cow)
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
 	StorageBackendGMock storage;
-	Object object(&storage, &mback, NULL, objectId);
+	Object object(&storage, &mback, objectId);
 
 	//mock
 	EXPECT_CALL(storage, pread(10, 20, _, 500, _))

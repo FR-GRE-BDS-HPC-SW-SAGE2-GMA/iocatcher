@@ -72,7 +72,7 @@ typedef std::map<size_t, ObjectSegment> ObjectSegmentMap;
 class Object
 {
 	public:
-		Object(StorageBackend * backend, MemoryBackend * memBackend, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement = 0);
+		Object(StorageBackend * backend, MemoryBackend * memBackend, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		static iovec * buildIovec(ObjectSegmentList & segments, size_t offset, size_t size);
@@ -89,8 +89,6 @@ class Object
 		ssize_t pwrite(void * buffer, size_t size, size_t offset);
 		ssize_t pread(void * buffer, size_t size, size_t offset);
 	private:
-		/** Libfabric domain to be used for meomry registration. **/
-		LibfabricDomain * domain;
 		/** Object ID **/
 		ObjectId objectId;
 		/** List of segments hosted by this object. **/

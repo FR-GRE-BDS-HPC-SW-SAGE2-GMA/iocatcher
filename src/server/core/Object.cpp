@@ -28,16 +28,14 @@ using namespace std;
 /**
  * Constructor of an object.
  * @param storageBackend Pointer to the storage backend to be used to load/save data.
- * @param domain The libfabric domain to be used for memory registration.
  * @param objectId The identifier of the object.
  * @param alignement The segment size alignement to be used.
 **/
-Object::Object(StorageBackend * storageBackend, MemoryBackend * memBack, LibfabricDomain * domain, const ObjectId & objectId, size_t alignement)
+Object::Object(StorageBackend * storageBackend, MemoryBackend * memBack, const ObjectId & objectId, size_t alignement)
 {
 	this->memoryBackend = memBack;
 	this->storageBackend = storageBackend;
 	this->alignement = alignement;
-	this->domain = domain;
 	this->objectId = objectId;
 }
 
@@ -336,7 +334,7 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist)
 {
 	//spawn the new object
-	Object * cow = new Object(storageBackend, memoryBackend, domain, targetObjectId, alignement);
+	Object * cow = new Object(storageBackend, memoryBackend, targetObjectId, alignement);
 
 	//Create
 	int createStatus = cow->create();
