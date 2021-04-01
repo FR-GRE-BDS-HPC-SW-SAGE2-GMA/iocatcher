@@ -48,6 +48,7 @@ class ObjectSegmentMemory
 		~ObjectSegmentMemory(void);
 		char * getBuffer(void) {return this->buffer;};
 		size_t getSize(void) {return this->size;}
+		MemoryBackend * getMemoryBackend(void);
 	private:
 		/** Keep track of the buffer address, can be NULL for none (for unit tests). **/
 		char * buffer;
@@ -76,7 +77,7 @@ class ObjectSegment
 		void setDirty(bool value) {this->dirty = value;};
 		char * getBuffer(void) {assert(memory != nullptr); return this->memory->getBuffer();};
 		void makeCowOf(ObjectSegment & orig);
-		void applyCow(char * new_ptr, size_t size, MemoryBackend * memoryBackend);
+		void applyCow(void);
 		ObjectSegment & operator=(ObjectSegment && orig) = default;
 		bool isCow(void);
 	private:

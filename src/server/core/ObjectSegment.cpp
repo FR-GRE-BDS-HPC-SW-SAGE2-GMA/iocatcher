@@ -50,6 +50,15 @@ ObjectSegmentMemory::~ObjectSegmentMemory(void)
 
 /****************************************************/
 /**
+ * Return the current memory backend.
+**/
+MemoryBackend * ObjectSegmentMemory::getMemoryBackend(void)
+{
+	return this->memoryBackend;
+}
+
+/****************************************************/
+/**
  * Default constructor, it sets everything to NULL of zero.
 **/
 ObjectSegment::ObjectSegment(void)
@@ -124,24 +133,26 @@ void ObjectSegment::makeCowOf(ObjectSegment & orig)
 /****************************************************/
 /**
  * Function to be called on a first write access to a shared COW segment.
- * @param new_ptr Define the new memory address to be used to store data.
- * This function is in charge of copying the data in.
- * @param size Size of the allocated segment for safety check.
- * @param memoryBackend The memory backend in use to know how to free.
 **/
-void ObjectSegment::applyCow(char * new_ptr, size_t size, MemoryBackend * memoryBackend)
+void ObjectSegment::applyCow(void)
 {
 	//check
 	assert(this->memory != nullptr);
-	assert(this->memory->getSize() == size);
 	assert(this->isCow());
+	
+	//vars
+	const size_t size = this->memory->getSize();
+	MemoryBackend * memoryBackend = this->memory->getMemoryBackend();
+
+	//allocate new ptr
+	char * new_ptr = (char*)memoryBackend->allocate(size);
 	assert(new_ptr != NULL);
 
 	//copy content
 	memcpy(new_ptr, this->memory->getBuffer(), size);
 
 	//override the shared pointer
-	this->memory = std::make_shared<ObjectSegmentMemory>(new_ptr, memory->getSize(), memoryBackend);
+	this->memory = std::make_shared<ObjectSegmentMemory>(new_ptr, size, memoryBackend);
 }
 
 /****************************************************/

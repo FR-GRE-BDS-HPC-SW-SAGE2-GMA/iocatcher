@@ -128,13 +128,8 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 		//if overlap
 		if (segment.overlap(base, size)) {
 			//check if need to cow
-			if (accessMode == ACCESS_WRITE && segment.isCow()) {
-				//allocate new mem
-				void * new_buffer = this->memoryBackend->allocate(segment.getSize());
-
-				//make cow (the function make the copy)
-				segment.applyCow((char*)new_buffer, segment.getSize(), this->memoryBackend);
-			}
+			if (accessMode == ACCESS_WRITE && segment.isCow())
+				segment.applyCow();
 
 			//add to list
 			segments.push_back(segment.getSegmentDescr());

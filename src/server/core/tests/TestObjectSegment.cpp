@@ -130,15 +130,14 @@ TEST(TestObjectSegment, cow_support)
 	ASSERT_TRUE(cow.isCow());
 
 	//apply cow
-	void * new_buffer = mback.allocate(64);
-	cow.applyCow((char*)new_buffer, 64, &mback);
+	cow.applyCow();
 
 	//check orig
 	ASSERT_EQ(buffer, (void*)orig.getBuffer());
 	ASSERT_FALSE(orig.isCow());
 
 	//check cow
-	ASSERT_EQ(new_buffer, (void*)cow.getBuffer());
+	ASSERT_NE(buffer, (void*)cow.getBuffer());
 	ASSERT_FALSE(cow.isCow());
 }
 
