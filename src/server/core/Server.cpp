@@ -80,7 +80,7 @@ Server::Server(const Config * config, const std::string & port)
 	this->memoryBackend = new MemoryBackendCache(new MemoryBackendMalloc(domain));
 
 	//create container
-	this->container = new Container(storageBackend, memoryBackend, domain, 8*1024*1024);
+	this->container = new Container(storageBackend, memoryBackend, 8*1024*1024);
 
 	//register hooks
 	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());

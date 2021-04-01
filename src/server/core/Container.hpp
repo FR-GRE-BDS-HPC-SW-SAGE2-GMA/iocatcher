@@ -29,7 +29,7 @@ namespace IOC
 class Container
 {
 	public:
-		Container(StorageBackend * storageBackend, MemoryBackend * memBack, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
+		Container(StorageBackend * storageBackend, MemoryBackend * memBack, size_t objectSegmentsAlignement = 0);
 		~Container(void);
 		Object & getObject(const ObjectId & objectId);
 		bool hasObject(const ObjectId & objectId);
@@ -41,8 +41,6 @@ class Container
 	private:
 		/** List ob objects identified by their object ID. **/
 		std::map<ObjectId, Object*> objects;
-		/** Libfabric domain to be used to pre-register the allocated memory to be ready for RDMA operations. **/
-		LibfabricDomain * lfDomain;
 		/** We can force a minimal size for the object segments to get better performance. **/
 		size_t objectSegmentsAlignement;
 		/** Keep track of the storage backend to use. **/

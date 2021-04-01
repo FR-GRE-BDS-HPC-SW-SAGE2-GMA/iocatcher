@@ -14,14 +14,12 @@ using namespace IOC;
 /****************************************************/
 /**
  * Constructor of the container, mostly to set default values.
- * @param lfDomain Provide the libfabric domain to be used for memory registration to be ready for RDMA operations.
  * @param objectSegmentsAlignement Can setup a minimal size for object segments to get better performances.
 **/
-Container::Container(StorageBackend * storageBackend, MemoryBackend * memBack, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement)
+Container::Container(StorageBackend * storageBackend, MemoryBackend * memBack, size_t objectSegmentsAlignement)
 {
 	this->memoryBackend = memBack;
 	this->storageBackend = storageBackend;
-	this->lfDomain = lfDomain;
 	this->objectSegmentsAlignement = objectSegmentsAlignement;
 }
 

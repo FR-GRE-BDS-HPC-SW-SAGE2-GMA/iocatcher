@@ -17,14 +17,14 @@ using namespace IOC;
 TEST(TestContainer, constructor)
 {
 	MemoryBackendMalloc mback(NULL);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 }
 
 /****************************************************/
 TEST(TestContainer, getObject)
 {
 	MemoryBackendMalloc mback(NULL);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 	Object & obj1 = container.getObject(ObjectId(10,20));
 	Object & obj2 = container.getObject(ObjectId(10,21));
 	Object & obj3 = container.getObject(ObjectId(10,20));
@@ -38,7 +38,7 @@ TEST(TestContainer, hasObject)
 {
 	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 	ASSERT_FALSE(container.hasObject(objectId));
 	container.getObject(objectId);
 	ASSERT_TRUE(container.hasObject(objectId));
@@ -49,7 +49,7 @@ TEST(TestContainer, hasObject)
 TEST(TestContainer, onClientDisconnect)
 {
 	MemoryBackendMalloc mback(NULL);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 	Object & obj1 = container.getObject(ObjectId(10,20));
 	Object & obj2 = container.getObject(ObjectId(10,21));
 
@@ -81,7 +81,7 @@ TEST(TestContainer, onClientDisconnect)
 TEST(TestContainer, makeObjectCow_ok_1)
 {
 	MemoryBackendMalloc mback(NULL);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), false);
 	ASSERT_TRUE(res);
@@ -91,7 +91,7 @@ TEST(TestContainer, makeObjectCow_ok_1)
 TEST(TestContainer, makeObjectCow_ok_2)
 {
 	MemoryBackendMalloc mback(NULL);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	container.getObject(ObjectId(10,21));
 	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), true);
@@ -102,7 +102,7 @@ TEST(TestContainer, makeObjectCow_ok_2)
 TEST(TestContainer, makeObjectCow_alread_exist)
 {
 	MemoryBackendMalloc mback(NULL);
-	Container container(NULL, &mback, NULL);
+	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	container.getObject(ObjectId(10,21));
 	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), false);
