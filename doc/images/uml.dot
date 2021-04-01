@@ -16,136 +16,192 @@ digraph IOCATCHER
 		arrowtail = "empty"
 		dir=back
 	]
-	
+
+	//legend
+	subgraph cluster_legend {
+		label = "Legend"
+
+		Class [
+			label = "{Class|\l|\l}"
+		]
+
+		Hub [
+			label = "Hub"
+			shape = ellipse
+		]
+	}
+
 	//classes
-	Server [
-		label = "{Server|\l|\l}"
+	subgraph cluster_server {
+		label = "Server"
+
+		Server [
+			label = "{Server|\l|\l}"
+		]
+
+		TcpServer [
+			label = "{TcpServer|\l|\l}"
+		]
+
+		Config [
+			label = "{Config|\l|\l}"
+		]
+
+		ServerStats [
+			label = "{ServerStats|\l|\l}"
+		]
+	}
+
+	subgraph cluster_server_hooks {
+		label = "Server hooks"
+
+		ServerHook [
+			label = "ServerHook"
+			shape = ellipse
+		]
+
+		HookObjectWrite [
+			label = "{HookObjectWrite|\l|\l}"
+		]
+
+		HookObjectRead [
+			label = "{HookObjectRead|\l|\l}"
+		]
+
+		HookObjectCreate [
+			label = "{HookObjectCreate|\l|\l}"
+		]
+
+		HookObjectCow [
+			label = "{HookObjectCow|\l|\l}"
+		]
+
+		HookRangeRegister [
+			label = "{HookRangeRegister|\l|\l}"
+		]
+
+		HookRangeUnregister [
+			label = "{HookRangeUnregister|\l|\l}"
+		]
+
+		HookFlush [
+			label = "{HookFlush|\l|\l}"
+		]
+
+		HookPingPong [
+			label = "{HookPingPong|\l|\l}"
+		]
+	}
+
+	subgraph cluster_object_handling {
+		label = "Server objet handling"
+
+		Container [
+			label = "{Container|\l|\l}"
+		]
+
+		Object [
+			label = "{Object|\l|\l}"
+		]
+
+		StorageBackend [
+			label = "{StorageBackend|\l|\l}"
+		]
+
+		StorageBackendMero [
+			label = "{StorageBackendMero|\l|\l}"
+		]
+
+		ConsistencyTracker [
+			label = "{ConsistencyTracker|\l|\l}"
+		]
+
+		ConsistencyRange [
+			label = "{ConsistencyRange|\l|\l}"
+		]
+
+		ObjectSegment [
+			label = "{ObjectSegment|\l|\l}"
+		]
+
+		MemoryBackend [
+			label = "{MemoryBackend|\l|\l}"
+		]
+
+		MemoryBackendMalloc [
+			label = "{MemoryBackendMalloc|\l|\l}"
+		]
+
+		MemoryBackendNvdimm [
+			label = "{MemoryBackendNvdimm|\l|\l}"
+		]
+
+		MemoryBackendCache [
+			label = "{MemoryBackendCache|\l|\l}"
+		]
+
+		MemoryBackendRoundRobin [
+			label = "{MemoryBackendRoundRobin|\l|\l}"
+		]
+
+		ObjectSegmentMemory [
+			label = "{ObjectSegmentMemory|\l|\l}"
+		]
+
+	}
+
+	Backends [
+		label = "Backends"
+		shape = ellipse
 	]
 
-	Container [
-		label = "{Container|\l|\l}"
-	]
+	subgraph cluster_libfabric_handling {
+		label = "Libfabric wrapper"
 
-	Object [
-		label = "{Object|\l|\l}"
-	]
+		LibfabricConnection [
+			label = "{LibfabricConnection|\l|\l}"
+		]
 
-	StorageBackend [
-		label = "{StorageBackend|\l|\l}"
-	]
+		LibfabricDomain [
+			label = "{LibfabricDomain|\l|\l}"
+		]
 
-	StorageBackendMero [
-		label = "{StorageBackendMero|\l|\l}"
-	]
+		ClientRegistry [
+			label = "{ClientRegistry|\l|\l}"
+		]
 
-	ConsistencyTracker [
-		label = "{ConsistencyTracker|\l|\l}"
-	]
+		Hook [
+			label = "{Hook|\l|\l}"
+		]
 
-	Hook [
-		label = "{Hook|\l|\l}"
-	]
+		LibfabricHandler [
+			label = "LibfabricHandler"
+			shape = ellipse
+		]
+	}
 
-	LibfabricConnection [
-		label = "{LibfabricConnection|\l|\l}"
-	]
+	subgraph cluster_client {
+		label = "Client"
 
-	LibfabricDomain [
-		label = "{LibfabricDomain|\l|\l}"
-	]
+		TcpClient [
+			label = "{TcpClient|\l|\l}"
+		]
 
-	TcpServer [
-		label = "{TcpServer|\l|\l}"
-	]
-
-	TcpClient [
-		label = "{TcpClient|\l|\l}"
-	]
-
-	ioc_client_t [
-		label = "{ioc_client_t|\l|\l}"
-	]
-
-	ConsistencyRange [
-		label = "{ConsistencyRange|\l|\l}"
-	]
-
-	ObjectSegment [
-		label = "{ObjectSegment|\l|\l}"
-	]
-
-	Config [
-		label = "{Config|\l|\l}"
-	]
-
-	ClientRegistry [
-		label = "{ClientRegistry|\l|\l}"
-	]
-
-	HookObjectWrite [
-		label = "{HookObjectWrite|\l|\l}"
-	]
-
-	HookObjectRead [
-		label = "{HookObjectRead|\l|\l}"
-	]
-
-	HookObjectCreate [
-		label = "{HookObjectCreate|\l|\l}"
-	]
-
-	HookRangeRegister [
-		label = "{HookRangeRegister|\l|\l}"
-	]
-
-	HookRangeUnregister [
-		label = "{HookRangeUnregister|\l|\l}"
-	]
-
-	HookFlush [
-		label = "{HookFlush|\l|\l}"
-	]
-
-	HookPingPong [
-		label = "{HookPingPong|\l|\l}"
-	]
-
-	ServerStats [
-		label = "{ServerStats|\l|\l}"
-	]
-
-	MemoryBackend [
-		label = "{MemoryBackend|\l|\l}"
-	]
-
-	MemoryBackendMalloc [
-		label = "{MemoryBackendMalloc|\l|\l}"
-	]
-
-	MemoryBackendNvdimm [
-		label = "{MemoryBackendNvdimm|\l|\l}"
-	]
-
-	MemoryBackendCache [
-		label = "{MemoryBackendCache|\l|\l}"
-	]
-
-	MemoryBackendRoundRobin [
-		label = "{MemoryBackendRoundRobin|\l|\l}"
-	]
-
-	ObjectSegmentMemory [
-		label = "{ObjectSegmentMemory|\l|\l}"
-	]
+		ioc_client_t [
+			label = "{ioc_client_t|\l|\l}"
+		]
+	}
 
 	//inheritance links
-	Hook -> HookFlush
-	Hook -> HookObjectCreate
-	Hook -> HookObjectRead
-	Hook -> HookObjectWrite
-	Hook -> HookRangeRegister
-	Hook -> HookRangeUnregister
-	Hook -> HookPingPong
+	ServerHook -> HookFlush
+	ServerHook -> HookObjectCow
+	ServerHook -> HookObjectCreate
+	ServerHook -> HookObjectRead
+	ServerHook -> HookObjectWrite
+	ServerHook -> HookRangeRegister
+	ServerHook -> HookRangeUnregister
+	ServerHook -> HookPingPong
+	Hook -> ServerHook
 	StorageBackend -> StorageBackendMero
 	MemoryBackend -> MemoryBackendMalloc
 	MemoryBackend -> MemoryBackendNvdimm
@@ -153,14 +209,16 @@ digraph IOCATCHER
 	MemoryBackend -> MemoryBackendRoundRobin
 
 	//composition
+	LibfabricHandler -> LibfabricDomain[arrowtail=diamond]
+	LibfabricHandler -> LibfabricConnection[arrowtail=diamond]
 	Server -> Config[arrowtail=odiamond]
 	Server -> Container[arrowtail=diamond]
 	Server -> TcpServer[arrowtail=diamond]
-	Server -> LibfabricDomain[arrowtail=diamond]
-	Server -> LibfabricConnection[arrowtail=diamond]
+	Server -> LibfabricHandler[arrowtail=diamond]
 	Server -> ServerStats[arrowtail=diamond]
-	Server -> StorageBackend[arrowtail=diamond]
-	Server -> MemoryBackend[arrowtail=diamond]
+	Server -> Backends[arrowtail=diamond]
+	Backends -> StorageBackend[arrowtail=diamond]
+	Backends -> MemoryBackend[arrowtail=diamond]
 	LibfabricConnection -> ClientRegistry[arrowtail=diamond]
 	LibfabricConnection -> LibfabricDomain[arrowtail=odiamond]
 	LibfabricConnection -> Hook[arrowtail=diamond]
@@ -171,13 +229,15 @@ digraph IOCATCHER
 	Object -> ConsistencyTracker[arrowtail=diamond]
 	Object -> StorageBackend[arrowtail=odiamond]
 	Object -> MemoryBackend[arrowtail=odiamond]
-	ObjectSegment -> ObjectSegmentMemory[arrowtail=odiamond]
+	ObjectSegment -> ObjectSegmentMemory[arrowtail=diamond]
+	ObjectSegmentMemory -> MemoryBackend[arrowtail=odiamond]
 	ConsistencyTracker -> ConsistencyRange[arrowtail=diamond]
 	ioc_client_t -> TcpClient[arrowtail=diamond]
 	ioc_client_t -> LibfabricDomain[arrowtail=diamond]
 	ioc_client_t -> LibfabricConnection[arrowtail=diamond]
 	HookFlush -> Container[arrowtail=odiamond]
 	HookObjectCreate -> Container[arrowtail=odiamond]
+	HookObjectCow -> Container[arrowtail=odiamond]
 	HookObjectRead -> Container[arrowtail=odiamond]
 	HookObjectWrite -> Container[arrowtail=odiamond]
 	HookObjectRead -> ServerStats[arrowtail=odiamond]
