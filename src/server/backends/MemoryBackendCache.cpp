@@ -24,6 +24,11 @@
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Constructor of the cached memory backend.
+ * @param backend Pointer to the sub backend to 
+ * use to allocate and free memory.
+**/
 MemoryBackendCache::MemoryBackendCache(MemoryBackend * backend)
 	:MemoryBackend(NULL)
 {
@@ -35,6 +40,10 @@ MemoryBackendCache::MemoryBackendCache(MemoryBackend * backend)
 }
 
 /****************************************************/
+/**
+ * Destructor of the memory backend, it free all the allocated memory.
+ * memory.
+**/
 MemoryBackendCache::~MemoryBackendCache(void)
 {
 	//check that all lists are free
@@ -62,6 +71,11 @@ MemoryBackendCache::~MemoryBackendCache(void)
 }
 
 /****************************************************/
+/**
+ * Check if chunks are available in the cache and return it,
+ * if not found allocate new memory to the sub backend.
+ * @param size Size of the desired memory.
+**/
 void * MemoryBackendCache::allocate(size_t size)
 {
 	//check
@@ -89,6 +103,13 @@ void * MemoryBackendCache::allocate(size_t size)
 }
 
 /****************************************************/
+/**
+ * Return the given chunk to the cache and register it
+ * for latter use. Notice, we currently free the memory
+ * only at exit.
+ * @param addr Address of the memory to return.
+ * @param size Size of the memory to return.
+**/
 void MemoryBackendCache::deallocate(void * addr, size_t size)
 {
 	//check
@@ -104,6 +125,11 @@ void MemoryBackendCache::deallocate(void * addr, size_t size)
 }
 
 /****************************************************/
+/**
+ * For debugging check if the given pointer belongs to the cache.
+ * @param ptr Address of the memory to return.
+ * @param size Size of the memory to return.
+**/
 bool MemoryBackendCache::isLocalMemory(void * ptr, size_t size)
 {
 	//check

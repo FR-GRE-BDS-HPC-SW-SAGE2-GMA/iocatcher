@@ -24,6 +24,13 @@
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Constructor of the nvdimm memory backend.
+ * @param lfDomain Libfabric domain to be used to register the new allocated
+ * memory for RDMA usage.
+ * @param directory Directory in which to create the file to be memory mapped.
+ * This might be a directory in a FSDAX mountpoint to exploit NVDIMM memory.
+**/
 MemoryBackendNvdimm::MemoryBackendNvdimm(LibfabricDomain * lfDomain, const std::string & directory)
 	:MemoryBackend(lfDomain)
 {
@@ -52,6 +59,11 @@ MemoryBackendNvdimm::MemoryBackendNvdimm(LibfabricDomain * lfDomain, const std::
 }
 
 /****************************************************/
+/**
+ * Destructor of the nvdimm handling. Mostly only close the
+ * file descriptor after checking that all chunk have been
+ * freed.
+**/
 MemoryBackendNvdimm::~MemoryBackendNvdimm(void)
 {
 	//check
@@ -62,6 +74,11 @@ MemoryBackendNvdimm::~MemoryBackendNvdimm(void)
 }
 
 /****************************************************/
+/**
+ * Allocate a new memory chunk by growing the size of the mapped file via
+ * ftruncate().
+ * @param size Size of the requested memory space to allocate.
+**/
 void * MemoryBackendNvdimm::allocate(size_t size)
 {
 	//check
@@ -92,6 +109,12 @@ void * MemoryBackendNvdimm::allocate(size_t size)
 }
 
 /****************************************************/
+/**
+ * Call munmap() to free the given memory space and unregister
+ * it from the libfabric domaine.
+ * @param addr Address of the memory space to free.
+ * @param size Size of the memory space used to free.
+**/
 void MemoryBackendNvdimm::deallocate(void * addr, size_t size)
 {
 	//check
@@ -112,6 +135,9 @@ void MemoryBackendNvdimm::deallocate(void * addr, size_t size)
 }
 
 /****************************************************/
+/**
+ * Return the size of the mapped file for unit tests.
+**/
 size_t MemoryBackendNvdimm::getFileSize(void) const
 {
 	return this->fileSize;

@@ -15,6 +15,11 @@
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Allocate new memory chunk using malloc and register it to the
+ * libfabric domain for RDMA operations.
+ * @param size Size of the memory to allocate.
+**/
 void * MemoryBackendMalloc::allocate(size_t size)
 {
 	//check
@@ -33,6 +38,12 @@ void * MemoryBackendMalloc::allocate(size_t size)
 }
 
 /****************************************************/
+/**
+ * Free the given memory pointer.
+ * @param addr Address of the memory space to free.
+ * @param size Size of the memory space used to unregister it
+ * from the libfabric domain.
+**/
 void MemoryBackendMalloc::deallocate(void * addr, size_t size)
 {
 	//check

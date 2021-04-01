@@ -13,12 +13,19 @@
 using namespace IOC;
 
 /****************************************************/
+/**
+ * Constructor of the rouond robin memory backend, do nothing.
+**/
 MemoryBackendRoundRobin::MemoryBackendRoundRobin(void)
 	:MemoryBackend(NULL)
 {
 }
 
 /****************************************************/
+/**
+ * Destroy all the sub memory backends after checking that all the
+ * memory have been freed.
+**/
 MemoryBackendRoundRobin::~MemoryBackendRoundRobin(void)
 {
 	//warn if not all zero
@@ -31,13 +38,23 @@ MemoryBackendRoundRobin::~MemoryBackendRoundRobin(void)
 }
 
 /****************************************************/
+/**
+ * Register a sub memory backend. It will be destroyed by the round robin
+ * backend at exit.
+ * @param backend Address of the memory backend to register.
+**/
 void MemoryBackendRoundRobin::registerBackend(MemoryBackend * backend)
 {
+	assert(backend != NULL);
 	this->backends.push_back(backend);
 	this->backendMem.push_back(0);
 }
 
 /****************************************************/
+/**
+ * Allocate a new segment on the less used sub memory backend.
+ * @param size Size of the memory segment to allocate.
+**/
 void * MemoryBackendRoundRobin::allocate(size_t size)
 {
 	//check if has at least one
@@ -67,6 +84,11 @@ void * MemoryBackendRoundRobin::allocate(size_t size)
 }
 
 /****************************************************/
+/**
+ * Return the given segment to its parent backend.
+ * @param addr Address of the memory space to free.
+ * @param size Size of the memory space used to free.
+**/
 void MemoryBackendRoundRobin::deallocate(void * addr, size_t size)
 {
 	//check
@@ -90,6 +112,11 @@ void MemoryBackendRoundRobin::deallocate(void * addr, size_t size)
 }
 
 /****************************************************/
+/**
+ * Return the memory used by the given memory bacend.
+ * Used in unit tests.
+ * @param id Id of the memory backend we want to check.
+**/
 size_t MemoryBackendRoundRobin::getMem(int id) const
 {
 	//check

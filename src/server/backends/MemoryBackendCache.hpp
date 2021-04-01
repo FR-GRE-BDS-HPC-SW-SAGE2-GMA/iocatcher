@@ -38,7 +38,7 @@ class MemoryBackendCache: public MemoryBackend
 	private:
 		/** Keep track of the underhood memory backend to use. **/
 		MemoryBackend * backend;
-		/** Keep track of the free memory. **/
+		/** Keep track of the free memory per size class. **/
 		std::map<size_t, std::list<void*>> freeLists;
 		/** register the allocated ranges. **/
 		std::map<void*, size_t> rangesTracker;
