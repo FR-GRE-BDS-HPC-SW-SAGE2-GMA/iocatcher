@@ -22,16 +22,14 @@ using namespace IOC;
  * Constructor of the memory tracker.
  * @param buffer Address of the buffer to be tracked (can be NULL for unit tests).
  * @param size Size of the buffer to be tracked (to know how to call munmap()).
- * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
- * @param domain Pointer to the libfabric domain to know how to unregister the memory. Can be NULL for tests.
+ * @param memoryBackend To know how to free the memory on deletion.
 **/
-ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, bool isMmap, LibfabricDomain * domain)
+ObjectSegmentMemory::ObjectSegmentMemory(char * buffer, size_t size, MemoryBackend * memoryBackend)
 {
 	//setup
 	this->buffer = buffer;
 	this->size = size;
-	this->isMmap = isMmap;
-	this->domain = domain;
+	this->memoryBackend = memoryBackend;
 }
 
 /****************************************************/
@@ -46,17 +44,17 @@ ObjectSegmentMemory::~ObjectSegmentMemory(void)
 	if (buffer == nullptr)
 		return;
 
-	//unregister
-	if (this->domain != nullptr)
-		this->domain->unregisterSegment(this->buffer, this->size);
-
 	//free
-	if (isMmap) {
-		int status = munmap(buffer, size);
-		assumeArg(status == 0, "Failed to munmap() the obejct segment: %1.").argStrErrno().end();
-	} else {
-		free(buffer);
-	}
+	this->memoryBackend->deallocate(buffer, size);
+}
+
+/****************************************************/
+/**
+ * Return the current memory backend.
+**/
+MemoryBackend * ObjectSegmentMemory::getMemoryBackend(void)
+{
+	return this->memoryBackend;
 }
 
 /****************************************************/
@@ -78,11 +76,11 @@ ObjectSegment::ObjectSegment(void)
  * @param buffer Address of the buffer to be tracked (can be NULL for unit tests).
  * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
 **/
-ObjectSegment::ObjectSegment(size_t offset, size_t size, char * buffer, bool isMmap, LibfabricDomain * domain)
+ObjectSegment::ObjectSegment(size_t offset, size_t size, char * buffer, MemoryBackend * memoryBackend)
 {
 	this->offset = offset;
 	this->dirty = false;
-	this->memory = std::make_shared<ObjectSegmentMemory>(buffer, size, isMmap, domain);
+	this->memory = std::make_shared<ObjectSegmentMemory>(buffer, size, memoryBackend);
 }
 
 /****************************************************/
@@ -135,24 +133,26 @@ void ObjectSegment::makeCowOf(ObjectSegment & orig)
 /****************************************************/
 /**
  * Function to be called on a first write access to a shared COW segment.
- * @param new_ptr Define the new memory address to be used to store data.
- * This function is in charge of copying the data in.
- * @param size Size of the allocated segment for safety check.
- * @param isMmap Declare if the segment has been allocated with mmap() or malloc().
 **/
-void ObjectSegment::applyCow(char * new_ptr, size_t size, bool isMmap, LibfabricDomain * domain)
+void ObjectSegment::applyCow(void)
 {
 	//check
 	assert(this->memory != nullptr);
-	assert(this->memory->getSize() == size);
 	assert(this->isCow());
+	
+	//vars
+	const size_t size = this->memory->getSize();
+	MemoryBackend * memoryBackend = this->memory->getMemoryBackend();
+
+	//allocate new ptr
+	char * new_ptr = (char*)memoryBackend->allocate(size);
 	assert(new_ptr != NULL);
 
 	//copy content
 	memcpy(new_ptr, this->memory->getBuffer(), size);
 
 	//override the shared pointer
-	this->memory = std::make_shared<ObjectSegmentMemory>(new_ptr, memory->getSize(), isMmap, domain);
+	this->memory = std::make_shared<ObjectSegmentMemory>(new_ptr, size, memoryBackend);
 }
 
 /****************************************************/

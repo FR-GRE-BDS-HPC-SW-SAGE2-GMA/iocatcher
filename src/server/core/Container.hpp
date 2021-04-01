@@ -13,6 +13,7 @@ COPYRIGHT: 2020 Bull SAS
 #include <cstdlib>
 #include <map>
 #include "Object.hpp"
+#include "MemoryBackend.hpp"
 #include "StorageBackend.hpp"
 #include "../../base/network/LibfabricDomain.hpp"
 
@@ -28,7 +29,7 @@ namespace IOC
 class Container
 {
 	public:
-		Container(StorageBackend * storageBackend, LibfabricDomain * lfDomain, size_t objectSegmentsAlignement = 0);
+		Container(StorageBackend * storageBackend, MemoryBackend * memBack, size_t objectSegmentsAlignement = 0);
 		~Container(void);
 		Object & getObject(const ObjectId & objectId);
 		bool hasObject(const ObjectId & objectId);
@@ -36,15 +37,16 @@ class Container
 		void onClientDisconnect(uint64_t clientId);
 		void setObjectSegmentsAlignement(size_t alignement);
 		void setStorageBackend(StorageBackend * storageBackend);
+		void setMemoryBackend(MemoryBackend * memoryBackend);
 	private:
 		/** List ob objects identified by their object ID. **/
 		std::map<ObjectId, Object*> objects;
-		/** Libfabric domain to be used to pre-register the allocated memory to be ready for RDMA operations. **/
-		LibfabricDomain * lfDomain;
 		/** We can force a minimal size for the object segments to get better performance. **/
 		size_t objectSegmentsAlignement;
 		/** Keep track of the storage backend to use. **/
 		StorageBackend * storageBackend;
+		/** Keep track of the memory backend in use. **/
+		MemoryBackend * memoryBackend;
 };
 
 }

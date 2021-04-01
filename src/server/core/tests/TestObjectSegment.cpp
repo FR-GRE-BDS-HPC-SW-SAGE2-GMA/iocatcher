@@ -6,6 +6,7 @@
 
 /****************************************************/
 #include <gtest/gtest.h>
+#include "../backends/MemoryBackendMalloc.hpp"
 #include "../ObjectSegment.hpp"
 
 /****************************************************/
@@ -22,8 +23,9 @@ TEST(TestObjectSegment, default_constructor)
 TEST(TestObjectSegment, value_constructor)
 {
 	//build orig
-	void * buffer = malloc(64);
-	ObjectSegment segment(512, 64, (char*)buffer, false, nullptr);
+	MemoryBackendMalloc mback(NULL);
+	void * buffer = mback.allocate(64);
+	ObjectSegment segment(512, 64, (char*)buffer, &mback);
 
 	//test
 	EXPECT_EQ(64, segment.getSize());
@@ -37,8 +39,9 @@ TEST(TestObjectSegment, value_constructor)
 TEST(TestObjectSegment, move_constructor)
 {
 	//build orig
-	void * buffer = malloc(64);
-	ObjectSegment orig(512, 64, (char*)buffer, false, nullptr);
+	MemoryBackendMalloc mback(NULL);
+	void * buffer = mback.allocate(64);
+	ObjectSegment orig(512, 64, (char*)buffer, &mback);
 
 	//make move
 	ObjectSegment second(std::move(orig));
@@ -57,7 +60,7 @@ TEST(TestObjectSegment, overlap)
 	//build
 	size_t offset = 1000;
 	size_t size = 500;
-	ObjectSegment segment(offset, size, nullptr, false, nullptr);
+	ObjectSegment segment(offset, size, nullptr, nullptr);
 
 	//check cases
 	EXPECT_TRUE(segment.overlap(1000,500));
@@ -71,8 +74,9 @@ TEST(TestObjectSegment, overlap)
 TEST(TestObjectSegment, getSegmentDescr)
 {
 	//build orig
-	void * buffer = malloc(64);
-	ObjectSegment segment(512, 64, (char*)buffer, false, nullptr);
+	MemoryBackendMalloc mback(NULL);
+	void * buffer = mback.allocate(64);
+	ObjectSegment segment(512, 64, (char*)buffer, &mback);
 
 	//get descr
 	ObjectSegmentDescr descr = segment.getSegmentDescr();
@@ -87,7 +91,7 @@ TEST(TestObjectSegment, getSegmentDescr)
 TEST(TestObjectSegment, get_set_params)
 {
 	//build orig
-	ObjectSegment segment(512, 64, nullptr, false, nullptr);
+	ObjectSegment segment(512, 64, nullptr, nullptr);
 
 	//get descr
 	EXPECT_EQ(64, segment.getSize());
@@ -104,8 +108,9 @@ TEST(TestObjectSegment, get_set_params)
 TEST(TestObjectSegment, cow_support)
 {
 	//build orig
-	void * buffer = malloc(64);
-	ObjectSegment orig(512, 64, (char*)buffer, false, nullptr);
+	MemoryBackendMalloc mback(NULL);
+	void * buffer = mback.allocate(64);
+	ObjectSegment orig(512, 64, (char*)buffer, &mback);
 	orig.setDirty(true);
 	ASSERT_EQ(buffer, (void*)orig.getBuffer());
 
@@ -125,15 +130,14 @@ TEST(TestObjectSegment, cow_support)
 	ASSERT_TRUE(cow.isCow());
 
 	//apply cow
-	void * new_buffer = malloc(64);
-	cow.applyCow((char*)new_buffer, 64, false, nullptr);
+	cow.applyCow();
 
 	//check orig
 	ASSERT_EQ(buffer, (void*)orig.getBuffer());
 	ASSERT_FALSE(orig.isCow());
 
 	//check cow
-	ASSERT_EQ(new_buffer, (void*)cow.getBuffer());
+	ASSERT_NE(buffer, (void*)cow.getBuffer());
 	ASSERT_FALSE(cow.isCow());
 }
 
@@ -141,8 +145,9 @@ TEST(TestObjectSegment, cow_support)
 TEST(TestObjectSegment, move_operator)
 {
 	//build orig
-	void * buffer = malloc(64);
-	ObjectSegment orig(512, 64, (char*)buffer, false, nullptr);
+	MemoryBackendMalloc mback(NULL);
+	void * buffer = mback.allocate(64);
+	ObjectSegment orig(512, 64, (char*)buffer, &mback);
 
 	//make move
 	ObjectSegment second = std::move(orig);

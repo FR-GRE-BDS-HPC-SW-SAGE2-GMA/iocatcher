@@ -39,11 +39,6 @@ int main(int argc, const char ** argv)
 	
 	//info
 	printf("LISTEN: %s\n", config.listenIP.c_str());
-	if (config.nvdimmMountPath.empty() == false) {
-		for (size_t i = 0 ; i < config.nvdimmMountPath.size() ; i++)
-			printf("NVDIMM ENABLED: %s\n", config.nvdimmMountPath[i].c_str());
-		Object::setNvdimm(config.nvdimmMountPath);
-	}
 
 	//init mero
 	StorageBackend * storageBackend = NULL;
@@ -59,6 +54,13 @@ int main(int argc, const char ** argv)
 	//run server
 	Server server(&config, "8556");
 	server.setStorageBackend(storageBackend);
+
+	//enable nvdimm
+	if (config.nvdimmMountPath.empty() == false) {
+		for (size_t i = 0 ; i < config.nvdimmMountPath.size() ; i++)
+			printf("NVDIMM ENABLED: %s\n", config.nvdimmMountPath[i].c_str());
+		server.setNvdimm(config.nvdimmMountPath);
+	}
 
 	//setup hook
 	server.setOnClientConnect([](int id) {

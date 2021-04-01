@@ -11,7 +11,6 @@
 //std
 #include <cstdlib>
 //internal
-#include "Object.hpp"
 #include "base/network/LibfabricDomain.hpp"
 
 /****************************************************/

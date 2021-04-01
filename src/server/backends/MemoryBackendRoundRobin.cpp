@@ -5,6 +5,8 @@
 *****************************************************/
 
 /****************************************************/
+//std
+#include <cassert>
 //internal
 #include "base/common/Debug.hpp"
 #include "MemoryBackendRoundRobin.hpp"

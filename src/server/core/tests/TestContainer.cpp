@@ -8,6 +8,7 @@ COPYRIGHT: 2020 Bull SAS
 /****************************************************/
 #include <gtest/gtest.h>
 #include "../Container.hpp"
+#include "../../backends/MemoryBackendMalloc.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -15,13 +16,15 @@ using namespace IOC;
 /****************************************************/
 TEST(TestContainer, constructor)
 {
-	Container container(NULL, NULL);
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
 }
 
 /****************************************************/
 TEST(TestContainer, getObject)
 {
-	Container container(NULL, NULL);
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
 	Object & obj1 = container.getObject(ObjectId(10,20));
 	Object & obj2 = container.getObject(ObjectId(10,21));
 	Object & obj3 = container.getObject(ObjectId(10,20));
@@ -33,8 +36,9 @@ TEST(TestContainer, getObject)
 /****************************************************/
 TEST(TestContainer, hasObject)
 {
+	MemoryBackendMalloc mback(NULL);
 	ObjectId objectId(10, 20);
-	Container container(NULL, NULL);
+	Container container(NULL, &mback);
 	ASSERT_FALSE(container.hasObject(objectId));
 	container.getObject(objectId);
 	ASSERT_TRUE(container.hasObject(objectId));
@@ -44,7 +48,8 @@ TEST(TestContainer, hasObject)
 /****************************************************/
 TEST(TestContainer, onClientDisconnect)
 {
-	Container container(NULL, NULL);
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
 	Object & obj1 = container.getObject(ObjectId(10,20));
 	Object & obj2 = container.getObject(ObjectId(10,21));
 
@@ -75,7 +80,8 @@ TEST(TestContainer, onClientDisconnect)
 /****************************************************/
 TEST(TestContainer, makeObjectCow_ok_1)
 {
-	Container container(NULL, NULL);
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), false);
 	ASSERT_TRUE(res);
@@ -84,7 +90,8 @@ TEST(TestContainer, makeObjectCow_ok_1)
 /****************************************************/
 TEST(TestContainer, makeObjectCow_ok_2)
 {
-	Container container(NULL, NULL);
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	container.getObject(ObjectId(10,21));
 	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), true);
@@ -94,7 +101,8 @@ TEST(TestContainer, makeObjectCow_ok_2)
 /****************************************************/
 TEST(TestContainer, makeObjectCow_alread_exist)
 {
-	Container container(NULL, NULL);
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	container.getObject(ObjectId(10,21));
 	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), false);
