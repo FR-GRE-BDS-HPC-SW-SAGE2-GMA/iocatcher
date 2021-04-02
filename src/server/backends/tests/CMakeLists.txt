@@ -14,6 +14,7 @@ include_directories(../)
 ######################################################
 set(TEST_NAMES TestMemoryBackendMalloc
                TestMemoryBackendNvdimm
+               TestMemoryBackendNvdimmGrow
                TestMemoryBackendCache
                TestMemoryBackendRoundRobin
 )

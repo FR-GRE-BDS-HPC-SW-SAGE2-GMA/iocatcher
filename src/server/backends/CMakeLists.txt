@@ -9,6 +9,7 @@
 set(SERVER_BACKEND_SRC StorageBackendMero.cpp
                        MemoryBackendMalloc.cpp
                        MemoryBackendNvdimm.cpp
+                       MemoryBackendNvdimmGrow.cpp
                        MemoryBackendCache.cpp
                        MemoryBackendRoundRobin.cpp
 )
