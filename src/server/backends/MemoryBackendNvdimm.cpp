@@ -25,7 +25,12 @@
 using namespace IOC;
 
 /****************************************************/
+/** 
+ * We initially create the file with 8 times the requested size. 
+ * Then we double for each allocation.
+**/
 #define IOC_INITIAL_FACTOR 8
+/** Limit the allocation size at 32GB per batch. **/
 #define IOC_INCREASE_LIMIT (32UL*1024UL*1024UL*1024UL)
 
 /****************************************************/
@@ -76,12 +81,21 @@ void MemoryBackendNvdimm::openNewFile(size_t size)
 
 	//calc new size
 	size_t nextSize = this->fileSize;
+
+	//check if first allocation
 	if (nextSize == 0) {
 		nextSize = size * IOC_INITIAL_FACTOR;
 	} else {
+		//double the size
 		nextSize *= 2;
+
+		//apply limit
 		if (nextSize > IOC_INCREASE_LIMIT)
 			nextSize = IOC_INCREASE_LIMIT;
+
+		//make sure we fully use
+		if (nextSize % size != 0)
+			nextSize += size - nextSize % size;
 	}
 
 	//calc filename
