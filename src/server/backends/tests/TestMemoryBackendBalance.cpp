@@ -7,7 +7,7 @@
 /****************************************************/
 #include <gtest/gtest.h>
 #include "../MemoryBackendNvdimm.hpp"
-#include "../MemoryBackendRoundRobin.hpp"
+#include "../MemoryBackendBalance.hpp"
 #include <gmock/gmock.h>
 
 /****************************************************/
@@ -19,7 +19,7 @@ TEST(TestMemoryBackendMalloc, allocate_on_both)
 {
 	//vars
 	const size_t size = 1024*1024;
-	MemoryBackendRoundRobin backend;
+	MemoryBackendBalance backend;
 
 	//setup sub backends
 	MemoryBackendNvdimm * backend1 = new MemoryBackendNvdimm(NULL, "/tmp/");
@@ -49,7 +49,7 @@ TEST(TestMemoryBackendMalloc, allocate_on_first_free)
 {
 	//vars
 	const size_t size = 1024*1024;
-	MemoryBackendRoundRobin backend;
+	MemoryBackendBalance backend;
 
 	//setup sub backends
 	MemoryBackendNvdimm * backend1 = new MemoryBackendNvdimm(NULL, "/tmp/");

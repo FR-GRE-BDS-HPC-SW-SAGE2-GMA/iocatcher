@@ -23,7 +23,7 @@ COPYRIGHT: 2020 Bull SAS
 #include "../hooks/HookObjectCow.hpp"
 #include "base/common/Debug.hpp"
 #include "../backends/MemoryBackendCache.hpp"
-#include "../backends/MemoryBackendRoundRobin.hpp"
+#include "../backends/MemoryBackendBalance.hpp"
 #include "../backends/MemoryBackendNvdimm.hpp"
 #include "../backends/MemoryBackendMalloc.hpp"
 
@@ -281,7 +281,7 @@ void Server::onClientDisconnect(uint64_t tcpClientId)
 void Server::setNvdimm(const std::vector<std::string> & nvdimmPaths)
 {
 	//set root round robin backend
-	MemoryBackendRoundRobin * backend = new MemoryBackendRoundRobin();
+	MemoryBackendBalance * backend = new MemoryBackendBalance();
 
 	//loop to add all childs
 	for (auto & it : nvdimmPaths) {

@@ -25,11 +25,11 @@ namespace IOC
  * by keeping a balance over the memory size allocated
  * on each one.
 **/
-class MemoryBackendRoundRobin: public MemoryBackend
+class MemoryBackendBalance: public MemoryBackend
 {
 	public:
-		MemoryBackendRoundRobin(void);
-		virtual ~MemoryBackendRoundRobin(void);
+		MemoryBackendBalance(void);
+		virtual ~MemoryBackendBalance(void);
 		void registerBackend(MemoryBackend * backend);
 		size_t getMem(int id) const;
 	public:
