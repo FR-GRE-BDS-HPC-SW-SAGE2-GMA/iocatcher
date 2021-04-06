@@ -25,6 +25,15 @@
 using namespace IOC;
 
 /****************************************************/
+/** 
+ * We initially create the file with 8 times the requested size. 
+ * Then we double for each allocation.
+**/
+#define IOC_INITIAL_FACTOR 8
+/** Limit the allocation size at 32GB per batch. **/
+#define IOC_INCREASE_LIMIT (32UL*1024UL*1024UL*1024UL)
+
+/****************************************************/
 /**
  * Constructor of the nvdimm memory backend.
  * @param lfDomain Libfabric domain to be used to register the new allocated
@@ -38,25 +47,11 @@ MemoryBackendNvdimm::MemoryBackendNvdimm(LibfabricDomain * lfDomain, const std::
 	//setup
 	this->directory = directory;
 
-	//calc filename
-	std::string ftemplate = directory + std::string("/") + "iocatcher-nvdimm-file-XXXXXX";
-	char * fname = new char[ftemplate.size()+1];
-	memcpy(fname, ftemplate.c_str(), ftemplate.size()+1);
-
-	//open file
-	this->fileFD = mkstemp(fname);
-	assumeArg(this->fileFD > 0, "Fail to create and open the nvdimm file '%1': %2").arg(fname).argStrErrno().end();
-
-	//unlink so it will be deleted at exit
-	int status = unlink(fname);
-	assumeArg(status == 0, "Fail to unlink file %1: %2").arg(fname).argStrErrno().end();
-
-	//free mem
-	delete [] fname;
-
 	//setup default
+	this->fileFD = 0;
 	this->fileSize = 0;
 	this->chunks = 0;
+	this->fileOffset = 0;
 }
 
 /****************************************************/
@@ -76,6 +71,62 @@ MemoryBackendNvdimm::~MemoryBackendNvdimm(void)
 
 /****************************************************/
 /**
+ * Used to open a new file with the given size.
+**/
+void MemoryBackendNvdimm::openNewFile(size_t size)
+{
+	//close the old file
+	if (this->fileFD != 0)
+		close(this->fileFD);
+
+	//calc new size
+	size_t nextSize = this->fileSize;
+
+	//check if first allocation
+	if (nextSize == 0) {
+		nextSize = size * IOC_INITIAL_FACTOR;
+	} else {
+		//double the size
+		nextSize *= 2;
+
+		//apply limit
+		if (nextSize > IOC_INCREASE_LIMIT)
+			nextSize = IOC_INCREASE_LIMIT;
+
+		//make sure we fully use
+		if (nextSize % size != 0)
+			nextSize += size - nextSize % size;
+	}
+
+	//calc filename
+	std::string ftemplate = directory + std::string("/") + "iocatcher-nvdimm-file-XXXXXX";
+	char * fname = new char[ftemplate.size()+1];
+	memcpy(fname, ftemplate.c_str(), ftemplate.size()+1);
+
+	//open file
+	this->fileFD = mkstemp(fname);
+	IOC_DEBUG_ARG("nvdimm", "Opening file %1 to mmap it").arg(fname).end();
+	assumeArg(this->fileFD > 0, "Fail to create and open the nvdimm file '%1': %2").arg(fname).argStrErrno().end();
+
+	//unlink so it will be deleted at exit
+	int status = unlink(fname);
+	assumeArg(status == 0, "Fail to unlink file %1: %2").arg(fname).argStrErrno().end();
+
+	//extend the file
+	IOC_DEBUG_ARG("nvdimm", "Ftruncate %1, size = %2B").arg(this->fileFD).argUnit1024(nextSize).end();
+	status = ftruncate(this->fileFD, nextSize);
+	assumeArg(status == 0, "Failed to ftruncate the nvdimm file to size %1: %s").arg(nextSize).argStrErrno().end();
+
+	//free mem
+	delete [] fname;
+
+	//setup params
+	this->fileSize = nextSize;
+	this->fileOffset = 0;
+}
+
+/****************************************************/
+/**
  * Allocate a new memory chunk by growing the size of the mapped file via
  * ftruncate().
  * @param size Size of the requested memory space to allocate.
@@ -86,13 +137,14 @@ void * MemoryBackendNvdimm::allocate(size_t size)
 	assert(size > 0);
 	assert(size % 4096 == 0);
 
-	//get offset
-	size_t offset = this->fileSize;
+	//need to allocate a new file
+	if (this->fileOffset + size > this->fileSize)
+		this->openNewFile(size);
 
-	//extend the file
-	this->fileSize += size;
-	int status = ftruncate(this->fileFD, this->fileSize);
-	assumeArg(status == 0, "Failed to ftruncate the nvdimm file to size %1").arg(this->fileSize).end();
+	//get offset & move forward
+	size_t offset = this->fileOffset;
+	this->fileOffset += size;
+	assert(this->fileOffset <= this->fileSize);
 	
 	//memory map
 	void * ptr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_FILE|MAP_SHARED, this->fileFD, offset);
@@ -142,4 +194,13 @@ void MemoryBackendNvdimm::deallocate(void * addr, size_t size)
 size_t MemoryBackendNvdimm::getFileSize(void) const
 {
 	return this->fileSize;
+}
+
+/****************************************************/
+/**
+ * Return the number of allocated chunks.
+**/
+size_t MemoryBackendNvdimm::getChunks(void) const
+{
+	return this->chunks;
 }

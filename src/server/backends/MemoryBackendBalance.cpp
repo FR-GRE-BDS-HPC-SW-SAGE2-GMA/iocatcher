@@ -9,7 +9,7 @@
 #include <cassert>
 //internal
 #include "base/common/Debug.hpp"
-#include "MemoryBackendRoundRobin.hpp"
+#include "MemoryBackendBalance.hpp"
 
 /****************************************************/
 using namespace IOC;
@@ -18,7 +18,7 @@ using namespace IOC;
 /**
  * Constructor of the rouond robin memory backend, do nothing.
 **/
-MemoryBackendRoundRobin::MemoryBackendRoundRobin(void)
+MemoryBackendBalance::MemoryBackendBalance(void)
 	:MemoryBackend(NULL)
 {
 }
@@ -28,7 +28,7 @@ MemoryBackendRoundRobin::MemoryBackendRoundRobin(void)
  * Destroy all the sub memory backends after checking that all the
  * memory have been freed.
 **/
-MemoryBackendRoundRobin::~MemoryBackendRoundRobin(void)
+MemoryBackendBalance::~MemoryBackendBalance(void)
 {
 	//warn if not all zero
 	if (this->backendOfMem.empty() == false)
@@ -45,7 +45,7 @@ MemoryBackendRoundRobin::~MemoryBackendRoundRobin(void)
  * backend at exit.
  * @param backend Address of the memory backend to register.
 **/
-void MemoryBackendRoundRobin::registerBackend(MemoryBackend * backend)
+void MemoryBackendBalance::registerBackend(MemoryBackend * backend)
 {
 	assert(backend != NULL);
 	this->backends.push_back(backend);
@@ -57,7 +57,7 @@ void MemoryBackendRoundRobin::registerBackend(MemoryBackend * backend)
  * Allocate a new segment on the less used sub memory backend.
  * @param size Size of the memory segment to allocate.
 **/
-void * MemoryBackendRoundRobin::allocate(size_t size)
+void * MemoryBackendBalance::allocate(size_t size)
 {
 	//check if has at least one
 	assert(this->backends.size() > 0);
@@ -91,7 +91,7 @@ void * MemoryBackendRoundRobin::allocate(size_t size)
  * @param addr Address of the memory space to free.
  * @param size Size of the memory space used to free.
 **/
-void MemoryBackendRoundRobin::deallocate(void * addr, size_t size)
+void MemoryBackendBalance::deallocate(void * addr, size_t size)
 {
 	//check
 	assert(addr != NULL);
@@ -119,7 +119,7 @@ void MemoryBackendRoundRobin::deallocate(void * addr, size_t size)
  * Used in unit tests.
  * @param id Id of the memory backend we want to check.
 **/
-size_t MemoryBackendRoundRobin::getMem(int id) const
+size_t MemoryBackendBalance::getMem(int id) const
 {
 	//check
 	assert(id >= 0);

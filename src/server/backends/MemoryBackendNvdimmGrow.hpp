@@ -4,8 +4,8 @@
 			COPYRIGHT: 2020 Bull SAS
 *****************************************************/
 
-#ifndef IOC_MEMORY_BACKEND_NVDIMM_HPP
-#define IOC_MEMORY_BACKEND_NVDIMM_HPP
+#ifndef IOC_MEMORY_BACKEND_NVDIMM_GROW_HPP
+#define IOC_MEMORY_BACKEND_NVDIMM_GROW_HPP
 
 /****************************************************/
 //std
@@ -24,19 +24,22 @@ namespace IOC
  * implement only the file allocation strategy which only grow
  * the nvdimm file, it requires to be embedded into a 
  * MemoryBackendCache to be efficient.
+ * This version of the implementation use ftunctate to grow
+ * the file for every new allocation.
+ *
+ * LIMITATION: There is currently a bug in the kernel which make
+ * ftruncate() blocked when the file mapped and pin memory
+ * for rdma communications.
 **/
-class MemoryBackendNvdimm: public MemoryBackend
+class MemoryBackendNvdimmGrow: public MemoryBackend
 {
 	public:
-		MemoryBackendNvdimm(LibfabricDomain * lfDomain, const std::string & directory);
-		virtual ~MemoryBackendNvdimm(void);
+		MemoryBackendNvdimmGrow(LibfabricDomain * lfDomain, const std::string & directory);
+		virtual ~MemoryBackendNvdimmGrow(void);
 		size_t getFileSize(void) const;
-		size_t getChunks(void) const;
 	public:
 		virtual void * allocate(size_t size);
 		virtual void deallocate(void * addr, size_t size);
-	private:
-		void openNewFile(size_t size);
 	private:
 		/** directory in which to store the nvdimm data. **/
 		std::string directory;
@@ -46,12 +49,8 @@ class MemoryBackendNvdimm: public MemoryBackend
 		size_t fileSize;
 		/** Count allocated chuncks **/
 		size_t chunks;
-		/** Keep track of the current offset in current file. **/
-		size_t fileOffset;
-		/** Remeber the last alloc to grow exponentially until a limit. **/
-		size_t lastFileSize;
 };
 
 }
 
-#endif //IOC_MEMORY_BACKEND_NVDIMM_HPP
+#endif //IOC_MEMORY_BACKEND_NVDIMM_GROW_HPP
