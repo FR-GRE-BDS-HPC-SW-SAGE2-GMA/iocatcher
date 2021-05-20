@@ -131,6 +131,26 @@ TEST(TestObject, getBuffers_7_check_addr)
 }
 
 /****************************************************/
+TEST(TestObject, getBuffers_8_check_addr_inner)
+{
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId(10, 20);
+	Object object(NULL, &mback, objectId, 0);
+
+	ObjectSegmentList lst;
+	object.getBuffers(lst, 1000,500, ACCESS_READ);
+	EXPECT_EQ(1, lst.size());
+	void * ptr1 = lst.front().ptr;
+
+	ObjectSegmentList lst2;
+	object.getBuffers(lst2, 1200,100, ACCESS_READ);
+	EXPECT_EQ(1, lst2.size());
+
+	void * ptr2 = lst2.front().ptr;
+	EXPECT_EQ(ptr1, ptr2);
+}
+
+/****************************************************/
 TEST(TestObject, data_load)
 {
 	MemoryBackendMalloc mback(NULL);
@@ -213,7 +233,7 @@ TEST(TestObject, data_cow)
 		.Times(2)
 		.WillRepeatedly(Return(500));
 
-	//touch gangres
+	//touch ranges
 	ObjectSegmentList lst1;
 	object.getBuffers(lst1, 1000,500, ACCESS_WRITE);
 	ObjectSegmentList lst2;
@@ -240,7 +260,7 @@ TEST(TestObject, data_cow)
 
 	//call
 	ObjectId cowId(10, 21);
-	Object * cowObj = object.makeCopyOnWrite(cowId, true);
+	Object * cowObj = object.makeFullCopyOnWrite(cowId, true);
 
 	//change oroginal segment
 	ObjectSegmentList lstorig1;
@@ -266,4 +286,131 @@ TEST(TestObject, data_cow)
 	}
 
 	delete cowObj;
+}
+
+/****************************************************/
+TEST(TestObject, data_cow_range_simple)
+{
+	//spawn
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId1(10, 20);
+	StorageBackendGMock storage;
+	Object object(&storage, &mback, objectId1);
+
+	//cow object
+	ObjectId objectId2(10, 21);
+	Object cowObject(&storage, &mback, objectId2);
+
+	//mock
+	EXPECT_CALL(storage, pread(10, 20, _, 500, _))
+		.Times(1)
+		.WillRepeatedly(Return(500));
+	
+	//fill
+	object.fillBuffer(1000, 500, 1);
+
+	//call
+	cowObject.rangeCopyOnWrite(object, 1000, 500);
+
+	//check cow
+	char * ptr1 = (char*)object.getUniqBuffer(1000, 500, ACCESS_READ, false);
+	char * ptr2 = (char*)cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false);
+	ASSERT_EQ(ptr1, ptr2);
+
+	//change oroginal segment
+	object.fillBuffer(1000, 500, 3);
+
+	//check mem content
+	char * ptr3 = (char*)cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false);
+	ASSERT_TRUE(cowObject.checkBuffer(1000, 500, 1));
+
+	//check write (we must have a unir ref so keep the same buffer)
+	char * ptr4 = (char*)cowObject.getUniqBuffer(1000, 500, ACCESS_WRITE, false);
+	ASSERT_EQ(ptr1, ptr4);
+}
+
+/****************************************************/
+TEST(TestObject, data_cow_range_not_full_overlap)
+{
+	//spawn
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId1(10, 20);
+	StorageBackendGMock storage;
+	Object object(&storage, &mback, objectId1);
+
+	//cow object
+	ObjectId objectId2(10, 21);
+	Object cowObject(&storage, &mback, objectId2);
+
+	//mock
+	EXPECT_CALL(storage, pread(10, 20, _, 500, _))
+		.Times(1)
+		.WillRepeatedly(Return(500));
+
+	//touch range on orig
+	object.fillBuffer(1000, 500, 1);
+
+	//mock
+	EXPECT_CALL(storage, pread(10, 21, _, 100, _))
+		.Times(1)
+		.WillRepeatedly(Return(100));
+
+	//call
+	cowObject.rangeCopyOnWrite(object, 1200, 100);
+
+	//change oroginal segment
+	object.fillBuffer(1000, 500, 3);
+
+	//get segments
+	ASSERT_TRUE(cowObject.checkUniq(1200, 100));
+
+	//check mem content
+	ASSERT_TRUE(cowObject.checkBuffer(1200, 100, 1));
+}
+
+/****************************************************/
+TEST(TestObject, data_cow_range_not_full_overlap_preexist)
+{
+	//spawn
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId1(10, 20);
+	StorageBackendGMock storage;
+	Object object(&storage, &mback, objectId1);
+
+	//cow object
+	ObjectId objectId2(10, 21);
+	Object cowObject(&storage, &mback, objectId2);
+
+	//mock
+	EXPECT_CALL(storage, pread(10, 20, _, 500, _))
+		.Times(1)
+		.WillRepeatedly(Return(500));
+
+	//touch range on orig
+	object.fillBuffer(1000, 500, 1);
+
+	//mock
+	EXPECT_CALL(storage, pread(10, 21, _, 500, _))
+		.Times(1)
+		.WillRepeatedly(Return(500));
+	
+	//make prexisting non fully overlap range
+	cowObject.fillBuffer(1000, 500, 5);
+	ASSERT_TRUE(cowObject.checkUniq(1000, 500));
+
+	//call
+	char v1 = cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false)[200];
+	cowObject.rangeCopyOnWrite(object, 1200, 100);
+	char v2 = cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false)[200];
+
+	//change oroginal segment
+	object.fillBuffer(1000, 500, 3);
+
+	//get segments
+	ASSERT_TRUE(cowObject.checkUniq(1000, 500));
+
+	//check mem content
+	ASSERT_TRUE(cowObject.checkBuffer(1000, 200, 5));
+	ASSERT_TRUE(cowObject.checkBuffer(1200, 100, 1));
+	ASSERT_TRUE(cowObject.checkBuffer(1300, 200, 5));
 }

@@ -90,7 +90,7 @@ ObjectSegment::ObjectSegment(size_t offset, size_t size, char * buffer, MemoryBa
  * @param segSize The size of the segment to test.
  * @return True if the segment overlap, false otherwise.
 **/
-bool ObjectSegment::overlap(size_t segBase, size_t segSize)
+bool ObjectSegment::overlap(size_t segBase, size_t segSize) const
 {
 	assert(memory != nullptr);
 	return (this->offset < segBase + segSize && this->offset + this->memory->getSize() > segBase);

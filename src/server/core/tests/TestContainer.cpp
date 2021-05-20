@@ -83,7 +83,7 @@ TEST(TestContainer, makeObjectCow_ok_1)
 	MemoryBackendMalloc mback(NULL);
 	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
-	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), false);
+	bool res = container.makeObjectFullCow(ObjectId(10,20), ObjectId(10,21), false);
 	ASSERT_TRUE(res);
 }
 
@@ -94,7 +94,7 @@ TEST(TestContainer, makeObjectCow_ok_2)
 	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	container.getObject(ObjectId(10,21));
-	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), true);
+	bool res = container.makeObjectFullCow(ObjectId(10,20), ObjectId(10,21), true);
 	ASSERT_TRUE(res);
 }
 
@@ -105,6 +105,6 @@ TEST(TestContainer, makeObjectCow_alread_exist)
 	Container container(NULL, &mback);
 	container.getObject(ObjectId(10,20));
 	container.getObject(ObjectId(10,21));
-	bool res = container.makeObjectCow(ObjectId(10,20), ObjectId(10,21), false);
+	bool res = container.makeObjectFullCow(ObjectId(10,20), ObjectId(10,21), false);
 	ASSERT_FALSE(res);
 }

@@ -130,7 +130,7 @@ void Container::setObjectSegmentsAlignement(size_t alignement)
  * @param allowExist Do not fail if the object already exist (fail to create)
  * @return True if the COW has been makde, false in case of error.
 **/
-bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist)
+bool Container::makeObjectFullCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist)
 {
 	//search
 	auto it = objects.find(sourceId);	
@@ -150,7 +150,7 @@ bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId,
 	}
 
 	//cow
-	Object * cowObj = it->second->makeCopyOnWrite(destId, allowExist);
+	Object * cowObj = it->second->makeFullCopyOnWrite(destId, allowExist);
 	if (cowObj == NULL)
 		return false;
 
