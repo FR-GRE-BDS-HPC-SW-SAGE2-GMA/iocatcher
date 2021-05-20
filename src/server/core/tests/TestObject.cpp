@@ -234,14 +234,8 @@ TEST(TestObject, data_cow)
 		.WillRepeatedly(Return(500));
 
 	//touch ranges
-	ObjectSegmentList lst1;
-	object.getBuffers(lst1, 1000,500, ACCESS_WRITE);
-	ObjectSegmentList lst2;
-	object.getBuffers(lst2, 2000,500, ACCESS_WRITE);
-
-	//fill
-	memset(lst1.front().ptr, 1, 500);
-	memset(lst2.front().ptr, 2, 500);
+	object.fillBuffer(1000, 500, 1);
+	object.fillBuffer(2000, 500, 2);
 
 	//mark one as dirty
 	object.markDirty(2000,500);
@@ -263,27 +257,16 @@ TEST(TestObject, data_cow)
 	Object * cowObj = object.makeFullCopyOnWrite(cowId, true);
 
 	//change oroginal segment
-	ObjectSegmentList lstorig1;
-	object.getBuffers(lstorig1, 1000,500, ACCESS_WRITE);
-	ObjectSegmentList lstorig2;
-	object.getBuffers(lstorig2, 2000,500, ACCESS_WRITE);
-	memset(lstorig1.front().ptr, 3, 500);
-	memset(lstorig2.front().ptr, 4, 500);
+	object.fillBuffer(1000, 500, 3);
+	object.fillBuffer(2000, 500, 4);
 
-	//get segments
-	ObjectSegmentList lstdest1;
-	cowObj->getBuffers(lstdest1, 1000,500, ACCESS_READ);
-	ObjectSegmentList lstdest2;
-	cowObj->getBuffers(lstdest2, 2000,500, ACCESS_READ);
+	//check has cow
+	ASSERT_TRUE(cowObj->checkUniq(1000, 500));
+	ASSERT_TRUE(cowObj->checkUniq(2000, 500));
 
 	//check mem content
-	char * ptr1 = (char*)lstdest1.front().ptr;
-	char * ptr2 = (char*)lstdest2.front().ptr;
-	ASSERT_NE(ptr1, ptr2);
-	for (size_t i = 0 ; i < 500 ; i++) {
-		ASSERT_EQ(1, ptr1[i]) << "Index " << i;
-		ASSERT_EQ(2, ptr2[i]) << "Index " << i;
-	}
+	ASSERT_TRUE(cowObj->checkBuffer(1000, 500, 1));
+	ASSERT_TRUE(cowObj->checkBuffer(2000, 500, 2));
 
 	delete cowObj;
 }
