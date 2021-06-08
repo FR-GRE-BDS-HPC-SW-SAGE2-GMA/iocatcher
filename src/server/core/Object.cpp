@@ -320,6 +320,15 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 }
 
 /****************************************************/
+/**
+ * Create a copy of the current given segment of a remote object to the current
+ * object. If it match an empty region or a local segment with same offset/size
+ * it will make it COW.
+ * @param origSegment The source object to copy on the current one (this).
+ * @param offset Define the offset from which to copy. If it does not be aligned
+ * on pre-existing object segments there will be data copies on border segments.
+ * @param size Size of the segment to copy.
+**/
 void Object::rangeCopyOnWriteSegment(ObjectSegment & origSegment, size_t offset, size_t size)
 {
 	//calculate inner coords
@@ -379,6 +388,14 @@ void Object::rangeCopyOnWriteSegment(ObjectSegment & origSegment, size_t offset,
 }
 
 /****************************************************/
+/**
+ * Create a copy of the current object in memory and on the remote server with
+ * the given new ID. This specific function only copy the given range.
+ * @param origObject The source object to copy on the current one (this).
+ * @param offset Define the offset from which to copy. If it does not be aligned
+ * on pre-existing object segments there will be data copies on border segments.
+ * @param size Size of the segment to copy.
+**/
 void Object::rangeCopyOnWrite(Object & origObject, size_t offset, size_t size)
 {
 	//search first segment
@@ -473,6 +490,13 @@ char * Object::getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMo
 }
 
 /****************************************************/
+/**
+ * Fill the given range with the given value. This function
+ * is implemented to help unit test implementation.
+ * @param offset Define the offset from which to start to fill.
+ * @param size Define the size of the region to fill.
+ * @param value Define the value to be used for filling octets.
+**/
 void Object::fillBuffer(size_t offset, size_t size, char value)
 {
 	//touch range on orig
@@ -499,6 +523,12 @@ void Object::fillBuffer(size_t offset, size_t size, char value)
 }
 
 /****************************************************/
+/**
+ * Check if the given range is backed by a uniq segment completely
+ * filling the given range.
+ * @return True if backed by a uniq segment, false if backed by multiple
+ * segments of a too small one.
+**/
 bool Object::checkUniq(size_t offset, size_t size)
 {
 	ObjectSegmentList lst;
@@ -513,6 +543,15 @@ bool Object::checkUniq(size_t offset, size_t size)
 }
 
 /****************************************************/
+/**
+ * Check if the given range is filled by the given value.
+ * This function aimed to help unit test implementation.
+ * @param offset The base offset of the range to test.
+ * @param size The size of the range to test.
+ * @param value The expected value.
+ * @return True if the range is filled by the given value,
+ * it return false otherwise.
+**/
 bool Object::checkBuffer(size_t offset, size_t size, char value)
 {
 	//touch range on orig
