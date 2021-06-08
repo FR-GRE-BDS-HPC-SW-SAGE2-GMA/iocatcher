@@ -384,9 +384,19 @@ void Object::rangeCopyOnWrite(Object & origObject, size_t offset, size_t size)
 	//search first segment
 	auto itTarget = origObject.segmentMap.lower_bound(offset);
 
+	//nothing found
+	if (itTarget == origObject.segmentMap.end())
+		return;
+
 	//inc if before
-	if (itTarget != origObject.segmentMap.end() && itTarget->second.overlap(offset, size))
+	if (itTarget->second.overlap(offset, size) == false)
+		itTarget++;
+
+	//loop on all segment to make cow
+	while (itTarget != origObject.segmentMap.end() && itTarget->second.overlap(offset, size)) {
 		rangeCopyOnWriteSegment(itTarget->second, offset, size);
+		++itTarget;
+	}
 }
 
 /****************************************************/
