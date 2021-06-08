@@ -33,6 +33,7 @@ class Container
 		~Container(void);
 		Object & getObject(const ObjectId & objectId);
 		bool hasObject(const ObjectId & objectId);
+		bool makeObjectRangeCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist, size_t offset, size_t size);
 		bool makeObjectFullCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist);
 		void onClientDisconnect(uint64_t clientId);
 		void setObjectSegmentsAlignement(size_t alignement);

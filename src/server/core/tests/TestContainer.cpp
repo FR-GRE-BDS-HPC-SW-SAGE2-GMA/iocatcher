@@ -108,3 +108,30 @@ TEST(TestContainer, makeObjectCow_alread_exist)
 	bool res = container.makeObjectFullCow(ObjectId(10,20), ObjectId(10,21), false);
 	ASSERT_FALSE(res);
 }
+
+/****************************************************/
+TEST(TestContainer, makeObjectRangeCow_ok_1)
+{
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
+	Object & orig = container.getObject(ObjectId(10,20));
+	orig.fillBuffer(1000, 500, 1);
+	bool res = container.makeObjectRangeCow(ObjectId(10,20), ObjectId(10,21), false, 1000, 700);
+	ASSERT_TRUE(res);
+
+	//check
+	Object & dest = container.getObject(ObjectId(10,21));
+	ASSERT_TRUE(dest.checkUniq(1000, 500));
+	ASSERT_TRUE(dest.checkUniq(1500, 200));
+}
+
+/****************************************************/
+TEST(TestContainer, makeObjectRangeCow_ok_exist)
+{
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
+	container.getObject(ObjectId(10,20));
+	container.getObject(ObjectId(10,21));
+	bool res = container.makeObjectRangeCow(ObjectId(10,20), ObjectId(10,21), false, 1000, 500);
+	ASSERT_FALSE(res);
+}
