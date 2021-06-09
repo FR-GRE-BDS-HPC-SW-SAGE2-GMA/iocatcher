@@ -219,6 +219,10 @@ struct LibfabricObjectCow
 	LibfabricObjectId destObjectId;
 	/** If allow object to already exist. **/
 	bool allowExist;
+	/** Offset from which to cow **/
+	uint64_t rangeOffset;
+	/** Size of the range to cow **/
+	uint64_t rangeSize;
 };
 
 /****************************************************/

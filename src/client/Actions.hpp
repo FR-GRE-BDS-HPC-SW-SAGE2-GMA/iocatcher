@@ -25,7 +25,7 @@ int obj_flush(LibfabricConnection &connection, const LibfabricObjectId & objectI
 int obj_create(LibfabricConnection &connection, const LibfabricObjectId & objectId);
 int32_t obj_range_register(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write);
 int obj_range_unregister(LibfabricConnection &connection, int32_t id, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write);
-int obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist);
+int obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist, size_t offset, size_t size);
 
 }
 

@@ -357,8 +357,10 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
  * @param sourceObjectId ID of the source object.
  * @param destObjectId ID of the object to create.
  * @param allowExist Allow if object already exist.
+ * @param offset The offset from which to cow.
+ * @param size The size of the range to cow. 0 will reset the object and copy the full original object.
 **/
-int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist)
+int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist, size_t offset, size_t size)
 {
 	//setup message request
 	LibfabricMessage msg;
@@ -367,6 +369,8 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	msg.data.objCow.sourceObjectId = sourceObjectId;
 	msg.data.objCow.destObjectId = destObjectId;
 	msg.data.objCow.allowExist = allowExist;
+	msg.data.objCow.rangeOffset = offset;
+	msg.data.objCow.rangeSize = size;
 
 	//send message
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
