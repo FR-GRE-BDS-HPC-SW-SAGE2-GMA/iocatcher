@@ -9,6 +9,7 @@ COPYRIGHT: 2020 Bull SAS
 //std
 #include <cstdlib>
 #include <thread>
+#include <cstring>
 //linux
 #include <argp.h>
 //internal
@@ -78,6 +79,7 @@ static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 		case 'c': config->consistencyCheck = false; break;
 		case 'p': config->activePolling = true; break;
 		case 'a': config->clientAuth = false; break;
+		case 'm': config->meroRcFile = strdup(arg); break;
 		case 'v':
 			if (arg == nullptr)
 				DAQ::Debug::enableAll();

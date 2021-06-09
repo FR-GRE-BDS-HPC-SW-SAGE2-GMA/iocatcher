@@ -284,7 +284,7 @@ int TcpServer::createSocketV4(int firstPort, int maxPort, int *boundPort)
 		goto err;
 	}
 
-	if (-1 == listen(sock, 20)) {
+	if (-1 == listen(sock, 256)) {
 		fprintf(stderr, "Failed to listen on an IPv4 socket: %s (%d)\n",
 		          strerror(errno), errno);
 		goto err;
