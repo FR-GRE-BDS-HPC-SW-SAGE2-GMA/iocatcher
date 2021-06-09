@@ -42,7 +42,9 @@ int main(int argc, const char ** argv)
 
 	//init mero
 	StorageBackend * storageBackend = NULL;
-	#ifdef HAVE_MERO
+	#ifdef NOMERO
+		printf("NOT USING MERO/MOTR\n");
+	#elif defined(HAVE_MERO)
 		printf("USING MERO RESSOURCE FILE: %s\n", config.meroRcFile.c_str());
 		int status = c0appz_init(0, (char*)config.meroRcFile.c_str());
 		assume(status == 0, "Failed to connect to Mero !");
@@ -54,7 +56,7 @@ int main(int argc, const char ** argv)
 		assume(status == 0, "Failed to connect to Mero !");
 		storageBackend = new StorageBackendMero();
 	#else
-		printf("NOT USING MERO\n");
+		#error "Shoud not compile this lins !"
 	#endif
 
 	//run server
