@@ -37,10 +37,12 @@ set(IOC_SERVER_INTERNAL_CODE_NOMERO
 
 ######################################################
 if (MERO_FOUND)
+	list(APPEND IOC_SERVER_INTERNAL_CODE $<TARGET_OBJECTS:ioc-extern-mero>)
 	set(MERO_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
 	set(MERO_COMPILE_FLAGS "${MERO_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
 endif(MERO_FOUND)
 if (MOTR_FOUND)
+	list(APPEND IOC_SERVER_INTERNAL_CODE $<TARGET_OBJECTS:ioc-extern-motr>)
 	set(MOTR_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
 	set(MOTR_COMPILE_FLAGS "${MOTR_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
 endif (MOTR_FOUND)
