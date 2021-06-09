@@ -91,7 +91,9 @@ ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size
 	//check
 	assert(buffer != NULL);
 
-	#ifdef HAVE_MOTR
+	#ifdef NOMERO
+		return size;
+	#elif defined(HAVE_MOTR)
 		assume(size % 4096 == 0, "Clovis driver work only with size multiple of the page size !");
 		assume(offset % 4096 == 0, "Clovis driver work only with offset multiple of the page size !");
 
@@ -206,7 +208,7 @@ ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size
 			return -1;
 		}
 	#else
-		return size;
+		#error "Should never compile this line !"
 	#endif
 }
 
@@ -216,7 +218,9 @@ ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, siz
 	//check
 	assert(buffer != NULL);
 
-	#ifdef HAVE_MOTR
+	#ifdef NOMERO
+		return size;
+	#elif defined(HAVE_MOTR)
 		assume(size % 4096 == 0, "Motr driver work only with size multiple of the page size !");
 		assume(offset % 4096 == 0, "Motr driver work only with offset multiple of the page size !");
 
@@ -338,6 +342,6 @@ ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, siz
 			return -1;
 		}
 	#else
-		return size;
+		#error "Should never compile this line !"
 	#endif
 }
