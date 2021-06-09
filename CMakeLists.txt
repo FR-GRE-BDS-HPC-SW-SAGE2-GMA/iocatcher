@@ -32,6 +32,7 @@ find_package(Threads REQUIRED)
 find_package(Libevent REQUIRED)
 find_package(LibeventPthreads REQUIRED)
 find_package(Mero QUIET)
+find_package(Motr QUIET)
 
 ######################################################
 setup_internal_gmock_and_gtest()
@@ -45,8 +46,15 @@ endif (ENABLE_COVERAGE)
 
 ######################################################
 include_directories(${LIBFABRIC_INCLUDE_DIRS})
+if (MOTR_FOUND)
+	include_directories(${MOTR_INCLUDE_DIRS})
+	include_directories(${CMAKE_SOURCE_DIR}/extern-deps/from-motr-sample-apps/)
+	add_definitions(-DHAVE_MOTR)
+endif (MOTR_FOUND)
 if (MERO_FOUND)
 	include_directories(${MERO_INCLUDE_DIRS})
+	include_directories(${CMAKE_SOURCE_DIR}/extern-deps/from-clovis-sample-apps/)
+	add_definitions(-DHAVE_MERO)
 endif(MERO_FOUND)
 
 ######################################################

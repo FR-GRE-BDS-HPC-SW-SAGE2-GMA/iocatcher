@@ -15,16 +15,21 @@ set(SERVER_BACKEND_SRC StorageBackendMero.cpp
 )
 
 ######################################################
+
 if (MERO_FOUND)
-	add_library(ioc-server-backends OBJECT ${SERVER_BACKEND_SRC} clovis_api.c)
+	add_library(ioc-server-backends OBJECT ${SERVER_BACKEND_SRC})
 	SET_TARGET_PROPERTIES(ioc-server-backends PROPERTIES POSITION_INDEPENDENT_CODE ON)
 	SET_TARGET_PROPERTIES(ioc-server-backends PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
-endif(MERO_FOUND)
+endif (MERO_FOUND)
+if (MOTR_FOUND)
+	add_library(ioc-server-backends OBJECT ${SERVER_BACKEND_SRC})
+	SET_TARGET_PROPERTIES(ioc-server-backends PROPERTIES POSITION_INDEPENDENT_CODE ON)
+	SET_TARGET_PROPERTIES(ioc-server-backends PROPERTIES COMPILE_FLAGS "${MOTR_COMPILE_FLAGS}")
+endif(MOTR_FOUND)
 
 ######################################################
 add_library(ioc-server-backends-no-mero OBJECT ${SERVER_BACKEND_SRC})
 SET_TARGET_PROPERTIES(ioc-server-backends-no-mero PROPERTIES POSITION_INDEPENDENT_CODE ON)
-SET_TARGET_PROPERTIES(ioc-server-backends-no-mero PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
 target_compile_definitions(ioc-server-backends-no-mero PUBLIC -DNOMERO)
 
 ######################################################
