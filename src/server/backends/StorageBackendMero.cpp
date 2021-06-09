@@ -6,6 +6,7 @@
 
 /****************************************************/
 //std
+#include <cassert>
 #include <iostream>
 #include "base/common/Debug.hpp"
 #include "StorageBackendMero.hpp"
@@ -212,8 +213,8 @@ ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size
 /****************************************************/
 ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
 {
-		//check
-		assert(buffer != NULL);
+	//check
+	assert(buffer != NULL);
 
 	#ifdef HAVE_MOTR
 		assume(size % 4096 == 0, "Motr driver work only with size multiple of the page size !");
