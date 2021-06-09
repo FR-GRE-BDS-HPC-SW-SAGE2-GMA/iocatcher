@@ -121,7 +121,7 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	}
 
 	//extract
-	for (auto it = this->segmentMap.lower_bound(base) ; it != this->segmentMap.end() && it->first < base + size ; ++it) {
+	for (auto it = this->segmentMap.lower_bound(base) ; it != this->segmentMap.end() && it->second.overlap(base, size) ; ++it) {
 		//to ease access
 		ObjectSegment & segment = it->second;
 
@@ -321,12 +321,109 @@ iovec * Object::buildIovec(ObjectSegmentList & segments, size_t offset, size_t s
 
 /****************************************************/
 /**
+ * Create a copy of the current given segment of a remote object to the current
+ * object. If it match an empty region or a local segment with same offset/size
+ * it will make it COW.
+ * @param origSegment The source object to copy on the current one (this).
+ * @param offset Define the offset from which to copy. If it does not be aligned
+ * on pre-existing object segments there will be data copies on border segments.
+ * @param size Size of the segment to copy.
+**/
+void Object::rangeCopyOnWriteSegment(ObjectSegment & origSegment, size_t offset, size_t size)
+{
+	//calculate inner coords
+	size_t innerOffset = 0;
+	size_t innerSize = origSegment.getSize();
+	bool origPartialOverlap = false;
+
+	//calc
+	if (origSegment.getOffset() < offset) {
+		innerOffset = offset - origSegment.getOffset();
+		innerSize -= innerOffset;
+		origPartialOverlap = true;
+	}
+	if (offset + size < origSegment.getOffset() + origSegment.getSize()) {
+		innerSize -= (origSegment.getOffset() + origSegment.getSize()) - (offset + size);
+		origPartialOverlap = true;
+	}
+
+	//search dest and check if same
+	//TODO getindex
+	const auto & targetSegmentIterator = this->segmentMap.lower_bound(origSegment.getOffset());
+	bool localPartialOverlap = false;
+	if (targetSegmentIterator != this->segmentMap.end())
+		if (targetSegmentIterator->second.getOffset() != origSegment.getOffset() || targetSegmentIterator->second.getSize() != origSegment.getSize())
+			localPartialOverlap = true;
+
+	//if partial manual copy
+	if (origPartialOverlap || localPartialOverlap) {
+		//calc abs
+		size_t absOffset = origSegment.getOffset() + innerOffset;
+
+		//get segments
+		ObjectSegmentList segments;
+		getBuffers(segments, absOffset, innerSize, ACCESS_WRITE, true);
+
+		//copy data
+		for (auto & it : segments) {
+			//calc offset & size
+			size_t destOffset = absOffset - it.offset;
+			size_t copySize = it.size;
+			if (copySize > innerSize)
+				copySize = innerSize;
+			
+			//copy
+			memcpy(it.ptr + destOffset, origSegment.getBuffer() + innerOffset, copySize);
+
+			//move
+			innerOffset += copySize;
+			absOffset += copySize;
+			innerSize -= copySize;
+		}
+	} else {
+		//we make the segment in cow mode
+		ObjectSegment & segment = this->segmentMap[origSegment.getOffset() + origSegment.getSize() - 1];
+		segment.makeCowOf(origSegment);
+	}
+}
+
+/****************************************************/
+/**
+ * Create a copy of the current object in memory and on the remote server with
+ * the given new ID. This specific function only copy the given range.
+ * @param origObject The source object to copy on the current one (this).
+ * @param offset Define the offset from which to copy. If it does not be aligned
+ * on pre-existing object segments there will be data copies on border segments.
+ * @param size Size of the segment to copy.
+**/
+void Object::rangeCopyOnWrite(Object & origObject, size_t offset, size_t size)
+{
+	//search first segment
+	auto itTarget = origObject.segmentMap.lower_bound(offset);
+
+	//nothing found
+	if (itTarget == origObject.segmentMap.end())
+		return;
+
+	//inc if before
+	if (itTarget->second.overlap(offset, size) == false)
+		itTarget++;
+
+	//loop on all segment to make cow
+	while (itTarget != origObject.segmentMap.end() && itTarget->second.overlap(offset, size)) {
+		rangeCopyOnWriteSegment(itTarget->second, offset, size);
+		++itTarget;
+	}
+}
+
+/****************************************************/
+/**
  * Create a copy of the current object in memory and on the remote server with
  * the given new ID.
  * @param targetObjectId The cow object id to create.
  * @param allowExist Do not fail if the object already exist (fail to create)
 **/
-Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExist)
+Object * Object::makeFullCopyOnWrite(const ObjectId & targetObjectId, bool allowExist)
 {
 	//spawn the new object
 	Object * cow = new Object(storageBackend, memoryBackend, targetObjectId, alignement);
@@ -372,7 +469,7 @@ Object * Object::makeCopyOnWrite(const ObjectId & targetObjectId, bool allowExis
  * @param accessMode The mode of access.
  * @param load If need to load the data before returning.
 **/
-void * Object::getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMode, bool load)
+char * Object::getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMode, bool load)
 {
 	//get list
 	ObjectSegmentList segments;
@@ -390,4 +487,97 @@ void * Object::getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMo
 
 	//return
 	return ptr;
+}
+
+/****************************************************/
+/**
+ * Fill the given range with the given value. This function
+ * is implemented to help unit test implementation.
+ * @param offset Define the offset from which to start to fill.
+ * @param size Define the size of the region to fill.
+ * @param value Define the value to be used for filling octets.
+**/
+void Object::fillBuffer(size_t offset, size_t size, char value)
+{
+	//touch range on orig
+	ObjectSegmentList segments;
+	this->getBuffers(segments, offset, size, ACCESS_WRITE);
+
+	//fill
+	for (auto & it : segments) {
+		//init range
+		size_t localOffset = 0;
+		size_t localSize = it.size;
+
+		//not full overlap
+		if (it.offset < offset) {
+			localOffset = offset - it.offset;
+			localSize -= localOffset;
+		}
+		if (localOffset + localSize > size)
+			localSize = size - localOffset;
+
+		//set
+		memset(it.ptr + localOffset, value, localSize);
+	}
+}
+
+/****************************************************/
+/**
+ * Check if the given range is backed by a uniq segment completely
+ * filling the given range.
+ * @return True if backed by a uniq segment, false if backed by multiple
+ * segments of a too small one.
+**/
+bool Object::checkUniq(size_t offset, size_t size)
+{
+	ObjectSegmentList lst;
+	this->getBuffers(lst, offset , size, ACCESS_READ);
+	if (lst.size() != 1)
+		return false;
+	if (lst.front().offset != offset)
+		return false;
+	if (lst.front().size != size)
+		return false;
+	return true;
+}
+
+/****************************************************/
+/**
+ * Check if the given range is filled by the given value.
+ * This function aimed to help unit test implementation.
+ * @param offset The base offset of the range to test.
+ * @param size The size of the range to test.
+ * @param value The expected value.
+ * @return True if the range is filled by the given value,
+ * it return false otherwise.
+**/
+bool Object::checkBuffer(size_t offset, size_t size, char value)
+{
+	//touch range on orig
+	ObjectSegmentList segments;
+	this->getBuffers(segments, offset, size, ACCESS_WRITE);
+
+	//fill
+	for (auto & it : segments) {
+		//init range
+		size_t localOffset = 0;
+		size_t localSize = it.size;
+
+		//not full overlap
+		if (it.offset < offset) {
+			localOffset = offset - it.offset;
+			localSize -= localOffset;
+		}
+		if (localOffset + localSize > size)
+			localSize = size;
+
+		//set
+		for (size_t i = 0 ; i < localSize ; i++)
+			if (it.ptr[localOffset + i] != value)
+				return false;
+	}
+
+	//ok
+	return true;
 }

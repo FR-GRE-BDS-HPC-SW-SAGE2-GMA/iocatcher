@@ -134,8 +134,10 @@ void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
  * @param dest_high High part of the destination object ID.
  * @param dest_how Low part of the destination object ID.
  * @param alllow_exist Allow the destincation object to already exist.
+ * @param offset The offset from which to cow.
+ * @param size The size of the range to cow. 0 will reset the object and copy the full original object.
 **/
-int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low, bool allow_exist);
+int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low, bool allow_exist, size_t offset, size_t size);
 
 /****************************************************/
 #ifdef __cplusplus

@@ -272,7 +272,7 @@ TEST_F(TestClientServer, obj_register)
 }
 
 /****************************************************/
-TEST_F(TestClientServer, obj_cow)
+TEST_F(TestClientServer, obj_cow_full)
 {
 	//setup buffer
 	const size_t size = 1024;
@@ -286,7 +286,7 @@ TEST_F(TestClientServer, obj_cow)
 	ASSERT_EQ(0, res);
 
 	//make copy on write
-	status = ioc_client_obj_cow(client, 10, 20, 10, 21, true);
+	status = ioc_client_obj_cow(client, 10, 20, 10, 21, true, 0, 0);
 	ASSERT_EQ(0, status);
 
 	//read again cow object to check content
@@ -297,4 +297,35 @@ TEST_F(TestClientServer, obj_cow)
 	//check content
 	for (size_t i = 0 ; i < size ; i++)
 		ASSERT_EQ(1, buffer2[i]) << "index " << i;
+}
+
+/****************************************************/
+TEST_F(TestClientServer, obj_cow_range)
+{
+	//setup buffer
+	const size_t size = 1024;
+	char buffer[size];
+	ssize_t res;
+	int status;
+	memset(buffer, 1, size);
+
+	//write object
+	res = ioc_client_obj_write(client, 10, 20, buffer, size, 0);
+	ASSERT_EQ(0, res);
+
+	//make copy on write
+	status = ioc_client_obj_cow(client, 10, 20, 10, 21, true, size/2, size/2);
+	ASSERT_EQ(0, status);
+
+	//read again cow object to check content
+	char buffer2[size];
+	ioc_client_obj_read(client, 10, 21, buffer2, size, 0);
+	ASSERT_EQ(0, res);
+
+	//check content
+	for (size_t i = 0 ; i < size ; i++)
+		if (i < size / 2)
+			ASSERT_EQ(0, buffer2[i]) << "index " << i;
+		else
+			ASSERT_EQ(1, buffer2[i]) << "index " << i;
 }

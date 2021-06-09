@@ -46,6 +46,7 @@ class ObjectSegmentMemory
 	public:
 		ObjectSegmentMemory(char * buffer, size_t size, MemoryBackend * memoryBackend);
 		~ObjectSegmentMemory(void);
+		const char * getBuffer(void) const {return this->buffer;};
 		char * getBuffer(void) {return this->buffer;};
 		size_t getSize(void) {return this->size;}
 		MemoryBackend * getMemoryBackend(void);
@@ -69,13 +70,14 @@ class ObjectSegment
 		ObjectSegment(void);
 		ObjectSegment(ObjectSegment && orig) = default;
 		ObjectSegment(size_t offset, size_t size, char * buffer, MemoryBackend * memoryBackend);
-		bool overlap(size_t segBase, size_t segSize);
+		bool overlap(size_t segBase, size_t segSize) const;
 		ObjectSegmentDescr getSegmentDescr(void);
-		size_t getSize(void) {assert(memory != nullptr); return this->memory->getSize();};
-		size_t getOffset(void) {return this->offset;};
+		size_t getSize(void) const {assert(memory != nullptr); return this->memory->getSize();};
+		size_t getOffset(void) const {return this->offset;};
 		bool isDirty(void) {return this->dirty;};
 		void setDirty(bool value) {this->dirty = value;};
 		char * getBuffer(void) {assert(memory != nullptr); return this->memory->getBuffer();};
+		const char * getBuffer(void) const {assert(memory != nullptr); return this->memory->getBuffer();};
 		void makeCowOf(ObjectSegment & orig);
 		void applyCow(void);
 		ObjectSegment & operator=(ObjectSegment && orig) = default;

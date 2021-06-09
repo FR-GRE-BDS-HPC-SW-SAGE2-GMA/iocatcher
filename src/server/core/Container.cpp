@@ -124,13 +124,54 @@ void Container::setObjectSegmentsAlignement(size_t alignement)
 
 /****************************************************/
 /**
+ * Make a copy on write operation on the given object on the given range.
+ * @param sourceId The ID of the source object.
+ * @param destId The ID object object to create in COW mode.
+ * @param allowExist Do not fail if the object already exist (fail to create) (TODO check if we keep this option)
+ * @param offset Base offset from which to start to cow.
+ * @param size Size of the segment to cow.
+ * @return True if the COW has been makde, false in case of error.
+**/
+bool Container::makeObjectRangeCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist, size_t offset, size_t size)
+{
+	//search
+	auto it = objects.find(sourceId);	
+
+	//not found
+	if (it == objects.end()) {
+		return false;
+	}
+
+	//extract source
+	Object & sourceObject = *it->second;
+
+	//if dest object already exist
+	auto itDest = objects.find(destId);
+	Object * destObj = NULL;
+	if (itDest != objects.end()) {
+		if (allowExist == false)
+			return false;
+		destObj = itDest->second;
+	} else {
+		objects[destId] = destObj = new Object(this->storageBackend, this->memoryBackend, destId, this->objectSegmentsAlignement);
+	}
+
+	//apply cow on the given range
+	destObj->rangeCopyOnWrite(sourceObject, offset, size);
+
+	//ok
+	return true;
+}
+
+/****************************************************/
+/**
  * Make a copy on write operation on the given object.
  * @param sourceId The ID of the source object.
  * @param destId The ID object object to create in COW mode.
  * @param allowExist Do not fail if the object already exist (fail to create)
  * @return True if the COW has been makde, false in case of error.
 **/
-bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist)
+bool Container::makeObjectFullCow(const ObjectId & sourceId, const ObjectId &destId, bool allowExist)
 {
 	//search
 	auto it = objects.find(sourceId);	
@@ -150,7 +191,7 @@ bool Container::makeObjectCow(const ObjectId & sourceId, const ObjectId &destId,
 	}
 
 	//cow
-	Object * cowObj = it->second->makeCopyOnWrite(destId, allowExist);
+	Object * cowObj = it->second->makeFullCopyOnWrite(destId, allowExist);
 	if (cowObj == NULL)
 		return false;
 

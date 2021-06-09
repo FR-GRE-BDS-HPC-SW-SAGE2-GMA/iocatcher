@@ -37,7 +37,12 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 	LibfabricObjectId & destId = clientMessage->data.objCow.destObjectId;;
 
 	//create object
-	bool status = this->container->makeObjectCow(sourceId, destId, clientMessage->data.objCow.allowExist);
+	bool status;
+	LibfabricObjectCow & objectCow = clientMessage->data.objCow;
+	if (objectCow.rangeSize == 0)
+		status = this->container->makeObjectFullCow(sourceId, destId, objectCow.allowExist);
+	else
+		status = this->container->makeObjectRangeCow(sourceId, destId, objectCow.allowExist, objectCow.rangeOffset, objectCow.rangeSize); 
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;

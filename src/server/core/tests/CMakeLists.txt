@@ -13,6 +13,7 @@ include_directories(../)
 
 ######################################################
 set(TEST_NAMES TestObject
+               TestObjectCow
                TestConsistencyTracker
                TestContainer
                TestServer
