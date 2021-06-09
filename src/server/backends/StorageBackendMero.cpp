@@ -122,7 +122,7 @@ ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size
 			errno = EIO;
 			return -1;
 		}
-	#else defined(HAVE_MERO)
+	#elif defined(HAVE_MERO)
 		struct m0_indexvec ext;
 		struct m0_bufvec data;
 		struct m0_bufvec attr;
@@ -247,7 +247,7 @@ ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, siz
 			errno = EIO;
 			return -1;
 		}
-	#else defined(HAVE_MERO)
+	#elif defined(HAVE_MERO)
 		struct m0_indexvec ext;
 		struct m0_bufvec data;
 		struct m0_bufvec attr;
