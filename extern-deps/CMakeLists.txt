@@ -15,3 +15,11 @@ endif (ENABLE_TESTS)
 
 ######################################################
 add_subdirectory(from-cern-lhcb-daqpipe-v2)
+
+######################################################
+if(MERO_FOUND)
+	add_subdirectory(from-clovis-sample-apps)
+endif(MERO_FOUND)
+if(MOTR_FOUND)
+	add_subdirectory(from-motr-sample-apps)
+endif(MOTR_FOUND)

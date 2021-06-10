@@ -23,7 +23,7 @@
 #include "core/Server.hpp"
 #include "core/Container.hpp"
 #ifndef NOMERO
-	#include "backends/clovis_api.h"
+	#include "clovis_api.h"
 	#include "backends/StorageBackendMero.hpp"
 #endif
 
@@ -42,13 +42,21 @@ int main(int argc, const char ** argv)
 
 	//init mero
 	StorageBackend * storageBackend = NULL;
-	#ifndef NOMERO
+	#ifdef NOMERO
+		printf("NOT USING MERO/MOTR\n");
+	#elif defined(HAVE_MERO)
 		printf("USING MERO RESSOURCE FILE: %s\n", config.meroRcFile.c_str());
 		int status = c0appz_init(0, (char*)config.meroRcFile.c_str());
 		assume(status == 0, "Failed to connect to Mero !");
 		storageBackend = new StorageBackendMero();
+	#elif defined(HAVE_MOTR)
+		printf("USING MOTR RESSOURCE FILE: %s\n", config.meroRcFile.c_str());
+		c0appz_set_manual_rc((char*)config.meroRcFile.c_str());
+		int status = c0appz_init(0);
+		assume(status == 0, "Failed to connect to Mero !");
+		storageBackend = new StorageBackendMero();
 	#else
-		printf("NOT USING MERO\n");
+		#error "Shoud not compile this lins !"
 	#endif
 
 	//run server

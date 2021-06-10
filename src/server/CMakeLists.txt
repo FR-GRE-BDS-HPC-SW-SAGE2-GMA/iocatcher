@@ -37,21 +37,28 @@ set(IOC_SERVER_INTERNAL_CODE_NOMERO
 
 ######################################################
 if (MERO_FOUND)
-	set(MERO_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
-	set(MERO_COMPILE_FLAGS "${MERO_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
-else (MERO_FOUND)
+	list(APPEND IOC_SERVER_INTERNAL_CODE $<TARGET_OBJECTS:ioc-extern-mero>)
+endif(MERO_FOUND)
+if (MOTR_FOUND)
+	list(APPEND IOC_SERVER_INTERNAL_CODE $<TARGET_OBJECTS:ioc-extern-motr>)
+endif (MOTR_FOUND)
+if (NOT MERO_FOUND AND NOT MOTR_FOUND)
 	set(MERO_COMPILE_FLAGS "-DNOMERO")
-endif (MERO_FOUND)
+endif (NOT MERO_FOUND AND NOT MOTR_FOUND)
 
 ######################################################
 if (MERO_FOUND)
 	add_library(serverlib SHARED ${IOC_SERVER_INTERNAL_CODE})
 	target_link_libraries(serverlib ${MERO_LIBRARIES})
+	SET_TARGET_PROPERTIES(serverlib PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
+elseif (MOTR_FOUND)
+	add_library(serverlib SHARED ${IOC_SERVER_INTERNAL_CODE})
+	target_link_libraries(serverlib ${MOTR_LIBRARIES})
+	SET_TARGET_PROPERTIES(serverlib PROPERTIES COMPILE_FLAGS "${MOTR_COMPILE_FLAGS}")
 else (MERO_FOUND)
 	add_library(serverlib SHARED ${IOC_SERVER_INTERNAL_CODE_NOMERO})
 endif (MERO_FOUND)
 target_link_libraries(serverlib iocatcher-base)
-SET_TARGET_PROPERTIES(serverlib PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
 
 ######################################################
 if (MERO_FOUND)

@@ -6,6 +6,7 @@
 
 /****************************************************/
 //std
+#include <cassert>
 #include <iostream>
 #include "base/common/Debug.hpp"
 #include "StorageBackendMero.hpp"
@@ -87,10 +88,44 @@ int StorageBackendMero::create(int64_t high, int64_t low)
 /****************************************************/
 ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
 {
-	#ifndef NOMERO
-		//check
-		assert(buffer != NULL);
+	//check
+	assert(buffer != NULL);
 
+	#ifdef NOMERO
+		return size;
+	#elif defined(HAVE_MOTR)
+		assume(size % 4096 == 0, "Clovis driver work only with size multiple of the page size !");
+		assume(offset % 4096 == 0, "Clovis driver work only with offset multiple of the page size !");
+
+		//check mero block size
+		int pool = 0;
+		size_t m0bs = c0appz_m0bs(high, low, size, pool);
+
+		//make read
+		size_t bsz = 4096;
+		size_t cnt = size / bsz;
+		int ret = c0appz_mr((char*)buffer, high, low, offset, bsz, cnt, m0bs);
+
+		//set object for debug
+		struct m0_uint128 m_object_id;
+		m_object_id.u_hi = high;
+		m_object_id.u_lo = low;
+
+		//check status
+		if (ret == 0) {
+			IOC_DEBUG_ARG("mero", "Success executing the MERO helperPread op, object ID=%1, offset=%3, size=%2")
+				.arg(m_object_id)
+				.arg(offset)
+				.arg(size)
+				.end();
+			return size;
+		} else {
+			cerr << "[Failed] Error executing the MERO helperPread op, object ID=" << m_object_id << " , size=" << size
+						<< ", offset=" << offset << endl;
+			errno = EIO;
+			return -1;
+		}
+	#elif defined(HAVE_MERO)
 		struct m0_indexvec ext;
 		struct m0_bufvec data;
 		struct m0_bufvec attr;
@@ -173,16 +208,51 @@ ssize_t StorageBackendMero::pread(int64_t high, int64_t low, void * buffer, size
 			return -1;
 		}
 	#else
-		return size;
+		#error "Should never compile this line !"
 	#endif
 }
 
 /****************************************************/
 ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, size_t size, size_t offset)
 {
-	#ifndef NOMERO
-		//check
-		assert(buffer != NULL);
+	//check
+	assert(buffer != NULL);
+
+	#ifdef NOMERO
+		return size;
+	#elif defined(HAVE_MOTR)
+		assume(size % 4096 == 0, "Motr driver work only with size multiple of the page size !");
+		assume(offset % 4096 == 0, "Motr driver work only with offset multiple of the page size !");
+
+		//check mero block size
+		int pool = 0;
+		size_t m0bs = c0appz_m0bs(high, low, size, pool);
+
+		//make read
+		size_t bsz = 4096;
+		size_t cnt = size / bsz;
+		int ret = c0appz_mw((char*)buffer, high, low, offset, bsz, cnt, m0bs);
+
+		//set object for debug
+		struct m0_uint128 m_object_id;
+		m_object_id.u_hi = high;
+		m_object_id.u_lo = low;
+
+		//check status
+		if (ret == 0) {
+			IOC_DEBUG_ARG("mero", "Success executing the MERO helperWrite op, object ID=%1, offset=%3, size=%2")
+				.arg(m_object_id)
+				.arg(offset)
+				.arg(size)
+				.end();
+			return size;
+		} else {
+			cerr << "[Failed] Error executing the MERO helperWrite op, object ID=" << m_object_id << " , size=" << size
+						<< ", offset=" << offset << endl;
+			errno = EIO;
+			return -1;
+		}
+	#elif defined(HAVE_MERO)
 		struct m0_indexvec ext;
 		struct m0_bufvec data;
 		struct m0_bufvec attr;
@@ -272,6 +342,6 @@ ssize_t StorageBackendMero::pwrite(int64_t high, int64_t low, void * buffer, siz
 			return -1;
 		}
 	#else
-		return size;
+		#error "Should never compile this line !"
 	#endif
 }

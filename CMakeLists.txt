@@ -32,6 +32,7 @@ find_package(Threads REQUIRED)
 find_package(Libevent REQUIRED)
 find_package(LibeventPthreads REQUIRED)
 find_package(Mero QUIET)
+find_package(Motr QUIET)
 
 ######################################################
 setup_internal_gmock_and_gtest()
@@ -45,8 +46,19 @@ endif (ENABLE_COVERAGE)
 
 ######################################################
 include_directories(${LIBFABRIC_INCLUDE_DIRS})
+if (MOTR_FOUND)
+	include_directories(${MOTR_INCLUDE_DIRS})
+	include_directories(${CMAKE_SOURCE_DIR}/extern-deps/from-motr-sample-apps/)
+	add_definitions(-DHAVE_MOTR)
+	set(MOTR_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
+	set(MOTR_COMPILE_FLAGS "${MOTR_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
+endif (MOTR_FOUND)
 if (MERO_FOUND)
 	include_directories(${MERO_INCLUDE_DIRS})
+	include_directories(${CMAKE_SOURCE_DIR}/extern-deps/from-clovis-sample-apps/)
+	add_definitions(-DHAVE_MERO)
+	set(MERO_COMPILE_FLAGS "-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern -fno-common -I${MERO_INCLUDE_DIRS}")
+	set(MERO_COMPILE_FLAGS "${MERO_COMPILE_FLAGS}  -Wall -Wno-attributes -fno-strict-aliasing -rdynamic")
 endif(MERO_FOUND)
 
 ######################################################
