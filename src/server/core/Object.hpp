@@ -75,7 +75,7 @@ class Object
 		Object(StorageBackend * backend, MemoryBackend * memBackend, const ObjectId & objectId, size_t alignement = 0);
 		const ObjectId & getObjectId(void);
 		char * getUniqBuffer(size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
-		void getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
+		bool getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load = true);
 		void fillBuffer(size_t offset, size_t size, char value);
 		bool checkBuffer(size_t offset, size_t size, char value);
 		bool checkUniq(size_t offset, size_t size);

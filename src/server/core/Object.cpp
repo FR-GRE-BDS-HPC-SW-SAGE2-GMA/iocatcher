@@ -109,8 +109,9 @@ void Object::forceAlignement(size_t alignment)
  * @param size The size of the range to consider.
  * @param accessMode Define the mode of access to know if we need to trigger copy-on-write.
  * @param load If need to load the segment if not present.
+ * @return True if OK, false in case it fails to read content while creating the segments.
 **/
-void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load)
+bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load)
 {
 	//align
 	if (this->alignement > 0)  {
@@ -142,7 +143,10 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	for (auto it : segments) {
 		if (it.offset > lastOffset) {
 			size_t size = it.offset - lastOffset;
-			tmp.push_back(this->loadSegment(lastOffset, size, load));
+			ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, load);
+			if (descr.ptr == NULL)
+				return false;
+			tmp.push_back(descr);
 		}
 		lastOffset = it.offset + it.size;
 	}
@@ -155,11 +159,17 @@ void Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	size_t endOffset = base + size;
 	if (lastOffset < endOffset) {
 		size_t size = endOffset - lastOffset;
-		segments.push_back(this->loadSegment(lastOffset, size, load));
+		ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, load);
+		if (descr.ptr == NULL)
+			return false;
+		segments.push_back(descr);
 	}
 
 	//sort
 	segments.sort();
+
+	//ok
+	return true;
 }
 
 /****************************************************/
@@ -180,10 +190,15 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 	//load data
 	if (load) {
 		size_t status = this->pread(buffer, size, offset);
-		assumeArg(status == size, "Fail to helperPread from object (%1) !").arg(status).end();
+		//if fail to read
 		if (status != size) {
-			status = this->pwrite(buffer, size, offset);
-			assumeArg(status == size, "Fail to write to object (%1) !").arg(status).end();
+			this->memoryBackend->deallocate(buffer, size);
+			ObjectSegmentDescr errDescr = {
+				.ptr = NULL,
+				.offset = 0,
+				.size = 0
+			};
+			return errDescr;
 		}
 	}
 

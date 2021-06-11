@@ -28,6 +28,7 @@ class HookObjectRead : public Hook
 	private:
 		void objRdmaPushToClient(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		void objEagerPushToClient(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
+		void respondError(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage);
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;
