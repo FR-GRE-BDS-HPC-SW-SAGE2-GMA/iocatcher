@@ -35,6 +35,31 @@ HookObjectWrite::HookObjectWrite(Container * container, ServerStats * stats)
 
 /****************************************************/
 /**
+ * Send an error answer due to read failure.
+ * @param connection Connection handler.
+ * @param clientId Define the libfabric client ID.
+ * @param clientMessage Pointer the the message requesting the RDMA read operation.
+ * @param segments The list of object segments to transfer.
+**/
+void HookObjectWrite::respondError(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage)
+{
+	//send open
+	LibfabricMessage * msg = new LibfabricMessage;
+	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.clientId = 0;
+	msg->data.response.msgHasData = false;
+	msg->data.response.msgDataSize = 0;
+	msg->data.response.status = -1;
+
+	//send ack message
+	connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
+		delete msg;
+		return LF_WAIT_LOOP_KEEP_WAITING;
+	});
+}
+
+/****************************************************/
+/**
  * Fetch data from the client via RDMA.
  * @param clientId Define the libfabric client ID.
  * @param clientMessage Pointer the the message requesting the RDMA write operation.
@@ -171,13 +196,17 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 	//get buffers from object
 	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
 	ObjectSegmentList segments;
-	object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_WRITE, false);
+	bool status = object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_WRITE, true, true);
 
 	//eager or rdma
-	if (clientMessage->data.objReadWrite.msgHasData) {
-		objEagerExtractFromMessage(connection, lfClientId, clientMessage, segments);
+	if (status) {
+		if (clientMessage->data.objReadWrite.msgHasData) {
+			objEagerExtractFromMessage(connection, lfClientId, clientMessage, segments);
+		} else {
+			objRdmaFetchFromClient(connection, lfClientId, clientMessage, segments);
+		}
 	} else {
-		objRdmaFetchFromClient(connection, lfClientId, clientMessage, segments);
+		this->respondError(connection, lfClientId, clientMessage);
 	}
 
 	//mark dirty
