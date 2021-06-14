@@ -196,7 +196,7 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 	//get buffers from object
 	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
 	ObjectSegmentList segments;
-	bool status = object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_WRITE, false);
+	bool status = object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_WRITE, true, true);
 
 	//eager or rdma
 	if (status) {

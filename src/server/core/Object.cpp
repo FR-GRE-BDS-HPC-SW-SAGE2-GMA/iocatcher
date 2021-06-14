@@ -101,6 +101,22 @@ void Object::forceAlignement(size_t alignment)
 
 /****************************************************/
 /**
+ * Check if the object is fully overlapped by the requested range.
+ * @param segOffset The base offset of the segment to be accessed.
+ * @param segSize The size of the segment to be accessed.
+ * @param reqOffset The base offset of the access request.
+ * @param reqSize The size of the access request.
+ * @return True if the segment is fully overlaped by the request, false otherwise.
+**/
+bool Object::isFullyOverlapped(size_t segOffset, size_t segSize, size_t reqOffset, size_t reqSize)
+{
+	size_t segEnd = segOffset + segSize;
+	size_t reqEnd = reqOffset + reqSize;
+	return reqOffset >= segOffset && reqEnd <= segEnd;
+}
+
+/****************************************************/
+/**
  * Get the list of object segments matching the given range.
  * @warning Cauton, the first segment can have a lower offset thant the requested offset.
  * It return segments as they are in the object.
@@ -109,10 +125,18 @@ void Object::forceAlignement(size_t alignment)
  * @param size The size of the range to consider.
  * @param accessMode Define the mode of access to know if we need to trigger copy-on-write.
  * @param load If need to load the segment if not present.
+ * @param isForWriteOp For write operation we want to accept pre-read failure and puruse but
+ * we want to report error on a read operation. Also on write op we load the data from
+ * storage only if the loaded segment is larger than the requested range (in other word
+ * if due to alignement the caller will not write the full segment).
  * @return True if OK, false in case it fails to read content while creating the segments.
 **/
-bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load)
+bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, ObjectAccessMode accessMode, bool load, bool isForWriteOp)
 {
+	//keep orig range
+	size_t origBase = base;
+	size_t origSize = size;
+
 	//align
 	if (this->alignement > 0)  {
 		size += base % alignement;
@@ -143,7 +167,10 @@ bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	for (auto it : segments) {
 		if (it.offset > lastOffset) {
 			size_t size = it.offset - lastOffset;
-			ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, load);
+			bool needLoad = load;
+			if (isForWriteOp && isFullyOverlapped(lastOffset, size, origBase, origSize))
+				needLoad = false;
+			ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, needLoad, isForWriteOp);
 			if (descr.ptr == NULL)
 				return false;
 			tmp.push_back(descr);
@@ -159,7 +186,10 @@ bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 	size_t endOffset = base + size;
 	if (lastOffset < endOffset) {
 		size_t size = endOffset - lastOffset;
-		ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, load);
+		bool needLoad = load;
+		if (isForWriteOp && isFullyOverlapped(lastOffset, size, origBase, origSize))
+			needLoad = false;
+		ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, needLoad, isForWriteOp);
 		if (descr.ptr == NULL)
 			return false;
 		segments.push_back(descr);
@@ -180,9 +210,12 @@ bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
  * @param offset Offset of the range to consider.
  * @param size Size of the range to consider.
  * @param load If need to load data from mero.
+ * @param acceptLoadFail This option is used on a first write access if the write
+ * we first load the old data before overriting it. But as it is a write op we
+ * do not fail if the load operation fails.
  * @return The loaded object segment.
 **/
-ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
+ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load, bool acceptLoadFail)
 {
 	//allocate memory
 	char* buffer = (char*)this->memoryBackend->allocate(size);
@@ -191,7 +224,7 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load)
 	if (load) {
 		size_t status = this->pread(buffer, size, offset);
 		//if fail to read
-		if (status != size) {
+		if (status != size && acceptLoadFail) {
 			this->memoryBackend->deallocate(buffer, size);
 			ObjectSegmentDescr errDescr = {
 				.ptr = NULL,
