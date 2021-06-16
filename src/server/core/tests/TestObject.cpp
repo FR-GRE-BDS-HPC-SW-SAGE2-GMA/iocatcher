@@ -165,8 +165,35 @@ TEST(TestObject, data_load)
 
 	//make request
 	ObjectSegmentList lst;
-	object.getBuffers(lst, 1000,500, ACCESS_READ);
+	bool status = object.getBuffers(lst, 1000,500, ACCESS_READ);
+	EXPECT_TRUE(status);
 	EXPECT_EQ(1, lst.size());
+}
+
+/****************************************************/
+TEST(TestObject, data_load_failure)
+{
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId(10, 20);
+	StorageBackendGMock storage;
+	Object object(&storage, &mback, objectId,1000);
+
+	//expect call to load
+	EXPECT_CALL(storage, pread(10, 20, _, 1000, 1000))
+		.Times(2)
+		.WillOnce(Return(-1));
+
+	//make request with load
+	ObjectSegmentList lst;
+	bool statusRead = object.getBuffers(lst, 1000,500, ACCESS_READ, true, false);
+	EXPECT_FALSE(statusRead);
+	EXPECT_EQ(0, lst.size());
+
+	//make request with load
+	ObjectSegmentList lst2;
+	bool statusWrite = object.getBuffers(lst2, 1000,500, ACCESS_READ, true, true);
+	EXPECT_TRUE(statusWrite);
+	EXPECT_EQ(1, lst2.size());
 }
 
 /****************************************************/
