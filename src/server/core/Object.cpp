@@ -112,7 +112,7 @@ bool Object::isFullyOverlapped(size_t segOffset, size_t segSize, size_t reqOffse
 {
 	size_t segEnd = segOffset + segSize;
 	size_t reqEnd = reqOffset + reqSize;
-	return reqOffset >= segOffset && reqEnd <= segEnd;
+	return segOffset >= reqOffset && segEnd <= reqEnd;
 }
 
 /****************************************************/
@@ -171,8 +171,10 @@ bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 			if (isForWriteOp && isFullyOverlapped(lastOffset, size, origBase, origSize))
 				needLoad = false;
 			ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, needLoad, isForWriteOp);
-			if (descr.ptr == NULL)
+			if (descr.ptr == NULL) {
+				segments.clear();
 				return false;
+			}
 			tmp.push_back(descr);
 		}
 		lastOffset = it.offset + it.size;
@@ -190,8 +192,10 @@ bool Object::getBuffers(ObjectSegmentList & segments, size_t base, size_t size, 
 		if (isForWriteOp && isFullyOverlapped(lastOffset, size, origBase, origSize))
 			needLoad = false;
 		ObjectSegmentDescr descr = this->loadSegment(lastOffset, size, needLoad, isForWriteOp);
-		if (descr.ptr == NULL)
+		if (descr.ptr == NULL) {
+			segments.clear();
 			return false;
+		}
 		segments.push_back(descr);
 	}
 
@@ -224,7 +228,7 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load, bo
 	if (load) {
 		size_t status = this->pread(buffer, size, offset);
 		//if fail to read
-		if (status != size && acceptLoadFail) {
+		if (status != size && !acceptLoadFail) {
 			this->memoryBackend->deallocate(buffer, size);
 			ObjectSegmentDescr errDescr = {
 				.ptr = NULL,
