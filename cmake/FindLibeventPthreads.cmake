@@ -7,7 +7,8 @@
 #  LIBEVENT_PTHREADS_DEFINITIONS - Compiler switches required for using libevent
 
 ######################################################
-set(LIBEVENT_PTHREADS_PREFIX "" CACHE STRING "Help cmake to find libevent library (https://libevent.org/) into your system.")
+set(LIBEVENT_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING "Help cmake to find libevent library (https://libevent.org/) into your system.")
+set(LIBEVENT_PTHREADS_PREFIX ${LIBEVENT_PREFIX} CACHE STRING "Help cmake to find libevent library (https://libevent.org/) into your system.")
 
 ######################################################
 find_path(LIBEVENT_PTHREADS_INCLUDE_DIR event2/thread.h

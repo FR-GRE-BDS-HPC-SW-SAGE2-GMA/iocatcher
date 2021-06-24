@@ -7,7 +7,7 @@
 #  LIBEVENT_DEFINITIONS - Compiler switches required for using libevent
 
 ######################################################
-set(LIBEVENT_PREFIX "" CACHE STRING "Help cmake to find libevent library (https://libevent.org/) into your system.")
+set(LIBEVENT_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING "Help cmake to find libevent library (https://libevent.org/) into your system.")
 
 ######################################################
 find_path(LIBEVENT_INCLUDE_DIR event2/event.h

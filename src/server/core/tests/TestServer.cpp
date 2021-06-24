@@ -22,6 +22,9 @@ TEST(TestServer, constructor)
 
 	//server
 	Server server(&config, "8666");
+
+	//wait a bit so the tcp thread is in loop()
+	usleep(100000);
 }
 
 /****************************************************/
