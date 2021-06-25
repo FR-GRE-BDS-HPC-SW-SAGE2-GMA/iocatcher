@@ -134,6 +134,7 @@ class LibfabricConnection
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
 		bool checkAuth(LibfabricMessage * message, int clientId, int id);
+		void pollAllCqInCache(void);
 	private:
 		/** Pointer to the libfabric domain to be used to establish the connection. **/
 		LibfabricDomain * lfDomain;
@@ -188,6 +189,8 @@ class LibfabricConnection
 		bool checkClientAuth;
 		/** To be used when broacasting a crash message. **/
 		bool disableReceive;
+		/** Buffer to store batch readed completion queue entries **/
+		std::list<fi_cq_msg_entry> cqEntries;
 };
 
 }
