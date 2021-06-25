@@ -63,8 +63,7 @@ Server::Server(const Config * config, const std::string & port)
 	this->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 
 	//establish connections
-	this->connection = new LibfabricConnection(this->domain, false);
-	//this->connection = new LibfabricConnection(this->domain, !config->activePolling);
+	this->connection = new LibfabricConnection(this->domain, !config->activePolling);
 	assert(IOC_EAGER_MAX_WRITE < 1024*1024 - sizeof(LibfabricMessage));
 	this->connection->postRecives(1024*1024, 64);
 	if (config->clientAuth)
