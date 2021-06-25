@@ -911,6 +911,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
  * of the application.
  * @remark This might solve an issue we encouter when scaling to 2048 clients
  * being stopped on fi_read/fi_write with FI_EAGAIN.
+ * @todo Can use a more performance structure to store cache and avoid memory allocations.
 **/
 void LibfabricConnection::pollAllCqInCache(void)
 {
