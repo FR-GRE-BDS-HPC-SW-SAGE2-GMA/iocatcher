@@ -25,7 +25,7 @@ To compile you need to link the the **libioc-client.so**.
 Life cycle
 ----------
 
-You first need to initialize the library. The initialization function provide a
+You first need to initialize the library. The initialization function provides a
 client handler so the library can perfectly be initialized multiple times if
 want to join several servers.
 
@@ -44,8 +44,8 @@ want to join several servers.
 Object identification
 ---------------------
 
-Iocatcher is aimed to cache objects from the Motr object storage so it take back
-his object identification mecanism which correspond to two 64 bits integers (low
+Iocatcher is aimed to cache objects from the Motr object storage so it takes back
+his object identification mechanism which correspond to two 64-bit integers (low
 and high).
 
 Object access API
@@ -56,7 +56,7 @@ doxygen provided by the **ioc-client.h** header file.
 
 .. code-block:: C
 
-  //create object
+  //create objects
   int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low);
 
   // read & write
@@ -74,11 +74,11 @@ Range exclusion
 
 With iocatcher you can register a range to say you are mapping it in read or
 write mode. This give you exclusive access to this range so other client be
-rejected if they try to register again this range until you unregister it after
+rejected if they try to register again this range until you deregister it after
 use.
 
 On registration you get a registration ID which you need to use again when you
-want to unregister your registration.
+want to deregister your registration.
 
 This aimed to be used inside ummap-io to get exclusive write mapping and guaranty
 we stay in valid conditions.
@@ -99,5 +99,5 @@ Configuration API
   void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
 
 If you want to experiment with multiple write mapping by enforcing at your level
-a correct semantic you can disable the consistency checking by using the 
+a correct semantic, you can disable the consistency checking by using the 
 **--no-consistency-check** option while launching the server.

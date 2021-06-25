@@ -17,9 +17,9 @@ In order to build the code you need:
 Building
 --------
 
-To build you can either call directly cmake of use the configure wrapper script.
-This wrapper just prepare options by providing an autotools like semantic and
-just call cmake. You will find the cmake command line used as the first line
+To build you can either call directly CMake or use the configure wrapper script.
+This wrapper just prepare options by providing autotools like semantic and
+just call CMake. You will find the cmake command line used as the first line
 printed by the script.
 
 .. code-block:: shell
@@ -44,7 +44,7 @@ client to it.
   #in another terminal launch the client
   src/client/iocatcher-client 127.0.0.1
 
-If you want to run on an Infiniband card you need to use the IP address of this
+If you want to run on an Infiniband card, you need to use the IP address of this
 device on the server host.
 
 You can find more client examples in the *examples* directory.
@@ -57,7 +57,7 @@ You can query the server semantic with the common **--help** option.
 Debugging
 ---------
 
-If you want to enable debug messages you need to rebuild the server in debug 
+If you want to enable debug messages, you need to rebuild the server in debug 
 mode:
 
 .. code-block:: shell
