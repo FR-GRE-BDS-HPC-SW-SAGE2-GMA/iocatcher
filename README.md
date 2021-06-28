@@ -1,14 +1,33 @@
-libfabric-poc
-=============
+iocatcher
+=========
 
-This is a proof of concept code to test and learn about libfabric in RDM mode.
-The goal is to look on it for implementation of the storage intermediate server
-for the SAGE2 Global Memory Abstraction server.
+This project is a proof of concept to implement a kind of cache (or burst buffer)
+between an application using ummap-io-v2 and the Motr object storage from seagate
+https://github.com/Seagate/cortx-motr. It explores usage of RDMA operations to 
+tranmis data via libfabric with the goal to store the temporary data in NVDIMMs.
+
+We recap here that Motr objects are just identified as two 64 bit integers 
+marking a 128 bit uniq key.
 
 Dependencies
 ------------
 
- - libfabric (tested 1.11.0), requierd.
+The project depends on: 
+
+ - libfabric (tested 1.11.0, 1.12.1), requierd, https://ofiwg.github.io/libfabric/
+ - libevent (tested 2.1.12), required, https://libevent.org/
+ - cmake (tested 2.8.11), required to build, https://cmake.org/
+ - A C++ compiler supporting C++11.
+
+Supported plateform
+-------------------
+
+The project uses libfabric for its network implementation so it supports fallback
+on TCP. It uses the RDM protocol from libfabric so it allows using all the related
+network drivers (verbs, tcp, ucx, psm).
+
+The code should not be so dependent on the architecture but was developped for
+x86_64.
 
 Building
 --------
@@ -18,8 +37,9 @@ You can build by using:
 ```sh
 mkdir build
 cd build
-../configure --with-libfabric=$HOME/usr
+../configure --prefix=$HOME/usr --with-libfabric=$HOME/usr --with-libevent=$HOME/usr
 make
+make install
 ```
 
 Running the full chaine
@@ -35,37 +55,44 @@ look with --help.
 ./src/client/iocatcher-client 127.0.0.1
 ```
 
-Running the basic benchmark
----------------------------
+The client API
+--------------
 
-You need to launch the server providing the listening address (127.0.0.1 by
-default) then you need to launch the client.
+The client API is very simple and is summarized here:
 
-```sh
-#server
-./ 192.168.10.1
-#client
-./poc -c 192.168.10.1
+
+```c
+//library lifecycle
+ioc_client_t * ioc_client_init(const char * ip, const char * port);
+void ioc_client_fini(ioc_client_t * client);
+
+//object actions
+ssize_t ioc_client_obj_read(ioc_client_t * client, int64_t high, int64_t low, void* buffer, size_t size, size_t offset);
+ssize_t ioc_client_obj_write(ioc_client_t * client, int64_t high, int64_t low, const void* buffer, size_t size, size_t offset);
+int ioc_client_obj_flush(ioc_client_t * client, int64_t high, int64_t low, uint64_t offset, uint64_t size);
+int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low);
+int ioc_client_obj_cow(ioc_client_t * client, int64_t orig_high, int64_t orig_low, int64_t dest_high, int64_t dest_low, bool allow_exist, size_t offset, size_t size);
+
+//access protection
+int32_t ioc_client_obj_range_register(ioc_client_t * client, int64_t high, int64_t low, size_t offset, size_t size, bool write);
+int ioc_client_obj_range_unregister(ioc_client_t * client, int32_t id, int64_t high, int64_t low, size_t offset, size_t size, bool write);
+
+//get current network provider name
+const char * ioc_client_provider_name(ioc_client_t * client);
+
+//move from active to passiv wait mode
+void ioc_client_set_passive_wait(ioc_client_t * client, bool value);
 ```
 
-You can launch multiple client threads. On the server side you need to declare
-the number of expected clients with -C, on the client side you can lauch serveral
-clients of use internal threads with -t option.
+License & finance
+-----------------
 
-```sh
-#server
-./poc -s -C 8 192.168.10.1
-#client
-./poc -c -t 8 192.168.10.1
-```
+This project is distributed under Apache 2.0 license.
 
-You can use passive pooling instead of active by enabling -w option on server
-or/and client. You can change the number of messages by applying -m option on
-both server and client with the same value.
+The project was developped for the SAGE2 european project.
 
-```sh
-#server
-./poc -m 10000000 -s 192.168.10.1
-#client
-./poc -m 10000000 -c 192.168.10.1
-```
+Authors
+-------
+
+Sébastien Valat (ATOS)
+Christophe Laferrière (ATOS)
