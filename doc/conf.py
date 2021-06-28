@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'iocatcher'
-copyright = '2021, Sébastien Valat (ATOS)'
-author = 'Sébastien Valat (ATOS)'
+copyright = '2021, ATOS'
+author = 'ATOS'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.0-dev'
