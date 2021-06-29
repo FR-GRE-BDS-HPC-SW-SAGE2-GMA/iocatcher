@@ -2,3 +2,4 @@ build
 build-coverage
 doxygen
 .vscode
+doc/_build
