@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 //internal
 #include "TcpServer.hpp"
+#include "Protocol.hpp"
 #include "../common/Debug.hpp"
 
 /****************************************************/
@@ -96,9 +97,12 @@ void TcpServer::sendClientId(TcpClientInfo *client)
 {
 	uint64_t id;
 	uint64_t key;
+	int16_t protocolVersion = IOC_LF_PROTOCOL_VERSION;
 	this->onConnect(&id, &key, client);
 	client->id = id;
 	int rc;
+	rc = write(client->fd, &protocolVersion, sizeof(protocolVersion));
+	assume(rc == sizeof(protocolVersion), "Invalid write() size !");
 	rc = write(client->fd, &id, sizeof(id));
 	assume(rc == sizeof(id), "Invalid write() size !");
 	rc = write(client->fd, &key, sizeof(key));

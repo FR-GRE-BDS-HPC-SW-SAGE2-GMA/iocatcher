@@ -26,6 +26,8 @@ struct TcpConnInfo
 	uint64_t clientId;
 	/** Authentication key assigned by the server. **/
 	uint64_t key;
+	/** Send protocol version. **/
+	int16_t protocolVersion;
 	/** 
 	 * If we need to keep the TCP connection alive or if we can close it
 	 * just after the first exchange. We keep it alive to track

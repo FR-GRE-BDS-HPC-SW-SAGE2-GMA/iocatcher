@@ -24,6 +24,7 @@
 #include <cassert>
 //local
 #include "../common/Debug.hpp"
+#include "Protocol.hpp"
 #include "TcpClient.hpp"
 
 /*****************************************************/
@@ -130,10 +131,20 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 
 	// Get client ID and key from TCP server
 	int rc;
+
+	//check protocol
+	rc = read(connFd, &infos.protocolVersion, sizeof(infos.protocolVersion));
+	assert(rc == sizeof(infos.protocolVersion));
+	assumeArg(infos.protocolVersion == IOC_LF_PROTOCOL_VERSION, "Invalid server protocol version, expect %1, got %2")
+		.arg(IOC_LF_PROTOCOL_VERSION)
+		.arg(infos.protocolVersion)
+		.end();
+
+	//read other conn info
 	rc = read(connFd, &infos.clientId, sizeof(infos.clientId));
-	assert(rc == sizeof(uint64_t));
+	assert(rc == sizeof(infos.clientId));
 	rc = read(connFd, &infos.key, sizeof(infos.key));
-	assert(rc == sizeof(uint64_t));
+	assert(rc == sizeof(infos.key));
 	rc = read(connFd, &infos.keepConnection, sizeof(infos.keepConnection));
 	assert(rc == sizeof(bool));
 	//fprintf(stderr, "Got client ID %lu and key %lx and keep connection %d\n", infos.clientId, infos.key, (int)infos.keepConnection);
