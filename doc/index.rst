@@ -13,6 +13,7 @@ Welcome to iocatcher's documentation!
    build
    client-api
    uml
+   technical-details
 
 Indices and tables
 ==================
