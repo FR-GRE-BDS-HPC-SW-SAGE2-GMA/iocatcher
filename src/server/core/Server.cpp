@@ -252,9 +252,9 @@ void Server::stop(void)
 	//stop tcp server
 	if (this->tcpServer != NULL) {
 		this->tcpServer->stop();
+		this->tcpServerThread.join();
 		delete this->tcpServer;
 		this->tcpServer = NULL;
-		this->tcpServerThread.join();
 	}
 }
 

@@ -7,7 +7,7 @@
 #  LIBFABRIC_DEFINITIONS - Compiler switches required for using libfabric
 
 ######################################################
-set(LIBFABRIC_PREFIX "" CACHE STRING "Help cmake to find libfabric library (https://github.com/ofiwg/libfabric) into your system.")
+set(LIBFABRIC_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING "Help cmake to find libfabric library (https://github.com/ofiwg/libfabric) into your system.")
 
 ######################################################
 find_path(LIBFABRIC_INCLUDE_DIR rdma/fabric.h

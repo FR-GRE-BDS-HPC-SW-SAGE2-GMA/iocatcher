@@ -24,10 +24,15 @@ cfg_add_enable_option --name='coverage' \
                       --doc='Enable coverage report'
 
 ######################################################
-#libunwind
+#libfabric
 cfg_add_with_option --name='libfabric' \
                     --doc='Define prefix to find libfabric [/usr]' \
                     --var='LIBFABRIC_PREFIX'
+
+#libevent
+cfg_add_with_option --name='libevent' \
+                    --doc='Define prefix to find libevent [/usr]' \
+                    --var='LIBEVENT_PREFIX'
 
 ######################################################
 #If we want to document extra options

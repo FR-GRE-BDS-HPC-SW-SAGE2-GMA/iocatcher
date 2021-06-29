@@ -39,7 +39,20 @@ mkdir build
 cd build
 ../configure --prefix=$HOME/usr --with-libfabric=$HOME/usr --with-libevent=$HOME/usr
 make
+make test
 make install
+```
+
+If you want generate code coverage:
+
+```sh
+mkdir build-coverage
+cd build-coverage
+../configure --prefix=$HOME/usr --with-libfabric=$HOME/usr --with-libevent=$HOME/usr --enable-coverage
+make
+make test
+../dev/gen-coverage.sh
+#find the report in the html directory
 ```
 
 Running the full chaine

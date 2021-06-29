@@ -56,6 +56,7 @@ TcpServer::TcpServer(int port, int portRange, bool keepConnection)
 	this->listenFd = res;
 	this->nr_clients = 0;
 	this->keepConnection = keepConnection;
+	this->ebase = NULL;
 }
 
 /****************************************************/
@@ -182,7 +183,8 @@ retry:
 **/
 void TcpServer::stop(void)
 {
-	event_base_loopbreak(this->ebase);
+	if (this->ebase != NULL)
+		event_base_loopbreak(this->ebase);
 }
 
 /****************************************************/
