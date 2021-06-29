@@ -919,13 +919,13 @@ void LibfabricConnection::pollAllCqInCache(void)
 	struct fi_cq_msg_entry entry;
 
 	//loop while we have entries
-	while(pollForCompletion(this->cq, &entry, false) == 1) {
+	while(pollForCompletion(this->cq, &entry, false, false) == 1) {
 		//push to list
 		this->cqEntries.push_back(entry);
 
 		//warn
 		if (this->cqEntries.size() == 1000)
-			IOC_WARNING_ARG("Start to have lots os pending messaged in the cqEntry cache, this might be a problem to study !");
+			IOC_WARNING_ARG("Start to have lots (1000) os pending messaged in the cqEntry cache, this might be a problem to study !");
 	}
 }
 
@@ -935,10 +935,11 @@ void LibfabricConnection::pollAllCqInCache(void)
  * @param cq The completion queue to poll.
  * @param entry The completion entry to fill on event recive.
  * @param passivePolling Use passive or active polling. On passive polling the function
+ * @param acceptCache Allow taking event from the completion cache.
  * will block waiting an event. On active polling it will return on the first
  * check so the caller need to establish the waiting loop.
 **/
-int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling)
+int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache)
 {
 	//vars
 	struct fi_cq_msg_entry localEntry;
@@ -953,7 +954,7 @@ int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_
 		entry = &localEntry;
 
 	//remove from internal cache
-	if (this->cqEntries.empty() == false) {
+	if (acceptCache == true && this->cqEntries.empty() == false) {
 		*entry = this->cqEntries.front();
 		this->cqEntries.pop_front();
 		return 1;

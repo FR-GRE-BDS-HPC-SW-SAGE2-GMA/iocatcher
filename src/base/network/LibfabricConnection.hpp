@@ -128,7 +128,7 @@ class LibfabricConnection
 	private:
 		bool pollRx(void);
 		bool pollTx(void);
-		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling);
+		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache = true);
 		LibfabricActionResult onRecv(size_t id);
 		bool onRecvMessage(LibfabricClientMessage & clientMessage, size_t id);
 		void onSent(void * buffer);
