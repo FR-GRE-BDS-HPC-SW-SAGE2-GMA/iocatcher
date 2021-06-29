@@ -8,7 +8,7 @@
 int main(int argc, char ** argv)
 {
 	//connect to server
-	struct ioc_client_t * client = ioc_client_init(argv[1], "8556");
+	ioc_client_t * client = ioc_client_init(argv[1], "8556");
 
 	//init ummap
 	ummap_init();
