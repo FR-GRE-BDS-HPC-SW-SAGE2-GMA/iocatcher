@@ -320,6 +320,8 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 	//send
 	do {
 		err = fi_send(this->ep, buffer, size, NULL, it->second, new LibfabricPostActionFunction(postAction));
+		if (err == -FI_EAGAIN)
+			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
 }
@@ -350,6 +352,8 @@ void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, in
 	//send
 	do {
 		err = fi_send(this->ep, buffer, size, NULL, it->second, IOC_LF_NO_WAKEUP_POST_ACTION);
+		if (err == -FI_EAGAIN)
+			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
 }
@@ -382,7 +386,13 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_read(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
+	//do action and retry while we got FI_EAGAIN error
+	int ret = 0;
+	do {
+		ret = fi_read(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
+		if (ret == -FI_EAGAIN)
+			this->pollAllCqInCache();
+	} while(ret == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_read", ret);
 }
 
@@ -421,8 +431,14 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_readv(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
-	LIBFABRIC_CHECK_STATUS("fi_read", ret);
+	//do action and retry while we got FI_EAGAIN error
+	int ret = 0;
+	do {
+		ret = fi_readv(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
+		if (ret == -FI_EAGAIN)
+			this->pollAllCqInCache();
+	} while(ret == -FI_EAGAIN);
+	LIBFABRIC_CHECK_STATUS("fi_readv", ret);
 
 	//clear tmp
 	delete [] mrDesc;
@@ -463,8 +479,14 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_writev(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
-	LIBFABRIC_CHECK_STATUS("fi_read", ret);
+	//do action and retry while we got FI_EAGAIN error
+	int ret = 0;
+	do {
+		ret = fi_writev(ep, iov, mrDesc, count, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
+		if (ret == -FI_EAGAIN)
+			this->pollAllCqInCache();
+	} while(ret == -FI_EAGAIN);
+	LIBFABRIC_CHECK_STATUS("fi_writev", ret);
 
 	//clear tmp
 	delete [] mrDesc;
@@ -499,7 +521,13 @@ void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void 
 		.arg(destinationEpId)
 		.end();
 
-	int ret = fi_write(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
+	//do action and retry while we got FI_EAGAIN error
+	int ret = 0;
+	do {
+		ret = fi_write(ep, localAddr, size, mrDesc, it->second, (uint64_t)remoteAddr, remoteKey, new LibfabricPostActionFunction(postAction));
+		if (ret == -FI_EAGAIN)
+			this->pollAllCqInCache();
+	} while(ret == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_write", ret);
 }
 
@@ -890,14 +918,40 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 
 /****************************************************/
 /**
+ * In case of ressource starvation we might want to poll all the
+ * completion queue entries in the cache so we let ressource for the rest
+ * of the application.
+ * @remark This might solve an issue we encouter when scaling to 2048 clients
+ * being stopped on fi_read/fi_write with FI_EAGAIN.
+ * @todo Can use a more performance structure to store cache and avoid memory allocations.
+**/
+void LibfabricConnection::pollAllCqInCache(void)
+{
+	//vars
+	struct fi_cq_msg_entry entry;
+
+	//loop while we have entries
+	while(pollForCompletion(this->cq, &entry, false, false) == 1) {
+		//push to list
+		this->cqEntries.push_back(entry);
+
+		//warn
+		if (this->cqEntries.size() == 1000)
+			IOC_WARNING_ARG("Start to have lots (1000) os pending messaged in the cqEntry cache, this might be a problem to study !");
+	}
+}
+
+/****************************************************/
+/**
  * Poll the libfabric completion queue to get a completion.
  * @param cq The completion queue to poll.
  * @param entry The completion entry to fill on event recive.
  * @param passivePolling Use passive or active polling. On passive polling the function
+ * @param acceptCache Allow taking event from the completion cache.
  * will block waiting an event. On active polling it will return on the first
  * check so the caller need to establish the waiting loop.
 **/
-int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling)
+int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache)
 {
 	//vars
 	struct fi_cq_msg_entry localEntry;
@@ -910,6 +964,13 @@ int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_
 	//has no entry
 	if (entry == NULL)
 		entry = &localEntry;
+
+	//remove from internal cache
+	if (acceptCache == true && this->cqEntries.empty() == false) {
+		*entry = this->cqEntries.front();
+		this->cqEntries.pop_front();
+		return 1;
+	}
 
 	//active or passive
 	if (passivePolling)
