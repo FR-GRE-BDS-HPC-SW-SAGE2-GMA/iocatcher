@@ -38,6 +38,10 @@ namespace IOC
  * Max eager size for read operation. After this ro RDMA.
 **/
 #define IOC_EAGER_MAX_READ (32*1024)
+/**
+ * Define the protocol version
+**/
+#define IOC_LF_PROTOCOL_VERSION 1
 
 /****************************************************/
 /**
@@ -243,6 +247,16 @@ struct LibfabricResponse
 
 /****************************************************/
 /**
+ * Structure used on libfabric connection establishiment to return
+ * server informations like protocol verison.
+**/
+struct LibfabricFirstHandshake
+{
+	int16_t protocolVersion;
+};
+
+/****************************************************/
+/**
  * Global definition of a message. 
  **/
 struct LibfabricMessage
@@ -254,6 +268,8 @@ struct LibfabricMessage
 		char addr[IOC_LF_MAX_ADDR_LEN];
 		/** Used for ping pong tests when using RDMA operation. **/
 		Iov iov;
+		/** Response to first handshake. **/
+		LibfabricFirstHandshake firstHandshakeResponse;
 		/** Response to be send after most operations. **/
 		LibfabricResponse response;
 		/** Infos to make read/write operation on objects. **/

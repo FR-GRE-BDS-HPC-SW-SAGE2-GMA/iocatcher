@@ -221,9 +221,20 @@ void LibfabricConnection::joinServer(void)
 
 	//register hook
 	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, int clientId, size_t msgId, void * buffer) {
+		//assign id
 		//printf("get clientID %d\n", clientId);
 		this->clientId = clientId;
 		connection->repostRecive(msgId);
+
+		//check protocol version
+		LibfabricMessage * message = static_cast<LibfabricMessage*>(buffer);
+		assumeArg(message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
+			"Invalid rdma protocol version from server, expect %1, as %2")
+				.arg(IOC_LF_PROTOCOL_VERSION)
+				.arg(message->data.firstHandshakeResponse.protocolVersion)
+				.end();
+
+		//return back
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -858,6 +869,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	memset(msg, 0, sizeof(*msg));
 	msg->header.type = IOC_LF_MSG_ASSIGN_ID;
 	msg->header.clientId = epId;
+	msg->data.firstHandshakeResponse.protocolVersion = IOC_LF_PROTOCOL_VERSION;
 
 	//debug
 	IOC_DEBUG_ARG("client:libfabric", "Recive client in libfabric tcpId=%1, lfId=%2")
