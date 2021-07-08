@@ -26,7 +26,7 @@ set(LIBEVENT_PTHREADS_INCLUDE_DIRS ${LIBEVENT_PTHREADS_INCLUDE_DIR} )
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set LIBEVENT_PTHREADS_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args(libeventpthreads  DEFAULT_MSG
+find_package_handle_standard_args(LibeventPthreads  DEFAULT_MSG
 	LIBEVENT_PTHREADS_LIBRARY LIBEVENT_PTHREADS_INCLUDE_DIR)
 
 ######################################################
