@@ -15,7 +15,7 @@ workflow:
           - name: "gcc"
           - name: "gcc-c++"
           # library deps to build
-          - name: "libfabric-devel"
+          #- name: "libfabric-devel"
           - name: "libevent-devel"
           # to get gcovr via pip
           #- name: "python3"
@@ -27,6 +27,8 @@ workflow:
       info: "Configure & Build & Run tests"
       context:
         cmdline:
+          - label: "Install libfabric from source"
+            cmd: "cd /tmp/ && wget https://github.com/ofiwg/libfabric/releases/download/v1.13.0/libfabric-1.13.0.tar.bz2 -O libfabric-1.13.0.tar.bz2 && tar -xf libfabric-1.13.0.tar.bz2 && cd libfabric-1.13.0 && ./configure && make && make install"
           - label: "Configure"
             cmd: "cd ${BUILDDIR} && ${SRCDIR}/configure --enable-jenkins"
             user: "sf-user"
