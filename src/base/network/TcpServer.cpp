@@ -145,7 +145,7 @@ void TcpServer::acceptOneClientCallback(evutil_socket_t fd, short unused_events,
 
 	event_add(evt, NULL);
 
-	printf("Client %p arrived\n", client);
+	printf("Client %p arrived\n", static_cast<void*>(client));
 	server->sendClientId(client);
 	//server->sendHgConnectInfo(client);
 }
@@ -199,7 +199,7 @@ void TcpServer::stop(void)
 void TcpServer::handleClientMessage(TcpClientInfo *client, const char *msg, int len)
 {
 	// do some stuff here
-	printf("Client %p sent msg of len %d\n", client, len);
+	printf("Client %p sent msg of len %d\n", static_cast<void*>(client), len);
 	if (strncmp(msg,"stop", 4) == 0)
 		client->server->stop();
 }

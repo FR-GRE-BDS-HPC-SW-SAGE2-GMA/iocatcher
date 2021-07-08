@@ -42,7 +42,7 @@ void LibfabricPostAction::freeBuffer(void)
 LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 {
 	return this->function();
-};
+}
 
 /****************************************************/
 /**

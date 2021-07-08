@@ -231,9 +231,9 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load, bo
 		if (status != size && !acceptLoadFail) {
 			this->memoryBackend->deallocate(buffer, size);
 			ObjectSegmentDescr errDescr = {
-				.ptr = NULL,
-				.offset = 0,
-				.size = 0
+				NULL,
+				0,
+				0
 			};
 			return errDescr;
 		}
