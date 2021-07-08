@@ -28,7 +28,7 @@ workflow:
       context:
         cmdline:
           - label: "Configure"
-            cmd: "cd ${BUILDDIR} && ${SRCDIR}/configure --enable-jenkins"
+            cmd: "cd ${BUILDDIR} && ${SRCDIR}/configure --enable-debug"
             user: "sf-user"
           - label: "Build"
             cmd: "cd ${BUILDDIR} && make"
