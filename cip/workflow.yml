@@ -34,7 +34,7 @@ workflow:
             cmd: "cd ${BUILDDIR} && make"
             user: "sf-user"
           - label: "Run tests"
-            cmd: "cd ${BUILDDIR} && make test"
+            cmd: "cd ${BUILDDIR} && ctest -V"
             user: "sf-user"
           - label: "Install"
             cmd: "cd ${BUILDDIR} && make install"
