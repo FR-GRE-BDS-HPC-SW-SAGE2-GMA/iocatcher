@@ -264,9 +264,6 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
 	//disable reception
 	this->disableReceive = true;
 
-	//counter
-	int count = this->remoteLiAddr.size();
-
 	//build message to send
 	LibfabricMessage * lfMessage = static_cast<LibfabricMessage*>(buffer);
 	this->fillProtocolHeader(lfMessage->header, IOC_LF_MSG_FATAL_ERROR);

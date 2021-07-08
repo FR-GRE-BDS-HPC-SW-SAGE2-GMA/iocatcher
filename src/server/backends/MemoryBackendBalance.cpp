@@ -67,7 +67,7 @@ void * MemoryBackendBalance::allocate(size_t size)
 	size_t min = this->backendMem[id];
 
 	//search min
-	for (int i = 1 ; i < this->backends.size() ; i++) {
+	for (size_t i = 1 ; i < this->backends.size() ; i++) {
 		if (this->backendMem[i] < min) {
 			id = i;
 			min = this->backendMem[i];

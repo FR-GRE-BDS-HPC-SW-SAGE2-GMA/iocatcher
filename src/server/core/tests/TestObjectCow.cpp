@@ -99,7 +99,6 @@ TEST(TestObject, data_cow_range_simple)
 	object.fillBuffer(1000, 500, 3);
 
 	//check mem content
-	char * ptr3 = (char*)cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false);
 	ASSERT_TRUE(cowObject.checkBuffer(1000, 500, 1));
 
 	//check write (we must have a unir ref so keep the same buffer)
@@ -148,7 +147,6 @@ TEST(TestObject, data_cow_range_simple_many)
 
 	//check mem content
 	for (int i = 0 ; i < 4 ; i++) {
-		char * ptr3 = (char*)cowObject.getUniqBuffer(1000 + i * 500, 500, ACCESS_READ, false);
 		ASSERT_TRUE(cowObject.checkBuffer(1000 + i * 500, 500, 1 + i));
 
 		//check write (we must have a unir ref so keep the same buffer)
@@ -232,6 +230,8 @@ TEST(TestObject, data_cow_range_not_full_overlap_preexist)
 	char v1 = cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false)[200];
 	cowObject.rangeCopyOnWrite(object, 1200, 100);
 	char v2 = cowObject.getUniqBuffer(1000, 500, ACCESS_READ, false)[200];
+	ASSERT_EQ(5, v1);
+	ASSERT_EQ(1, v2);
 
 	//change oroginal segment
 	object.fillBuffer(1000, 500, 3);

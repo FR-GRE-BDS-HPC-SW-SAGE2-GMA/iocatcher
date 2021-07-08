@@ -102,7 +102,7 @@ Server::Server(const Config * config, const std::string & port)
 		first = false;
 
 		//only first time
-		if (first)
+		if (ok)
 			this->connection->broadcastErrrorMessage(message);
 	});
 }
