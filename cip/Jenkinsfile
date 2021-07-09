@@ -1,0 +1,43 @@
+//import lib from software factory
+@Library('sf-pipeline-shared-lib@master') _
+
+//ini params
+sfParameters.initParams('cip/job.params', [
+	//disableConcurrentBuilds(),
+	buildDiscarder(logRotator(numToKeepStr: '5'))
+])
+
+//environment
+def sfEnvironment = [
+    "SF_BUILDER_SRCDIR=/src",
+    "SF_BUILDER_BUILDDIR=/home/sf-user",
+    "SF_BUILDER_EXPORT_DIR=sf-builder-export",
+    "SF_BUILDER_ARTIFACTORY_HOST=${env.ARTIFACTORY_HOST}",
+    "SF_BUILDER_ARTIFACTORY_USERNAME=${env.ARTIFACTORY_USERNAME}",
+    "SF_BUILDER_ARTIFACTORY_PASSWORD=${env.ARTIFACTORY_PASSWORD}"
+]
+
+//build pipeline
+sfPipeline('gce-pool', sfEnvironment) {
+	ansiColor('xterm') {
+		stage("Cleanup previously exported Artifacts and reports") {
+			dir("${SF_BUILDER_EXPORT_DIR}") {
+				deleteDir()
+			}
+		}
+
+		stage("Retrieve sources") {
+			checkout(scm)
+		}
+
+		stage("Build") {
+			sfBuilder.build('cip/workflow.yml')
+		}
+
+		//post {
+		//	always {
+		//		junit '${SF_BUILDER_BUILDDIR}/**/*.gtest.xml'
+		//	}
+		//}
+	}
+}

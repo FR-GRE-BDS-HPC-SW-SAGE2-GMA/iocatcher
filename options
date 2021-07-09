@@ -17,7 +17,19 @@ cfg_add_enable_option --name='test' \
                       --on='-DENABLE_TESTS=${ON}' \
                       --doc='Disable unit tests' \
                       --invert-help
-
+#junit xml out
+cfg_add_enable_option --name='junit-output'  \
+                      --on='-DENABLE_JUNIT_OUTPUT=${ON}' \
+                      --doc='Save test output in JUnit format (only in self-test mode)' 
+#valgrind
+cfg_add_enable_option --name='valgrind' \
+                      --on='-DENABLE_VALGRIND=${ON}' \
+                      --doc='Enable running unit tests into valgrind to generate reports'
+#jenkins full features
+cfg_add_enable_option --name='jenkins' \
+                      --on-enable-inherit='--enable-junit-output --enable-debug "CXXFLAGS=-Wall -fprofile-arcs -ftest-coverage"' \
+                      --doc='Enable all checking modes (unit, valgrind, coverage...)' \
+                      --only='enable'
 #coverage
 cfg_add_enable_option --name='coverage' \
                       --on='-DENABLE_COVERAGE=${ON}' \

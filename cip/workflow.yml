@@ -1,0 +1,46 @@
+workflow:
+  # basic description of the workflow
+  headers:
+    name: "iocatcher"
+    version: "0.0.0"
+  
+  # pre activities to install deps
+  activities:
+    yum_dependency:
+      info: "Resolve dependencies"
+      context:
+        yum:
+          # to build & run tests
+          - name: "cmake"
+          - name: "gcc"
+          - name: "gcc-c++"
+          # library deps to build
+          #- name: "libfabric-devel"
+          - name: "libevent-devel"
+          # to get gcovr via pip
+          #- name: "python3"
+      stop_if_error: true
+      disabled: false
+
+    # commands to run
+    shell:
+      info: "Configure & Build & Run tests"
+      context:
+        cmdline:
+          - label: "Install libfabric from source"
+            cmd: "cd /tmp/ && wget https://github.com/ofiwg/libfabric/releases/download/v1.13.0/libfabric-1.13.0.tar.bz2 -O libfabric-1.13.0.tar.bz2 && tar -xf libfabric-1.13.0.tar.bz2 && cd libfabric-1.13.0 && ./configure && make && make install"
+          - label: "Configure"
+            cmd: "cd ${BUILDDIR} && ${SRCDIR}/configure --enable-jenkins"
+            user: "sf-user"
+          - label: "Build"
+            cmd: "cd ${BUILDDIR} && make"
+            user: "sf-user"
+          - label: "Run tests"
+            cmd: "cd ${BUILDDIR} && ctest -V"
+            user: "sf-user"
+          - label: "Install"
+            cmd: "cd ${BUILDDIR} && make install"
+          #- label:
+          #  cmd: "cd ${BUILDDIR} && pip3 install gcovr && gcovr ${SRCDIR} -r ${BUILDDIR} --filter ${SRCDIR}/src --xml > gcovr.xml"
+      stop_if_error : true
+      disabled : false

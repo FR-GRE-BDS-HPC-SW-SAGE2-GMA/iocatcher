@@ -1,0 +1,39 @@
+jobParams = [
+    TEAM: [
+        type: 'string',
+        descr: 'Team name',
+        val: 'brdm'
+    ],
+    COMPNAME: [
+        type: 'string',
+        descr: 'Component name',
+        val: 'iocatcher'
+    ],
+    COMPVERS: [
+        type: 'string',
+        descr: 'Component version',
+        val: '0.0.0'
+    ],
+    BUILDTYPE: [
+        type: 'choice',
+        descr: "Build type (snapshot / release)",
+        val: ['snapshot', 'release']
+    ],
+    PUBLISH: [
+        type: 'booleanParam',
+        descr: "Publish rpms and wheels",
+        val:  false
+    ],
+    ARTIFACTORY_USERNAME: [
+        type: 'string',
+        descr: 'Artifactory username',
+        val: "brdm-user"
+    ],
+    ARTIFACTORY_PASSWORD: [
+        type: 'string',
+        descr: 'Artifactory password',
+        val: "brdm-password"
+    ]
+]
+
+return this
