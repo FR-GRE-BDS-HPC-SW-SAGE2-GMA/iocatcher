@@ -37,7 +37,7 @@ sfPipeline('gce-pool', sfEnvironment) {
 		stage("Publish tests") {
 			junit(allowEmptyResults: false,
 			      keepLongStdio : true,
-			      testResults: 'sf-builder-export/junit/*.gtest.xml')
+			      testResults: "${SF_BUILDER_EXPORT_DIR}/junit/*.gtest.xml")
 		}
 	}
 }
