@@ -69,13 +69,12 @@ int32_t ConsistencyTracker::registerRange(uint64_t tcpClientId, size_t offset, s
 			return -1;
 
 		//register
-		struct ConsistencyRange range = {
-			.tcpClientId = tcpClientId,
-			.id = this->nextId++,
-			.offset = offset,
-			.size = size,
-			.accessMode = accessMode
-		};
+		struct ConsistencyRange range;
+		range.tcpClientId = tcpClientId;
+		range.id = this->nextId++;
+		range.offset = offset;
+		range.size = size;
+		range.accessMode = accessMode;
 		this->ranges.push_back(range);
 
 		//ok

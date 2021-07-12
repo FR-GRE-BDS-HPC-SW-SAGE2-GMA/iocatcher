@@ -42,6 +42,7 @@ TEST(TestLibfabricConnection, connect)
 
 	//spawn a client in a thread
 	std::thread client([]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8444", false);
 		domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 		LibfabricConnection * connection = new LibfabricConnection(&domain, false);
@@ -92,6 +93,7 @@ TEST(TestLibfabricConnection, message)
 
 	//client
 	std::thread client([&sendMessage]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -149,6 +151,7 @@ TEST(TestLibfabricConnection, pollMessage)
 
 	//client
 	std::thread client([&sendMessage]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8476", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -183,8 +186,8 @@ TEST(TestLibfabricConnection, rdma)
 	bool gotConnection = false;
 	bool gotRdmaRead = false;
 	bool gotRdmaWrite = false;
-	bool ready = false;
-	bool canExit = false;
+	volatile bool ready = false;
+	volatile bool canExit = false;
 	Iov iov;
 
 	//alloc
@@ -240,6 +243,7 @@ TEST(TestLibfabricConnection, rdma)
 
 	//client
 	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8448", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -281,8 +285,8 @@ TEST(TestLibfabricConnection, rdmav)
 	bool gotConnection = false;
 	bool gotRdmaRead = false;
 	bool gotRdmaWrite = false;
-	bool ready = false;
-	bool canExit = false;
+	volatile bool ready = false;
+	volatile bool canExit = false;
 	Iov iov;
 
 	//alloc
@@ -342,6 +346,7 @@ TEST(TestLibfabricConnection, rdmav)
 
 	//client
 	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8450", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -406,6 +411,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 
 	//client
 	std::thread client([&sendMessage]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8455", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123456789);
@@ -463,6 +469,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 
 	//client
 	std::thread client([&sendMessage, &gotError]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8465", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123);
@@ -523,6 +530,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 
 	//client
 	std::thread client1([&gotErrorMessage]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -538,6 +546,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 
 	//client
 	std::thread client2([&gotErrorMessage]{
+		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);

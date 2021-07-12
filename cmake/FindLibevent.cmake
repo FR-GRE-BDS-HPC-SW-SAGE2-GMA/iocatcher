@@ -25,7 +25,7 @@ set(LIBEVENT_INCLUDE_DIRS ${LIBEVENT_INCLUDE_DIR} )
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set LIBEVENT_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args(libevent  DEFAULT_MSG
+find_package_handle_standard_args(Libevent  DEFAULT_MSG
 	LIBEVENT_LIBRARY LIBEVENT_INCLUDE_DIR)
 
 ######################################################

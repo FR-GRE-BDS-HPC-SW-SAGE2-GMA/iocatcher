@@ -42,7 +42,7 @@ void LibfabricPostAction::freeBuffer(void)
 LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 {
 	return this->function();
-};
+}
 
 /****************************************************/
 /**
@@ -263,9 +263,6 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
 
 	//disable reception
 	this->disableReceive = true;
-
-	//counter
-	int count = this->remoteLiAddr.size();
 
 	//build message to send
 	LibfabricMessage * lfMessage = static_cast<LibfabricMessage*>(buffer);

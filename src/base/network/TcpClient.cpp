@@ -134,7 +134,7 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 
 	//check protocol
 	rc = read(connFd, &infos.protocolVersion, sizeof(infos.protocolVersion));
-	assert(rc == sizeof(infos.protocolVersion));
+	assumeArg(rc == sizeof(infos.protocolVersion), "Fail to read input data, got %d").arg(rc).end();
 	assumeArg(infos.protocolVersion == IOC_LF_PROTOCOL_VERSION, "Invalid server protocol version, expect %1, got %2")
 		.arg(IOC_LF_PROTOCOL_VERSION)
 		.arg(infos.protocolVersion)
@@ -142,11 +142,11 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 
 	//read other conn info
 	rc = read(connFd, &infos.clientId, sizeof(infos.clientId));
-	assert(rc == sizeof(infos.clientId));
+	assumeArg(rc == sizeof(infos.clientId), "Fail to read input data, got %1").arg(rc).end();
 	rc = read(connFd, &infos.key, sizeof(infos.key));
-	assert(rc == sizeof(infos.key));
+	assumeArg(rc == sizeof(infos.key), "Fail to read input data, got %1").arg(rc).end();
 	rc = read(connFd, &infos.keepConnection, sizeof(infos.keepConnection));
-	assert(rc == sizeof(bool));
+	assumeArg(rc == sizeof(infos.keepConnection), "Fail to read input data, got %1").arg(rc).end();
 	//fprintf(stderr, "Got client ID %lu and key %lx and keep connection %d\n", infos.clientId, infos.key, (int)infos.keepConnection);
 
 	//disconnect

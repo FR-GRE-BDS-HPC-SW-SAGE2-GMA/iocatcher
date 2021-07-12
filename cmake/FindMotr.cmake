@@ -11,5 +11,5 @@ else (MOTR_LIBRARIES)
 	find_path(MOTR_INCLUDE_DIRS NAMES motr/client.h PATH_SUFFIXES motr)
 
 	include(FindPackageHandleStandardArgs)
-	find_package_handle_standard_args(MOTR DEFAULT_MSG MOTR_LIBRARIES MOTR_INCLUDE_DIRS)
+	find_package_handle_standard_args(Motr DEFAULT_MSG MOTR_LIBRARIES MOTR_INCLUDE_DIRS)
 endif (MOTR_LIBRARIES)

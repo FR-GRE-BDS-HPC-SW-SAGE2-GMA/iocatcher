@@ -149,7 +149,7 @@ inline Debug error(const char * format)   {return Debug(format,MESSAGE_ERROR);  
 inline Debug fatal(const char * format)   {return Debug(format,MESSAGE_FATAL);  }
 
 /*******************  FUNCTION  *********************/
-inline void debugSkip(void){};
+inline void debugSkip(void){}
 
 /********************  MACROS  **********************/
 #define DAQ_FATAL(x)     DAQ_FATAL_ARG(x).end()

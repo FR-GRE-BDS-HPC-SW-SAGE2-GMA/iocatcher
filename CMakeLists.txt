@@ -1,5 +1,5 @@
 ######################################################
-#            PROJECT  : libfabric-poc                #
+#            PROJECT  : IO Catcher                   #
 #            AUTHOR   : Valat Sébastien  - ATOS      #
 #            LICENSE  : Apache 2.0                   #
 #            COPYRIGHT: 2020 Bull SAS                #
@@ -8,7 +8,13 @@
 ######################################################
 #Usage of OBJECT keyword in add_library require 2.8.8 (or something like that, need to check)
 cmake_minimum_required(VERSION 2.8.8)
-project(libfabric-poc)
+# TODO we can remove this when we do not use anymore centos7
+if (CMAKE_VERSION VERSION_LESS 3.0)
+	project(iocatcher CXX C)
+else (CMAKE_VERSION VERSION_LESS 3.0)
+	cmake_policy(SET CMP0048 NEW)
+	project(iocatcher VERSION 0.0.0 LANGUAGES CXX C)
+endif (CMAKE_VERSION VERSION_LESS 3.0)
 
 ######################################################
 #global setup

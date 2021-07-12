@@ -25,7 +25,7 @@ set(LIBFABRIC_INCLUDE_DIRS ${LIBFABRIC_INCLUDE_DIR} )
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set LIBFABRIC_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args(libfabric  DEFAULT_MSG
+find_package_handle_standard_args(LibFabric  DEFAULT_MSG
 	LIBFABRIC_LIBRARY LIBFABRIC_INCLUDE_DIR)
 
 ######################################################
