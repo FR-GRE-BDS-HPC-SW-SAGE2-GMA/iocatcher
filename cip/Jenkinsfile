@@ -31,13 +31,15 @@ sfPipeline('gce-pool', sfEnvironment) {
 		}
 
 		stage("Build") {
-			sfBuilder.build('cip/workflow.yml')
+			timeout(time: 6, unit: 'MINUTES') {
+				sfBuilder.build('cip/workflow.yml')
+			}
 		}
 
-		//post {
-		//	always {
-		//		junit '${SF_BUILDER_BUILDDIR}/**/*.gtest.xml'
-		//	}
-		//}
+		stage("Publish tests") {
+			junit(allowEmptyResults: false,
+			      keepLongStdio : true,
+			      testResults: "${SF_BUILDER_EXPORT_DIR}/junit/*.gtest.xml")
+		}
 	}
 }

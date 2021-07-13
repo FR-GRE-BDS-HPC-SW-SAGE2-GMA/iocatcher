@@ -35,11 +35,14 @@ workflow:
           - label: "Build"
             cmd: "cd ${BUILDDIR} && make"
             user: "sf-user"
-          - label: "Run tests"
-            cmd: "cd ${BUILDDIR} && ctest -V"
-            user: "sf-user"
-          - label: "Install"
+          - label: "Build"
             cmd: "cd ${BUILDDIR} && make install"
+          - label: "Run tests"
+            cmd: "cd ${BUILDDIR} && ctest || echo 'Test failure'"
+            user: "sf-user"
+          - label: "Copy unit test results to export dir"
+            cmd: "cd ${SRCDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/junit && cp -v $(find ${BUILDDIR}/ -iname '*.gtest.xml') ${SRCDIR}/${EXPORT_DIR}/junit"
+            user: "sf-user"
           #- label:
           #  cmd: "cd ${BUILDDIR} && pip3 install gcovr && gcovr ${SRCDIR} -r ${BUILDDIR} --filter ${SRCDIR}/src --xml > gcovr.xml"
       stop_if_error : true

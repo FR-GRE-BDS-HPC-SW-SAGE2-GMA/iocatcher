@@ -41,7 +41,7 @@ TEST(TestTcpClientServer, constructor)
 	});
 
 	//wait
-	usleep(1000);
+	usleep(10000);
 
 	//client
 	TcpClient * client = new TcpClient("127.0.0.1", "5555");
@@ -56,7 +56,7 @@ TEST(TestTcpClientServer, constructor)
 
 	//disconnect
 	delete client;
-	usleep(1000);
+	usleep(10000);
 
 	//check
 	EXPECT_EQ(1, cntConnect);
