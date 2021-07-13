@@ -39,7 +39,7 @@ TEST(TestServer, run_poll)
 	std::thread runner([&server]{
 		server.poll();
 	});
-	usleep(4000);
+	usleep(10000);
 	server.stop();
 	runner.join();
 }
@@ -54,6 +54,6 @@ TEST(TestServer, run_stats)
 	//server
 	Server server(&config, "8670");
 	server.startStatsThread();
-	usleep(4000);
+	usleep(10000);
 	server.stop();
 }

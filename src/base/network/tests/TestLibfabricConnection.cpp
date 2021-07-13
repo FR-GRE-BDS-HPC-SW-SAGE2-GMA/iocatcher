@@ -24,9 +24,10 @@ TEST(TestLibfabricConnection, connect)
 {
 	// to check
 	bool gotConnection = false;
+	volatile bool serverReady = false;
 
 	//spawn a server in a thread
-	std::thread server([&gotConnection]{
+	std::thread server([&gotConnection, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8444", true);
 		domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
 		LibfabricConnection connection(&domain, false);
@@ -36,13 +37,16 @@ TEST(TestLibfabricConnection, connect)
 		});
 
 		//wait first connection then exit loop
+		serverReady = true;
 		while (!gotConnection)
 			connection.poll(false);
 	});
 
+	//wait
+	while(!serverReady){};
+
 	//spawn a client in a thread
 	std::thread client([]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8444", false);
 		domain.setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 		LibfabricConnection * connection = new LibfabricConnection(&domain, false);
@@ -65,9 +69,10 @@ TEST(TestLibfabricConnection, message)
 	bool gotConnection = false;
 	bool gotMessage = false;
 	bool sendMessage = false;
+	volatile bool serverReady = false;
 
 	//server
-	std::thread server([&gotConnection, &gotMessage]{
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8446", true);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
@@ -76,6 +81,7 @@ TEST(TestLibfabricConnection, message)
 		});
 
 		//wait connection
+		serverReady = true;
 		while (!gotConnection) 
 			connection.poll(false);
 
@@ -91,9 +97,11 @@ TEST(TestLibfabricConnection, message)
 		connection.poll(true);
 	});
 
+	//wait server
+	while(!serverReady){};
+
 	//client
 	std::thread client([&sendMessage]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -128,9 +136,10 @@ TEST(TestLibfabricConnection, pollMessage)
 	bool gotConnection = false;
 	bool gotMessage = false;
 	bool sendMessage = false;
+	volatile bool serverReady = false;
 
 	//server
-	std::thread server([&gotConnection, &gotMessage]{
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8476", true);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
@@ -139,6 +148,7 @@ TEST(TestLibfabricConnection, pollMessage)
 		});
 
 		//wait connection
+		serverReady = true;
 		while (!gotConnection) 
 			connection.poll(false);
 
@@ -149,9 +159,11 @@ TEST(TestLibfabricConnection, pollMessage)
 			gotMessage = true;
 	});
 
+	//wait server
+	while(!serverReady){};
+
 	//client
 	std::thread client([&sendMessage]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8476", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -188,6 +200,7 @@ TEST(TestLibfabricConnection, rdma)
 	bool gotRdmaWrite = false;
 	volatile bool ready = false;
 	volatile bool canExit = false;
+	volatile bool serverReady = false;
 	Iov iov;
 
 	//alloc
@@ -200,7 +213,7 @@ TEST(TestLibfabricConnection, rdma)
 	memset(ptrServer1, 1, size);
 
 	//server
-	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2, ptrClient]{
+	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, &serverReady, ptrServer1, ptrServer2, ptrClient]{
 		int clientId = -1;
 		LibfabricDomain domain("127.0.0.1", "8448", true);
 		LibfabricConnection connection(&domain, false);
@@ -215,6 +228,7 @@ TEST(TestLibfabricConnection, rdma)
 		domain.registerSegment(ptrServer2, size, true, true, false);
 
 		//ready
+		serverReady = true;
 		while(!gotConnection)
 			connection.poll(false);
 		while(!ready){};
@@ -241,9 +255,11 @@ TEST(TestLibfabricConnection, rdma)
 		canExit = true;
 	});
 
+	//wait server
+	while(!serverReady) {};
+
 	//client
 	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8448", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -287,6 +303,7 @@ TEST(TestLibfabricConnection, rdmav)
 	bool gotRdmaWrite = false;
 	volatile bool ready = false;
 	volatile bool canExit = false;
+	volatile bool serverReady = false;
 	Iov iov;
 
 	//alloc
@@ -299,7 +316,7 @@ TEST(TestLibfabricConnection, rdmav)
 	memset(ptrServer1, 1, size);
 
 	//server
-	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2, ptrClient]{
+	std::thread server([&iov, &serverReady, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2, ptrClient]{
 		int clientId = -1;
 		LibfabricDomain domain("127.0.0.1", "8450", true);
 		LibfabricConnection connection(&domain, false);
@@ -318,6 +335,7 @@ TEST(TestLibfabricConnection, rdmav)
 		struct iovec iov2[2] = {{ptrServer2, size/2},{(char*)ptrServer2+size/2, size/2}};
 
 		//ready
+		serverReady = true;
 		while(!gotConnection)
 			connection.poll(false);
 		while(!ready){};
@@ -344,9 +362,11 @@ TEST(TestLibfabricConnection, rdmav)
 		canExit = true;
 	});
 
+	//wait server
+	while(!serverReady){};
+
 	//client
 	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8450", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -388,9 +408,10 @@ TEST(TestLibfabricConnection, message_auth_ok)
 	bool gotConnection = false;
 	bool gotMessage = false;
 	bool sendMessage = false;
+	volatile bool serverReady = false;
 
 	//server
-	std::thread server([&gotConnection, &gotMessage]{
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8455", true);
 		LibfabricConnection connection(&domain, false);
 		connection.getClientRegistry().registerClient(10, 123456789);
@@ -399,6 +420,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection = true;
 		});
+		serverReady = true;
 		while (!gotConnection) 
 			connection.poll(false);
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
@@ -409,9 +431,11 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		connection.poll(true);
 	});
 
+	//wait server
+	while(!serverReady) {};
+
 	//client
 	std::thread client([&sendMessage]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8455", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123456789);
@@ -446,9 +470,10 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 	bool gotMessage = false;
 	bool gotError = false;
 	bool sendMessage = false;
+	volatile bool serverReady = false;
 
 	//server
-	std::thread server([&gotConnection, &gotMessage]{
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8465", true);
 		LibfabricConnection connection(&domain, false);
 		connection.getClientRegistry().registerClient(10, 123456789);
@@ -457,6 +482,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection = true;
 		});
+		serverReady = true;
 		while (!gotConnection) 
 			connection.poll(false);
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
@@ -467,9 +493,11 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		connection.poll(true);
 	});
 
+	//wait server
+	while(!serverReady) {};
+
 	//client
 	std::thread client([&sendMessage, &gotError]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8465", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123);
@@ -509,9 +537,10 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 {
 	int gotConnection = 0;
 	int gotErrorMessage = 0;
+	volatile bool serverReady = false;
 
 	//server
-	std::thread server([&gotConnection]{
+	std::thread server([&gotConnection, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8446", true);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
@@ -520,6 +549,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 		});
 
 		//wait connection
+		serverReady = true;
 		while (gotConnection < 2) 
 			connection.poll(false);
 
@@ -528,9 +558,11 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 		connection.broadcastErrrorMessage("This is a test error !");
 	});
 
+	//wait server
+	while(!serverReady) {};
+
 	//client
 	std::thread client1([&gotErrorMessage]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -546,7 +578,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 
 	//client
 	std::thread client2([&gotErrorMessage]{
-		usleep(5000);
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
