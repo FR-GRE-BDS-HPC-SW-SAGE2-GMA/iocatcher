@@ -31,7 +31,7 @@ sfPipeline('gce-pool', sfEnvironment) {
 		}
 
 		stage("Build") {
-			timeout(time: 4, unit: 'MINUTES') {
+			timeout(time: 6, unit: 'MINUTES') {
 				sfBuilder.build('cip/workflow.yml')
 			}
 		}
