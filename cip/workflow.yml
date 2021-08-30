@@ -22,6 +22,7 @@ workflow:
           # to generate doc
           - name: "sphinx"
           - name: "python3-sphinx"
+          - name: "doxygen"
       stop_if_error: true
       disabled: false
 
