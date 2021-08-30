@@ -18,7 +18,10 @@ workflow:
           #- name: "libfabric-devel"
           - name: "libevent-devel"
           # to get gcovr via pip
-          #- name: "python3"
+          - name: "python3"
+          # to generate doc
+          - name: "sphinx"
+          - name: "python3-sphinx"
       stop_if_error: true
       disabled: false
 
