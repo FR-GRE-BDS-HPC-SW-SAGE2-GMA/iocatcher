@@ -37,6 +37,18 @@ sfPipeline('gce-pool', sfEnvironment) {
 		}
 
 		stage("Publish tests") {
+			echo '[INFO] Publish coverage results...'
+			publishHTML(target: [
+			            allowMissing: false,
+			            alwaysLinkToLastBuild: true,
+			            keepAll: false,
+			            reportDir: "${SF_BUILDER_EXPORT_DIR}",
+			            reportFiles: "coverage/gcovr.html,doc/doxygen/html/index.html,doc/sphinx",
+			            reportName: "Reports",
+			            reportTitles: "Coverage,Doxygen,Sphinx"
+			])
+
+			echo '[INFO] Publish junit results...'
 			junit(allowEmptyResults: false,
 			      keepLongStdio : true,
 			      testResults: "${SF_BUILDER_EXPORT_DIR}/junit/*.gtest.xml")
