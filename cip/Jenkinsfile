@@ -43,7 +43,7 @@ sfPipeline('gce-pool', sfEnvironment) {
 			            alwaysLinkToLastBuild: true,
 			            keepAll: false,
 			            reportDir: "${SF_BUILDER_EXPORT_DIR}",
-			            reportFiles: "coverage/gcovr.html,doc/doxygen/html/index.html,doc/sphinx",
+			            reportFiles: "coverage/gcovr.html,doc/doxygen/html/index.html,doc/sphinx/index.html",
 			            reportName: "Reports",
 			            reportTitles: "Coverage,Doxygen,Sphinx"
 			])
