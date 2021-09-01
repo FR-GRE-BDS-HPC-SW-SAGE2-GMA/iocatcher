@@ -65,7 +65,7 @@ Server::Server(const Config * config, const std::string & port)
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, !config->activePolling);
 	assert(IOC_EAGER_MAX_WRITE < 1024*1024 - sizeof(LibfabricMessage));
-	this->connection->postRecives(1024*1024, 64);
+	this->connection->postRecives(1024*1024, 128);
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);
 
