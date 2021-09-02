@@ -36,7 +36,7 @@ sfPipeline('gce-pool', sfEnvironment) {
 			}
 		}
 
-		stage("Publish tests") {
+		stage("Publish") {
 			echo '[INFO] Publish coverage results...'
 			publishHTML(target: [
 			            allowMissing: false,
