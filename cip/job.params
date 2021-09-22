@@ -1,14 +1,4 @@
 jobParams = [
-    TEAM: [
-        type: 'string',
-        descr: 'Team name',
-        val: 'brdm'
-    ],
-    COMPNAME: [
-        type: 'string',
-        descr: 'Component name',
-        val: 'iocatcher'
-    ],
     COMPVERS: [
         type: 'string',
         descr: 'Component version',
@@ -23,16 +13,6 @@ jobParams = [
         type: 'booleanParam',
         descr: "Publish rpms and wheels",
         val:  false
-    ],
-    ARTIFACTORY_USERNAME: [
-        type: 'string',
-        descr: 'Artifactory username',
-        val: "brdm-user"
-    ],
-    ARTIFACTORY_PASSWORD: [
-        type: 'string',
-        descr: 'Artifactory password',
-        val: "brdm-password"
     ]
 ]
 
