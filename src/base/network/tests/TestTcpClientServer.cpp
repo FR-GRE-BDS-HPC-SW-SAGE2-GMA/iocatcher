@@ -44,7 +44,7 @@ TEST(TestTcpClientServer, constructor)
 	usleep(10000);
 
 	//client
-	TcpClient * client = new TcpClient("127.0.0.1", "5555");
+	TcpClient * client = new TcpClient("localhost", "5555");
 	TcpConnInfo conn = client->getConnectionInfos();
 
 	//check

@@ -21,6 +21,15 @@ TEST(TestContainer, constructor)
 }
 
 /****************************************************/
+TEST(TestContainer, setMemoryBackend)
+{
+	MemoryBackendMalloc mback(NULL);
+	Container container(NULL, &mback);
+	MemoryBackendMalloc mback2(NULL);
+	container.setMemoryBackend(&mback2);
+}
+
+/****************************************************/
 TEST(TestContainer, getObject)
 {
 	MemoryBackendMalloc mback(NULL);

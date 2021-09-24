@@ -13,6 +13,8 @@ include_directories(../)
 ######################################################
 set(TEST_NAMES TestHookObjectWrite
                TestHookObjectRead
+               TestHookObjectFlush
+               TestHookObjectCreate
 )
 
 ######################################################

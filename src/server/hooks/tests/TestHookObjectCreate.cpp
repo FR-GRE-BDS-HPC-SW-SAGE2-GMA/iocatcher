@@ -20,7 +20,7 @@ using namespace testing;
 #define ALIGNEMENT (8UL*1024UL*1024UL)
 
 /****************************************************/
-class TestHookObjectRead : public ::testing::Test
+class TestHookObjectCreate : public ::testing::Test
 {
 	protected:
 		Server * server;
@@ -53,40 +53,10 @@ class TestHookObjectRead : public ::testing::Test
 };
 
 /****************************************************/
-TEST_F(TestHookObjectRead, eager_comm_bug_brdm4216)
+TEST_F(TestHookObjectCreate, simple_create)
 {
-	//fill
-	char * ptr = (char*)this->server->getContainer().getObject(ObjectId(10,20)).getUniqBuffer(0,ALIGNEMENT, ACCESS_READ, false);
-	ASSERT_NE(nullptr, ptr);
-	for (size_t i = 0 ; i < ALIGNEMENT ; i++) {
-		if (i < 2*IOC_EAGER_MAX_READ || i >= 3*IOC_EAGER_MAX_READ)
-			ptr[i] = 0;
-		else
-			ptr[i] = 1;
-	}
-
-	//send message to check
-	char buffer[IOC_EAGER_MAX_READ];
-	ioc_client_obj_read(client, 10, 20, buffer, sizeof(buffer), 2*IOC_EAGER_MAX_READ);
-
-	//check content
-	for (size_t i = 0 ; i < IOC_EAGER_MAX_READ ; i++)
-		ASSERT_EQ(1, buffer[i]) << "i=" << i;
-}
-
-/****************************************************/
-TEST_F(TestHookObjectRead, invalid)
-{
-	//replace backend to generate error
-	StorageBackendGMock storageBackend;
-	this->server->setStorageBackend(&storageBackend);
-	EXPECT_CALL(storageBackend, pread(11, 20, _, ALIGNEMENT, 0)).Times(1).WillOnce(Return(-1));
-
-	//send message to check
-	char buffer[64];
-	ssize_t res = ioc_client_obj_read(client, 11, 20, buffer, sizeof(buffer), 0);
-	ASSERT_EQ(-1, res);
-
-	//remove before destroying it
-	this->server->setStorageBackend(NULL);
+	Container & container = this->server->getContainer();
+	ASSERT_FALSE(container.hasObject(ObjectId(10,20)));
+	ioc_client_obj_create(client, 10, 20);
+	ASSERT_TRUE(container.hasObject(ObjectId(10,20)));
 }

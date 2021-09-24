@@ -77,7 +77,7 @@ static error_t parseOptions(int key, char *arg, struct argp_state *state) {
 		case 'n': config->nvdimmMountPath = splitToVector(arg); break;
 		case 'l': config->listenIP = arg; break;
 		case 'c': config->consistencyCheck = false; break;
-		case 'p': config->activePolling = false; break;
+		case 'p': config->activePolling = true; break;
 		case 'a': config->clientAuth = false; break;
 		case 'm': config->meroRcFile = strdup(arg); break;
 		case 'v':

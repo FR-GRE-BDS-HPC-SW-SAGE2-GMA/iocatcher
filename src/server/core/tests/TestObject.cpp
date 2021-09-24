@@ -245,3 +245,67 @@ TEST(TestObject, data_flush)
 	//flush
 	object.flush(0,0);
 }
+
+/****************************************************/
+TEST(TestObject, getObejctId)
+{
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId(10, 20);
+	Object object(NULL, &mback, objectId);
+
+	EXPECT_EQ(objectId.high, object.getObjectId().high);
+	EXPECT_EQ(objectId.low, object.getObjectId().low);
+}
+
+/****************************************************/
+TEST(TestObject, setMemoryBackend)
+{
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId(10, 20);
+	Object object(NULL, &mback, objectId);
+	MemoryBackendMalloc mback2(NULL);
+	object.setMemoryBackend(&mback2);
+}
+
+/****************************************************/
+TEST(TestObject, forceAlignement)
+{
+	MemoryBackendMalloc mback(NULL);
+	ObjectId objectId(10, 20);
+	Object object(NULL, &mback, objectId);
+	object.forceAlignement(4096);
+}
+
+/****************************************************/
+TEST(TestObject, buildIovec_no_offset)
+{
+	//build list
+	ObjectSegmentList segList;
+
+	//fill
+	char buffer[1024];
+	ObjectSegmentDescr descr = {buffer, 0, 1024};
+	segList.push_back(descr);
+
+	//build iovec
+	iovec * res = Object::buildIovec(segList, 0, 512);
+	EXPECT_EQ((void*)buffer, (void*)(res[0].iov_base));
+	EXPECT_EQ(512, res[0].iov_len);
+}
+
+/****************************************************/
+TEST(TestObject, buildIovec_offset)
+{
+	//build list
+	ObjectSegmentList segList;
+
+	//fill
+	char buffer[512];
+	ObjectSegmentDescr descr = {buffer, 0, 512};
+	segList.push_back(descr);
+
+	//build iovec
+	iovec * res = Object::buildIovec(segList, 128, 512);
+	EXPECT_EQ((void*)(buffer+128), (void*)(res[0].iov_base));
+	EXPECT_EQ(512-128, res[0].iov_len);
+}
