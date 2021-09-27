@@ -58,7 +58,6 @@ class TcpServer
 		static int createSocketV4(int firstPort, int maxPort, int *bound_port);
 		static void acceptOneClientCallback(evutil_socket_t fd, short unused_events, void * tcpServer);
 		static void recvClientMessageCallback(evutil_socket_t fd, short unused_events, void *clnt);
-		static void handleClientMessage(TcpClientInfo *client, const char *msg, int len);
 	private:
 		int setupLibeventListener(void);
 		void sendClientId(TcpClientInfo *client);

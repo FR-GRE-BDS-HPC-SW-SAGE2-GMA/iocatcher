@@ -169,9 +169,6 @@ retry:
 	n = read(fd, msg, max_msg_len);
 	if (n == 0) {
 		client->server->closeClient(client, fd);
-	} else if (n > 0) {
-		trace("new message size %ld from client fd %d\n", n, fd);
-		handleClientMessage(client, msg, n);
 	} else if (n < 0) {
 		if (errno == EINTR) {
 			goto retry;
@@ -189,19 +186,6 @@ void TcpServer::stop(void)
 {
 	if (this->ebase != NULL)
 		event_base_loopbreak(this->ebase);
-}
-
-/****************************************************/
-/**
- * Function to handle client messages. The client can ask to stop the server.
- * @todo To be removed (not used anymore, this was waiting TcpServer::stop() to work.).
-**/
-void TcpServer::handleClientMessage(TcpClientInfo *client, const char *msg, int len)
-{
-	// do some stuff here
-	printf("Client %p sent msg of len %d\n", static_cast<void*>(client), len);
-	if (strncmp(msg,"stop", 4) == 0)
-		client->server->stop();
 }
 
 /****************************************************/
