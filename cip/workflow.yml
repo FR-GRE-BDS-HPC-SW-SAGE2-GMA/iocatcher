@@ -23,6 +23,8 @@ workflow:
           - name: "sphinx"
           - name: "python3-sphinx"
           - name: "doxygen"
+          # to check code
+          - name: "cppcheck"
       stop_if_error: true
       disabled: false
 
@@ -51,16 +53,19 @@ workflow:
             cmd: "pip3 install gcovr"
             user: "root"
           - label: "Generate coverage xml report"
-            cmd: "cd ${BUILDDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/coverage && gcovr ${BUILDDIR} -r ${SRCDIR} --filter ${SRCDIR}/src --exclude '.*tests/.+' --xml --xml-pretty > ${SRCDIR}/${EXPORT_DIR}/coverage/gcovr.xml"
+            cmd: "cd ${BUILDDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/coverage && gcovr ${BUILDDIR} -r ${SRCDIR} --exclude-unreachable-branches --exclude-throw-branches --filter ${SRCDIR}/src --exclude '.*tests/.+' --xml --xml-pretty | sed -e \"s#<source>/src</source>#<source>.</source>#g\" > ${SRCDIR}/${EXPORT_DIR}/coverage/gcovr.xml"
             user: "sf-user"
           - label: "Generate coverage html report"
-            cmd: "cd ${BUILDDIR} && gcovr ${BUILDDIR} -r ${SRCDIR} --filter ${SRCDIR}/src --exclude '.*tests/.+' --html > ${SRCDIR}/${EXPORT_DIR}/coverage/gcovr.html"
+            cmd: "cd ${BUILDDIR} && mkdir ${SRCDIR}/${EXPORT_DIR}/coverage/gcovr && gcovr ${BUILDDIR} -r ${SRCDIR} --filter ${SRCDIR}/src --exclude '.*tests/.+' --html --html-details --output ${SRCDIR}/${EXPORT_DIR}/coverage/gcovr/index.html"
             user: "sf-user"
           - label: "Doxygen"
             cmd: "cd ${SRCDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/doc && doxygen Doxyfile && mv ./doxygen ${SRCDIR}/${EXPORT_DIR}/doc"
             user: "sf-user"
           - label: "Sphinx"
             cmd: "cd ${SRCDIR}/doc && mkdir -p ${SRCDIR}/${EXPORT_DIR}/doc && make html && mv ./_build/html ${SRCDIR}/${EXPORT_DIR}/doc/sphinx"
+            user: "sf-user"
+          - label: "CppCheck"
+            cmd: "cd ${SRCDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/check && cppcheck --error-exitcode=0 --quiet -I./src -I./extern-deps/from-cern-lhcb-daqpipe-v2/ -I./extern-deps/from-clovis-sample-apps/ -I./extern-deps/from-motr-sample-apps/ -I./extern-deps/googletest-release-1.10.0/googletest/include/ -I./extern-deps/googletest-release-1.10.0/googlemock/include/ -j8 --std=c++11 --platform=unix64 --relative-paths --report-progress --xml --xml-version=2 --output-file=${SRCDIR}/${EXPORT_DIR}/check/cppcheck.xml ./src"
             user: "sf-user"
       stop_if_error : true
       disabled : false

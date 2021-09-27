@@ -108,7 +108,7 @@ Config::Config(void)
 	this->meroRcFile = "mero_ressource_file.rc";
 	this->consistencyCheck = true;
 	this->clientAuth = true;
-	this->activePolling = true;
+	this->activePolling = false;
 }
 
 /****************************************************/
