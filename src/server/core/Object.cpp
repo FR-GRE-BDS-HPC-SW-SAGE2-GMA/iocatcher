@@ -241,7 +241,7 @@ ObjectSegmentDescr Object::loadSegment(size_t offset, size_t size, bool load, bo
 
 	//register using end address to be able to use lower_bound() to quick search
 	ObjectSegment & segment = this->segmentMap[offset+size-1];
-	segment = std::move(ObjectSegment(offset, size, buffer, this->memoryBackend));
+	segment = ObjectSegment(offset, size, buffer, this->memoryBackend);
 
 	//return descr
 	return segment.getSegmentDescr();
