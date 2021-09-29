@@ -25,7 +25,7 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//get object
 	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
@@ -51,7 +51,7 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
 	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
-	msg->header.clientId = lfClientId;
+	msg->header.lfClientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;
 

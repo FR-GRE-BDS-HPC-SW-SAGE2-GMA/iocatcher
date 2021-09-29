@@ -25,7 +25,7 @@ HookRangeUnregister::HookRangeUnregister(const Config * config, Container * cont
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 on object %2 (%3->%4) from client %5")
@@ -55,7 +55,7 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
 	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK;
-	msg->header.clientId = lfClientId;
+	msg->header.lfClientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;
 

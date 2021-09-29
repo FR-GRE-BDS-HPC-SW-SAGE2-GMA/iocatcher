@@ -133,7 +133,7 @@ class LibfabricConnection
 		bool onRecvMessage(LibfabricClientMessage & clientMessage, size_t id);
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
-		bool checkAuth(LibfabricMessage * message, int clientId, int id);
+		bool checkAuth(LibfabricMessage * message, uint64_t clientId, int id);
 		void pollAllCqInCache(void);
 	private:
 		/** Pointer to the libfabric domain to be used to establish the connection. **/
@@ -155,13 +155,13 @@ class LibfabricConnection
 		/** Map of remote addresses to be used to send messages or rdma operation.**/
 		std::map<int, fi_addr_t> remoteLiAddr;
 		/** Keep track of the next ID to assign to the endpoints. **/
-		int nextEndpointId;
+		uint64_t nextEndpointId;
 		/** Hook to be called when a client connect. **/
 		std::function<void(int)> hookOnEndpointConnect;
 		/** Hook to be called when we recive a message with wrong authentication. **/
 		std::function<LibfabricActionResult(void)> hookOnBadAuth;
 		/** Keep track of the client ID if used for client side. **/
-		int clientId;
+		uint64_t clientId;
 		/** 
 		 * Keep tack of the lambda functions to be called when reciveing
 		 * the associated message ID.

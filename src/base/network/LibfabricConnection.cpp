@@ -668,7 +668,7 @@ void LibfabricConnection::onSent(void * buffer)
  * @return True in case of succes, false otherwise (and a message will automatically be
  * send to the client).
 **/
-bool LibfabricConnection::checkAuth(LibfabricMessage * message, int lfClientId, int id)
+bool LibfabricConnection::checkAuth(LibfabricMessage * message, uint64_t lfClientId, int id)
 {
 	//checks
 	assert(message != NULL);
@@ -744,7 +744,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 				//handle
 				if (it != this->hooks.end())
-					return it->second->onMessage(this, message->header.clientId, id, message);
+					return it->second->onMessage(this, message->header.lfClientId, id, message);
 				else
 					IOC_FATAL_ARG("Server has send error message !\n%s").arg((char*)&message->data).end();
 				break;
@@ -752,7 +752,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 		default:
 			{
 				//check auth
-				if (this->checkAuth(message, message->header.clientId, id) == false)
+				if (this->checkAuth(message, message->header.lfClientId, id) == false)
 					return LF_WAIT_LOOP_UNBLOCK;
 
 				//find handler
@@ -760,7 +760,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 				//handle
 				if (it != this->hooks.end())
-					return it->second->onMessage(this, message->header.clientId, id, message);
+					return it->second->onMessage(this, message->header.lfClientId, id, message);
 				else
 					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.msgType).end();
 				break;
@@ -806,12 +806,12 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 		return false;
 	} else {
 		//check auth
-		if (this->checkAuth(message, message->header.clientId, id) == false)
+		if (this->checkAuth(message, message->header.lfClientId, id) == false)
 			return false;
 		
 		//fill the struct
 		clientMessage.message = message;
-		clientMessage.lfClientId = message->header.clientId;
+		clientMessage.lfClientId = message->header.lfClientId;
 		clientMessage.msgBufferId = id;
 
 		//retu
@@ -881,7 +881,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	assert(message->header.msgType == IOC_LF_MSG_CONNECT_INIT);
 
 	//assign id
-	int epId = this->nextEndpointId++;
+	uint64_t epId = this->nextEndpointId++;
 
 	//insert server address in address vector
 	int err = fi_av_insert(this->av, message->data.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
@@ -893,12 +893,12 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	LibfabricMessage * msg = new LibfabricMessage;
 	memset(msg, 0, sizeof(*msg));
 	msg->header.msgType = IOC_LF_MSG_ASSIGN_ID;
-	msg->header.clientId = epId;
+	msg->header.lfClientId = epId;
 	msg->data.firstHandshakeResponse.protocolVersion = IOC_LF_PROTOCOL_VERSION;
 
 	//debug
 	IOC_DEBUG_ARG("client:libfabric", "Recive client in libfabric tcpId=%1, lfId=%2")
-		.arg(message->header.clientId)
+		.arg(message->header.lfClientId)
 		.arg(epId)
 		.end();
 
@@ -1026,7 +1026,7 @@ void LibfabricConnection::setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpCl
 void LibfabricConnection::fillProtocolHeader(LibfabricMessageHeader & header, uint64_t type)
 {
 	header.msgType = type;
-	header.clientId = this->clientId;
+	header.lfClientId = this->clientId;
 	header.tcpClientId = this->tcpClientId;
 	header.tcpClientKey = this->tcpClientKey;
 }
