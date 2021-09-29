@@ -214,7 +214,7 @@ void LibfabricConnection::joinServer(void)
 	//new message
 	LibfabricMessage * msg = new LibfabricMessage;
 	memset(msg, 0, sizeof(*msg));
-	msg->header.type = IOC_LF_MSG_CONNECT_INIT;
+	msg->header.msgType = IOC_LF_MSG_CONNECT_INIT;
 	err = fi_getname(&this->ep->fid, msg->data.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
@@ -583,8 +583,8 @@ bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, Li
 			if (entry.flags & FI_RECV) {
 				bool status = this->onRecvMessage(clientMessage, (size_t)entry.op_context);
 				if (status) {
-					assumeArg(clientMessage.message->header.type == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
-						.arg(clientMessage.message->header.type)
+					assumeArg(clientMessage.message->header.msgType == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
+						.arg(clientMessage.message->header.msgType)
 						.arg(expectedMessageType)
 						.end();
 					return true;
@@ -720,7 +720,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
 	//switch
-	switch(message->header.type) {
+	switch(message->header.msgType) {
 		case IOC_LF_MSG_CONNECT_INIT:
 			onConnInit(message);
 			repostRecive(id);
@@ -740,7 +740,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 		case IOC_LF_MSG_FATAL_ERROR:
 			{
 				//find handler
-				auto it = this->hooks.find(message->header.type);
+				auto it = this->hooks.find(message->header.msgType);
 
 				//handle
 				if (it != this->hooks.end())
@@ -756,13 +756,13 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 					return LF_WAIT_LOOP_UNBLOCK;
 
 				//find handler
-				auto it = this->hooks.find(message->header.type);
+				auto it = this->hooks.find(message->header.msgType);
 
 				//handle
 				if (it != this->hooks.end())
 					return it->second->onMessage(this, message->header.clientId, id, message);
 				else
-					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.type).end();
+					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.msgType).end();
 				break;
 			}
 	}
@@ -789,7 +789,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
 	//switch
-	if (message->header.type == IOC_LF_MSG_BAD_AUTH) {
+	if (message->header.msgType == IOC_LF_MSG_BAD_AUTH) {
 		if (this->hookOnBadAuth) {
 			this->hookOnBadAuth();
 			repostRecive(id);
@@ -801,7 +801,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 				.end();
 			return false;
 		}
-	} else if (message->header.type == IOC_LF_MSG_FATAL_ERROR) {
+	} else if (message->header.msgType == IOC_LF_MSG_FATAL_ERROR) {
 		IOC_FATAL_ARG("Server has send error message !\n%1").arg((char*)&message->data).end();
 		return false;
 	} else {
@@ -878,7 +878,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 {
 	//check
 	assert(message != NULL);
-	assert(message->header.type == IOC_LF_MSG_CONNECT_INIT);
+	assert(message->header.msgType == IOC_LF_MSG_CONNECT_INIT);
 
 	//assign id
 	int epId = this->nextEndpointId++;
@@ -892,7 +892,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	//send message
 	LibfabricMessage * msg = new LibfabricMessage;
 	memset(msg, 0, sizeof(*msg));
-	msg->header.type = IOC_LF_MSG_ASSIGN_ID;
+	msg->header.msgType = IOC_LF_MSG_ASSIGN_ID;
 	msg->header.clientId = epId;
 	msg->data.firstHandshakeResponse.protocolVersion = IOC_LF_PROTOCOL_VERSION;
 
@@ -1023,9 +1023,9 @@ void LibfabricConnection::setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpCl
  * @param header Reference to the header struct to fill.
  * @param type Tye of msesage to be sent.
 **/
-void LibfabricConnection::fillProtocolHeader(LibfabricMessageHeader & header, int type)
+void LibfabricConnection::fillProtocolHeader(LibfabricMessageHeader & header, uint64_t type)
 {
-	header.type = type;
+	header.msgType = type;
 	header.clientId = this->clientId;
 	header.tcpClientId = this->tcpClientId;
 	header.tcpClientKey = this->tcpClientKey;

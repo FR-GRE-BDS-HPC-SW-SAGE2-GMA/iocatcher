@@ -37,7 +37,7 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_CREATE_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_CREATE_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = ret;
 

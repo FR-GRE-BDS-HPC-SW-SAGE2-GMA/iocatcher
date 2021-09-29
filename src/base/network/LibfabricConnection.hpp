@@ -121,7 +121,7 @@ class LibfabricConnection
 		void setUsed(bool used) {this->used = used;};
 		bool getUsed(void) {return this->used;}
 		void setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpClientKey);
-		void fillProtocolHeader(LibfabricMessageHeader & header, int type);
+		void fillProtocolHeader(LibfabricMessageHeader & header, uint64_t type);
 		ClientRegistry & getClientRegistry(void);
 		void setCheckClientAuth(bool value);
 		void setOnBadAuth(std::function<LibfabricActionResult(void)> hookOnBadAuth);
@@ -166,7 +166,7 @@ class LibfabricConnection
 		 * Keep tack of the lambda functions to be called when reciveing
 		 * the associated message ID.
 		**/
-		std::map<size_t, Hook *> hooks;
+		std::map<uint64_t, Hook *> hooks;
 		/**
 		 * To know if the connection is in use of not to handle multiple client
 		 * connections for multi-threaded applications.

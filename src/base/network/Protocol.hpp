@@ -126,7 +126,7 @@ struct LibfabricObjectId
 struct LibfabricMessageHeader
 {
 	/** Define the type of message **/
-	int type;
+	uint64_t msgType;
 	/** Define the client ID. **/
 	int clientId;
 	/** Define the TCP client ID for auth validation. **/

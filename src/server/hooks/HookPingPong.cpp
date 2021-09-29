@@ -22,7 +22,7 @@ LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, 
 
 	//prepare answer
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_PONG;
+	msg->header.msgType = IOC_LF_MSG_PONG;
 	msg->header.clientId = 0;
 
 	//send message

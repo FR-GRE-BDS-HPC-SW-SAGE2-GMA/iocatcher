@@ -45,7 +45,7 @@ void HookObjectWrite::respondError(LibfabricConnection * connection, int clientI
 {
 	//send open
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 	msg->header.clientId = 0;
 	msg->data.response.msgHasData = false;
 	msg->data.response.msgDataSize = 0;
@@ -88,14 +88,14 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, i
 		//emit rdma write vec & implement callback
 		char * addr = (char*)clientMessage->data.objReadWrite.iov.addr + offset;
 		uint64_t key = clientMessage->data.objReadWrite.iov.key;
-		connection->rdmaReadv(clientId, iov + i, cnt, addr, key, [connection, ops, size, this, clientId, iov](void){
+		connection->rdmaReadv(clientId, iov + i, cnt, addr, key, [connection, ops, size, this, clientId](void){
 			//decrement
 			(*ops)--;
 
 			if (*ops == 0) {
 				//send open
 				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 				msg->header.clientId = 0;
 				msg->data.response.msgHasData = false;
 				msg->data.response.msgDataSize = 0;
@@ -168,7 +168,7 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 
 	//send open
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 	msg->header.clientId = 0;
 	msg->data.response.status = 0;
 

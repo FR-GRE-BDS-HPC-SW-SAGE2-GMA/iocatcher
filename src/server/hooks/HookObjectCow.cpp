@@ -46,7 +46,7 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_COW_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_COW_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = (status)?0:-1;
 

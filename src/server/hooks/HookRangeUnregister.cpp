@@ -54,7 +54,7 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;

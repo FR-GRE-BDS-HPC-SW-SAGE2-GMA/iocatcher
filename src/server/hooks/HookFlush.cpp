@@ -39,7 +39,7 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, int
 
 	//prepare message
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_FLUSH_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_FLUSH_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = ret;
 

@@ -45,7 +45,7 @@ void HookObjectRead::respondError(LibfabricConnection * connection, int clientId
 {
 	//send open
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 	msg->header.clientId = 0;
 	msg->data.response.msgHasData = false;
 	msg->data.response.msgDataSize = 0;
@@ -103,7 +103,7 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, int c
 			if (*ops == 0) {
 				//send open
 				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 				msg->header.clientId = 0;
 				msg->data.response.msgHasData = false;
 				msg->data.response.msgDataSize = 0;
@@ -152,7 +152,7 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, int 
 	//char * buffer = new char[sizeof(LibfabricMessage) + dataSize];
 	LibfabricMessage * msg = (LibfabricMessage *)connection->getDomain().getMsgBuffer();
 	//LibfabricMessage * msg = (LibfabricMessage*)buffer;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
 	msg->header.clientId = 0;
 	msg->data.response.msgDataSize = dataSize;
 	msg->data.response.msgHasData = true;

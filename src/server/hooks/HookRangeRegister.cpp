@@ -50,7 +50,7 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
+	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
 	msg->header.clientId = lfClientId;
 	msg->data.response.status = status;
 	msg->data.response.msgHasData = false;
