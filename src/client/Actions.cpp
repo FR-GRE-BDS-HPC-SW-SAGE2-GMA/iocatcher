@@ -114,7 +114,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 			.arg(serverResponse.message->data.response.msgDataSize)
 			.arg(size)
 			.end();
-		memcpy(buffer, serverResponse.message + 1, serverResponse.message->data.response.msgDataSize);
+		memcpy(buffer, serverResponse.message->extraData, serverResponse.message->data.response.msgDataSize);
 	}
 
 	//repost recv buffer
@@ -165,7 +165,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 	//embed small data in message
 	size_t toSend = sizeof(*msg);
 	if (size <= IOC_EAGER_MAX_WRITE) {
-		memcpy(msg+1, buffer, size);
+		memcpy(msg->extraData, buffer, size);
 		msg->data.objReadWrite.msgHasData = true;
 		toSend += size;
 	}

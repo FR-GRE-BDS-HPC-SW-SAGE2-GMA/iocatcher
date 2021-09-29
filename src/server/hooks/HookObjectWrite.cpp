@@ -137,7 +137,7 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, u
 void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//get base pointer
-	char * data = (char*)(clientMessage + 1);
+	char * data = clientMessage->extraData;
 
 	//copy data
 	size_t cur = 0;

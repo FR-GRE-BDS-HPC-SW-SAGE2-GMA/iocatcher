@@ -285,6 +285,8 @@ struct LibfabricMessage
 		/** Info to make a copy on write of an object. **/
 		LibfabricObjectCow objCow;
 	} data;
+	/** Extra data to ba placed after the header. **/
+	char extraData[0];
 };
 
 /****************************************************/

@@ -161,7 +161,7 @@ class AbstractRpcServer(object):
 
   def _CreateRequest(self, url, data=None):
     """Creates a new urllib request."""
-    logging.debug("Creating request for: '%s' with payload:\n%s", url, data)
+    logging.debug("Creating request for: '%s' with extraData:\n%s", url, data)
     req = urllib2.Request(url, data=data)
     if self.host_override:
       req.add_header("Host", self.host_override)
@@ -288,7 +288,7 @@ class AbstractRpcServer(object):
       self._GetAuthCookie(auth_token)
       return
 
-  def Send(self, request_path, payload=None,
+  def Send(self, request_path, extraData=None,
            content_type="application/octet-stream",
            timeout=None,
            **kwargs):
@@ -296,7 +296,7 @@ class AbstractRpcServer(object):
 
     Args:
       request_path: The path to send the request to, eg /api/appversion/create.
-      payload: The body of the request, or None to send an empty request.
+      extraData: The body of the request, or None to send an empty request.
       content_type: The Content-Type header to use.
       timeout: timeout in seconds; default None i.e. no timeout.
         (Note: for large requests on OS X, the timeout doesn't work right.)
@@ -320,7 +320,7 @@ class AbstractRpcServer(object):
         url = "http://%s%s" % (self.host, request_path)
         if args:
           url += "?" + urllib.urlencode(args)
-        req = self._CreateRequest(url=url, data=payload)
+        req = self._CreateRequest(url=url, data=extraData)
         req.add_header("Content-Type", content_type)
         try:
           f = self.opener.open(req)
@@ -1370,7 +1370,7 @@ def RealMain(argv, data=None):
   if not options.download_base:
     vcs.UploadBaseFiles(issue, rpc_server, patches, patchset, options, files)
     if options.send_mail:
-      rpc_server.Send("/" + issue + "/mail", payload="")
+      rpc_server.Send("/" + issue + "/mail", extraData="")
   return issue, patchset
 
 

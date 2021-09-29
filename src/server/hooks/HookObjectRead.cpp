@@ -159,7 +159,7 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 	msg->data.response.status = 0;
 
 	//get base pointer
-	char * data = (char*)(msg + 1);
+	char * data = msg->extraData;
 
 	//copy data
 	size_t cur = 0;

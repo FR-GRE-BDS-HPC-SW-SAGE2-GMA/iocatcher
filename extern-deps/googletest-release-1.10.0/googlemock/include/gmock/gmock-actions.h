@@ -480,8 +480,8 @@ namespace internal {
 // on return. Useful for move-only types, but could be used on any type.
 template <typename T>
 struct ByMoveWrapper {
-  explicit ByMoveWrapper(T value) : payload(std::move(value)) {}
-  T payload;
+  explicit ByMoveWrapper(T value) : extraData(std::move(value)) {}
+  T extraData;
 };
 
 // Implements the polymorphic Return(x) action, which can be used in
@@ -587,7 +587,7 @@ class ReturnAction {
       GTEST_CHECK_(!performed_)
           << "A ByMove() action should only be performed once.";
       performed_ = true;
-      return std::move(wrapper_->payload);
+      return std::move(wrapper_->extraData);
     }
 
    private:
