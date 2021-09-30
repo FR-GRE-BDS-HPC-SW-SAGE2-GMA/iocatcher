@@ -109,6 +109,7 @@ Config::Config(void)
 	this->consistencyCheck = true;
 	this->clientAuth = true;
 	this->activePolling = true;
+	this->broadcastErrorToClients = false;
 }
 
 /****************************************************/
