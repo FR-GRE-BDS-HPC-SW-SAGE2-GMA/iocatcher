@@ -80,6 +80,7 @@ class Debug : public FormattedMessage
 		static void setRank(int rank);
 		static bool isDisabled(void) {return Debug::disabled;};
 		static void setBeforeAbortHandler(std::function<void(const std::string& message)> handler);
+		static void initLoadEnv(void);
 	protected:
 		/** Category (only for DEBUG level), nullptr otherwise. **/
 		const char * cat;

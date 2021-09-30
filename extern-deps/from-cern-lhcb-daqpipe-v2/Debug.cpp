@@ -165,7 +165,17 @@ void Debug::end()
 			std::cerr << buf.str();
 			if (beforeAbort)
 				beforeAbort(buf.str());
-			exit(EXIT_FAILURE);
+			//check exit mode. In debug mode we abort by default
+			//in production we depend on env var not to generate big core dump if not wanted.
+			#ifdef NDEBUG
+				const char * abortEnv = getenv("IOC_ABORT");
+				if ( abortEnv != NULL && (strncmp("true", abortEnv, 4) == 0 || strncmp("yes", abortEnv, 3) == 0))
+					abort();
+				else
+					exit(EXIT_FAILURE);
+			#else
+				abort();
+			#endif
 			break;
 	}
 }
@@ -303,7 +313,7 @@ void Debug::setBeforeAbortHandler(std::function<void(const std::string& message)
 	Debug::beforeAbort = handler;
 }
 
-/********************** CONSTS **********************/
+/*******************  FUNCTION  *********************/
 /**
  * Enable verbosity for the given categories listed as a string with
  * comma separated values.
@@ -321,10 +331,35 @@ void Debug::setVerbosity ( const std::string& value )
 	}
 }
 
-/********************  GLOBALS  *********************/
+/*******************  FUNCTION  *********************/
 const DebugCategoryMap * Debug::getCatMap ()
 {
 	return catMap;
 }
+
+/********************  GLOBALS  *********************/
+void Debug::initLoadEnv(void)
+{
+	const char * env = getenv("IOC_DEBUG");
+	if (env != NULL) {
+		Debug::catMap = new DebugCategoryMap;
+		DAQ_INFO("Enabling debugging logs via IOC_DEBUG environnement variable !");
+		Debug::setVerbosity(env);
+	}
+}
+
+/********************  GLOBALS  *********************/
+/**
+ * We use a class constructor to be init after stdc++ otherwise if we use
+ * c lib constructor we arrive too soon which make crashing when using
+ * some objects.
+**/
+class DebugInitializer {
+	public:
+		DebugInitializer(void) {
+			Debug::initLoadEnv();
+		}
+};
+static DebugInitializer gblDebugInitializer;
 
 }
