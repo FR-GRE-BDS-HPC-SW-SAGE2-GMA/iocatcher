@@ -66,6 +66,12 @@ int TcpClient::tcp_connect(const char *addr, const char *aport)
 	struct servent *srv;
 	struct hostent *hp;
 
+	//debug
+	IOC_DEBUG_ARG("tcp:conn", "Connecting to %1:%2")
+		.arg(addr)
+		.arg(aport)
+		.end();
+
 	//fprintf(stderr, "Connecting to %s:%s\n", addr, aport);
 
 	if (!addr || !aport)
@@ -114,6 +120,12 @@ int TcpClient::tcp_connect(const char *addr, const char *aport)
 		exit(errno);
 	}
 
+	//debug
+	IOC_DEBUG_ARG("tcp:conn", "Connection success to %1:%2")
+		.arg(addr)
+		.arg(aport)
+		.end();
+
 	return sockfd;
 }
 
@@ -154,6 +166,9 @@ TcpConnInfo TcpClient::getConnectionInfos(void)
 		close(connFd);
 		connFd = -1;
 	}
+
+	//debug
+	IOC_DEBUG("tcp:conn", "Got connection info with success");
 
 	// ok
 	return infos;

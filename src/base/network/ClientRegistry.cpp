@@ -7,6 +7,7 @@ COPYRIGHT: 2020 Bull SAS
 
 /****************************************************/
 #include <cassert>
+#include "base/common/Debug.hpp"
 #include "ClientRegistry.hpp"
 
 /****************************************************/
@@ -42,6 +43,7 @@ void ClientRegistry::registerClient(uint64_t id, uint64_t key)
 	{
 		std::lock_guard<std::mutex> lockGuard(mutex);
 		assert(clients.find(id) == clients.end());
+		IOC_DEBUG_ARG("client:registry", "Register client id=%1, key=%2").arg(id).arg(key).end();
 		clients[id] = key;
 	}
 }
@@ -57,6 +59,7 @@ void ClientRegistry::disconnectClient(uint64_t id)
 	{
 		std::lock_guard<std::mutex> lockGuard(mutex);
 		assert(clients.find(id) != clients.end());
+		IOC_DEBUG_ARG("client:registry", "Remove client id=%1").arg(id).end();
 		clients.erase(id);
 	}
 }
