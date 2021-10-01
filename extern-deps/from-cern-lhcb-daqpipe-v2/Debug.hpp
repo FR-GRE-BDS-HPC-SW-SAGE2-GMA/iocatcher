@@ -81,6 +81,7 @@ class Debug : public FormattedMessage
 		static bool isDisabled(void) {return Debug::disabled;};
 		static void setBeforeAbortHandler(std::function<void(const std::string& message)> handler);
 		static void initLoadEnv(void);
+		static void enableDebugCodeLocation(void);
 	protected:
 		/** Category (only for DEBUG level), nullptr otherwise. **/
 		const char * cat;
@@ -100,6 +101,8 @@ class Debug : public FormattedMessage
 		static int rank;
 		/** Define if debug messages are disabled an need to be skiped. **/
 		static bool disabled;
+		/** Define if we print the code location for each debug message. **/
+		static bool debugMsgLocation;
 		/** Handler to be called before aborting. **/
 		static std::function<void(const std::string& message)> beforeAbort;
 };
@@ -119,6 +122,7 @@ class DebugDummy
 		static bool showCat(const char * cat){return false;};
 		static void showList(){};
 		static void setVerbosity(const std::string & value){};
+		static void enableDebugCodeLocation(void) {};
 		//from message class
 		template <class T> DebugDummy & arg(const T & value) {return *this;}
 		DebugDummy & arg(const std::string & value) {return *this;};

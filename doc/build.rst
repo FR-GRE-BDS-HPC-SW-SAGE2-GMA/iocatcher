@@ -67,12 +67,18 @@ mode:
   make install
 
 You can then enable the debug messages of the server by listing the debugging
-groups you want to filter of providing all to enable all.
+groups you want to filter or providing `all` to enable all the messages.
+
+You can also use the `code` keyword to display the source code location
+before all the log messages.
 
 .. code-block:: shell
 
   # display all debug messages
   iocatcher-server-no-mero -v all 127.0.0.1
+
+  # display all debug messages and print source code location
+  iocatcher-server-no-mero -v all,code 127.0.0.1
 
   # display messages from hook:ping
   iocatcher-server-no-mero -v hook:ping 127.0.0.1

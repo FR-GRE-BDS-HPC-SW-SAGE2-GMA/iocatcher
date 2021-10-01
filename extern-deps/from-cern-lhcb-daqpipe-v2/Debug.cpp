@@ -57,6 +57,7 @@ DebugCategoryMap * Debug::catMap = &ref;
 int Debug::catMaxWidth = 0;
 int Debug::rank = -1;
 bool Debug::disabled = true;
+bool Debug::debugMsgLocation = false;
 std::function<void(const std::string& message)> Debug::beforeAbort;
 
 /*******************  FUNCTION  *********************/
@@ -122,6 +123,8 @@ void Debug::end()
 			#ifndef NDEBUG
 				if (showCat(cat))
 				{
+					if (line != 0 && debugMsgLocation)
+						buf << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 					//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') <<  "] " << '[' << std::left << std::setw(catMaxWidth) << cat << "] " << *this << cstPostfix << std::endl;
 					buf << cstLevelPrefix[level] << '[' << std::left << std::setw(catMaxWidth) << cat << "] " << *this << cstPostfix << std::endl;
 					std::cout << buf.str();
@@ -131,7 +134,7 @@ void Debug::end()
 		case MESSAGE_INFO:
 		case MESSAGE_NORMAL:
 			///if (line != 0)
-			//	std::cout << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+			//	std::cout << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cout << buf.str();
@@ -141,7 +144,7 @@ void Debug::end()
 				break;
 			#else
 				if (line != 0)
-					buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+					buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 				//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 				buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 				std::cout << buf.str();
@@ -152,14 +155,14 @@ void Debug::end()
 		case MESSAGE_WARNING:
 		case MESSAGE_ERROR:
 			if (line != 0)
-				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cerr << buf.str();
 			break;
 		case MESSAGE_FATAL:
 			if (line != 0)
-				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cerr << buf.str();
@@ -326,9 +329,22 @@ void Debug::setVerbosity ( const std::string& value )
 	while(std::getline(iss, token, ',')) {
 		if (token == "all" || token == "*")
 			enableAll();
+		else if (token == "code")
+			enableDebugCodeLocation();
 		else
 			enableCat(token);
 	}
+}
+
+/*******************  FUNCTION  *********************/
+/**
+ * When enabled it prints the code location before every debug log messages.
+ * This is not done by default to stay readable. But printing can help to find
+ * where the messages are generated.
+**/
+void Debug::enableDebugCodeLocation(void)
+{
+	Debug::debugMsgLocation = true;
 }
 
 /*******************  FUNCTION  *********************/
