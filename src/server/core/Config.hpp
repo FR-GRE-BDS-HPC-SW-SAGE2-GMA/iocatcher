@@ -40,6 +40,8 @@ class Config
 		bool clientAuth;
 		/** Use active polling or passive polling. **/
 		bool activePolling;
+		/** On assume/fatal, boradcast the error message to the clients. To be disabled for unit tests. **/
+		bool broadcastErrorToClients;
 };
 
 }

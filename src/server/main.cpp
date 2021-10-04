@@ -36,6 +36,7 @@ int main(int argc, const char ** argv)
 	//parse args
 	Config config;
 	config.parseArgs(argc, argv);
+	config.broadcastErrorToClients = true;
 	
 	//info
 	printf("LISTEN: %s\n", config.listenIP.c_str());
