@@ -23,7 +23,7 @@ HookObjectCreate::HookObjectCreate(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:obj:create", "Get create object %1 from client %2")
@@ -37,8 +37,8 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_CREATE_ACK;
-	msg->header.clientId = lfClientId;
+	msg->header.msgType = IOC_LF_MSG_OBJ_CREATE_ACK;
+	msg->header.lfClientId = lfClientId;
 	msg->data.response.status = ret;
 
 	//send message

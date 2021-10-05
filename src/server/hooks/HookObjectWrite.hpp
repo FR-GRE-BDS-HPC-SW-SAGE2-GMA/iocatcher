@@ -24,11 +24,11 @@ class HookObjectWrite : public Hook
 {
 	public:
 		HookObjectWrite(Container * container, ServerStats * stats);
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
 	private:
-		void objRdmaFetchFromClient(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-		void objEagerExtractFromMessage(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-		void respondError(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage);
+		void objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
+		void objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
+		void respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage);
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;

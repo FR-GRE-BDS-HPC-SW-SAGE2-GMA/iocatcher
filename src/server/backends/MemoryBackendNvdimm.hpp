@@ -48,8 +48,6 @@ class MemoryBackendNvdimm: public MemoryBackend
 		size_t chunks;
 		/** Keep track of the current offset in current file. **/
 		size_t fileOffset;
-		/** Remeber the last alloc to grow exponentially until a limit. **/
-		size_t lastFileSize;
 };
 
 }

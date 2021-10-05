@@ -23,7 +23,7 @@ HookFlush::HookFlush(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:obj:flush", "Get flush object %1 on %2->%3 from client %4")
@@ -39,8 +39,8 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, int
 
 	//prepare message
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_FLUSH_ACK;
-	msg->header.clientId = lfClientId;
+	msg->header.msgType = IOC_LF_MSG_OBJ_FLUSH_ACK;
+	msg->header.lfClientId = lfClientId;
 	msg->data.response.status = ret;
 
 	//send message

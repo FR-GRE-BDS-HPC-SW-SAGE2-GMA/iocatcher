@@ -155,7 +155,7 @@ TEST(TestLibfabricConnection, pollMessage)
 		//poll message
 		LibfabricClientMessage message;
 		bool status = connection.pollMessage(message, IOC_LF_MSG_PING);
-		if (status && message.message->header.type == IOC_LF_MSG_PING)
+		if (status && message.message->header.msgType == IOC_LF_MSG_PING)
 			gotMessage = true;
 	});
 
@@ -213,7 +213,7 @@ TEST(TestLibfabricConnection, rdma)
 	memset(ptrServer1, 1, size);
 
 	//server
-	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, &serverReady, ptrServer1, ptrServer2, ptrClient]{
+	std::thread server([&iov, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, &serverReady, ptrServer1, ptrServer2]{
 		int clientId = -1;
 		LibfabricDomain domain("127.0.0.1", "8448", true);
 		LibfabricConnection connection(&domain, false);
@@ -259,7 +259,7 @@ TEST(TestLibfabricConnection, rdma)
 	while(!serverReady) {};
 
 	//client
-	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
+	std::thread client([&ready, &canExit, &iov, ptrClient]{
 		LibfabricDomain domain("127.0.0.1", "8448", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -316,7 +316,7 @@ TEST(TestLibfabricConnection, rdmav)
 	memset(ptrServer1, 1, size);
 
 	//server
-	std::thread server([&iov, &serverReady, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2, ptrClient]{
+	std::thread server([&iov, &serverReady, &canExit, &ready, &gotConnection, &gotRdmaRead, &gotRdmaWrite, ptrServer1, ptrServer2]{
 		int clientId = -1;
 		LibfabricDomain domain("127.0.0.1", "8450", true);
 		LibfabricConnection connection(&domain, false);
@@ -366,7 +366,7 @@ TEST(TestLibfabricConnection, rdmav)
 	while(!serverReady){};
 
 	//client
-	std::thread client([&ready, &canExit, &iov, &gotRdmaWrite, &gotRdmaRead, ptrClient]{
+	std::thread client([&ready, &canExit, &iov, ptrClient]{
 		LibfabricDomain domain("127.0.0.1", "8450", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);

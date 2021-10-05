@@ -41,12 +41,12 @@ HookObjectRead::HookObjectRead(Container * container, ServerStats * stats)
  * @param clientMessage Pointer the the message requesting the RDMA read operation.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectRead::respondError(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage)
+void HookObjectRead::respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage)
 {
 	//send open
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.clientId = 0;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.lfClientId = 0;
 	msg->data.response.msgHasData = false;
 	msg->data.response.msgDataSize = 0;
 	msg->data.response.status = -1;
@@ -65,7 +65,7 @@ void HookObjectRead::respondError(LibfabricConnection * connection, int clientId
  * @param clientMessage Pointer the the message requesting the RDMA read operation.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//build iovec
 	iovec * iov = Object::buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
@@ -103,8 +103,8 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, int c
 			if (*ops == 0) {
 				//send open
 				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-				msg->header.clientId = 0;
+				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+				msg->header.lfClientId = 0;
 				msg->data.response.msgHasData = false;
 				msg->data.response.msgDataSize = 0;
 				msg->data.response.status = 0;
@@ -142,7 +142,7 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, int c
  * @param clientMessage the request from the client to get the required informations.
  * @param segments The list of object segments to be sent.
 **/
-void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//size
 	size_t dataSize = clientMessage->data.objReadWrite.size;
@@ -152,14 +152,14 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, int 
 	//char * buffer = new char[sizeof(LibfabricMessage) + dataSize];
 	LibfabricMessage * msg = (LibfabricMessage *)connection->getDomain().getMsgBuffer();
 	//LibfabricMessage * msg = (LibfabricMessage*)buffer;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.clientId = 0;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.lfClientId = 0;
 	msg->data.response.msgDataSize = dataSize;
 	msg->data.response.msgHasData = true;
 	msg->data.response.status = 0;
 
 	//get base pointer
-	char * data = (char*)(msg + 1);
+	char * data = msg->extraData;
 
 	//copy data
 	size_t cur = 0;
@@ -197,7 +197,7 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, int 
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:obj:read", "Get object read on %1 for %2->%3 from client %4")
