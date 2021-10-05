@@ -23,7 +23,7 @@ HookObjectCow::HookObjectCow(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3")
@@ -46,8 +46,8 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 
 	//fill response
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_COW_ACK;
-	msg->header.clientId = lfClientId;
+	msg->header.msgType = IOC_LF_MSG_OBJ_COW_ACK;
+	msg->header.lfClientId = lfClientId;
 	msg->data.response.status = (status)?0:-1;
 
 	//send message

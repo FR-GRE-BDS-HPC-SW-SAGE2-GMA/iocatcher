@@ -41,12 +41,12 @@ HookObjectWrite::HookObjectWrite(Container * container, ServerStats * stats)
  * @param clientMessage Pointer the the message requesting the RDMA read operation.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectWrite::respondError(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage)
+void HookObjectWrite::respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage)
 {
 	//send open
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.clientId = 0;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.lfClientId = 0;
 	msg->data.response.msgHasData = false;
 	msg->data.response.msgDataSize = 0;
 	msg->data.response.status = -1;
@@ -65,7 +65,7 @@ void HookObjectWrite::respondError(LibfabricConnection * connection, int clientI
  * @param clientMessage Pointer the the message requesting the RDMA write operation.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//build iovec
 	iovec * iov = Object::buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
@@ -88,15 +88,15 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, i
 		//emit rdma write vec & implement callback
 		char * addr = (char*)clientMessage->data.objReadWrite.iov.addr + offset;
 		uint64_t key = clientMessage->data.objReadWrite.iov.key;
-		connection->rdmaReadv(clientId, iov + i, cnt, addr, key, [connection, ops, size, this, clientId, iov](void){
+		connection->rdmaReadv(clientId, iov + i, cnt, addr, key, [connection, ops, size, this, clientId](void){
 			//decrement
 			(*ops)--;
 
 			if (*ops == 0) {
 				//send open
 				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-				msg->header.clientId = 0;
+				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+				msg->header.lfClientId = 0;
 				msg->data.response.msgHasData = false;
 				msg->data.response.msgDataSize = 0;
 				msg->data.response.status = 0;
@@ -134,10 +134,10 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, i
  * @param clientMessage the request from the client to get the required informations.
  * @param segments The list of object segments to be sent.
 **/
-void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connection, int clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
 {
 	//get base pointer
-	char * data = (char*)(clientMessage + 1);
+	char * data = clientMessage->extraData;
 
 	//copy data
 	size_t cur = 0;
@@ -168,8 +168,8 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 
 	//send open
 	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.type = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.clientId = 0;
+	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
+	msg->header.lfClientId = 0;
 	msg->data.response.status = 0;
 
 	//stats
@@ -183,7 +183,7 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:obj:write", "Get object write on %1 for %2->%3 from client %4")

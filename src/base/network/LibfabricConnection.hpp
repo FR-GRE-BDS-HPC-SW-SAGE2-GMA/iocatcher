@@ -121,7 +121,7 @@ class LibfabricConnection
 		void setUsed(bool used) {this->used = used;};
 		bool getUsed(void) {return this->used;}
 		void setTcpClientInfos(uint64_t tcpClientId, uint64_t tcpClientKey);
-		void fillProtocolHeader(LibfabricMessageHeader & header, int type);
+		void fillProtocolHeader(LibfabricMessageHeader & header, uint64_t type);
 		ClientRegistry & getClientRegistry(void);
 		void setCheckClientAuth(bool value);
 		void setOnBadAuth(std::function<LibfabricActionResult(void)> hookOnBadAuth);
@@ -133,7 +133,7 @@ class LibfabricConnection
 		bool onRecvMessage(LibfabricClientMessage & clientMessage, size_t id);
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
-		bool checkAuth(LibfabricMessage * message, int clientId, int id);
+		bool checkAuth(LibfabricMessage * message, uint64_t clientId, int id);
 		void pollAllCqInCache(void);
 	private:
 		/** Pointer to the libfabric domain to be used to establish the connection. **/
@@ -155,18 +155,18 @@ class LibfabricConnection
 		/** Map of remote addresses to be used to send messages or rdma operation.**/
 		std::map<int, fi_addr_t> remoteLiAddr;
 		/** Keep track of the next ID to assign to the endpoints. **/
-		int nextEndpointId;
+		uint64_t nextEndpointId;
 		/** Hook to be called when a client connect. **/
 		std::function<void(int)> hookOnEndpointConnect;
 		/** Hook to be called when we recive a message with wrong authentication. **/
 		std::function<LibfabricActionResult(void)> hookOnBadAuth;
 		/** Keep track of the client ID if used for client side. **/
-		int clientId;
+		uint64_t clientId;
 		/** 
 		 * Keep tack of the lambda functions to be called when reciveing
 		 * the associated message ID.
 		**/
-		std::map<size_t, Hook *> hooks;
+		std::map<uint64_t, Hook *> hooks;
 		/**
 		 * To know if the connection is in use of not to handle multiple client
 		 * connections for multi-threaded applications.

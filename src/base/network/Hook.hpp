@@ -46,7 +46,7 @@ class Hook
 		 * @param clientMessage Pointer to the buffer containing the client message.
 		 * @return It returns an enum saying if the polling loop need to exit or not.
 		**/
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, int lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) = 0;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) = 0;
 };
 
 }

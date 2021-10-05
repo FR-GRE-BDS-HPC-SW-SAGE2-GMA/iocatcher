@@ -92,19 +92,21 @@ Server::Server(const Config * config, const std::string & port)
 	this->connection->registerHook(IOC_LF_MSG_OBJ_COW, new HookObjectCow(this->container));
 
 	//set error dispatch
-	DAQ::Debug::setBeforeAbortHandler([this](const std::string & message){
-		//keep track of first send to avoid looping if a second error
-		//append in broadcastErrrorMessage().
-		static bool first = true;
+	if (config->broadcastErrorToClients) {
+		DAQ::Debug::setBeforeAbortHandler([this](const std::string & message){
+			//keep track of first send to avoid looping if a second error
+			//append in broadcastErrrorMessage().
+			static bool first = true;
 
-		//get current
-		bool ok = first;
-		first = false;
+			//get current
+			bool ok = first;
+			first = false;
 
-		//only first time
-		if (ok)
-			this->connection->broadcastErrrorMessage(message);
-	});
+			//only first time
+			if (ok)
+				this->connection->broadcastErrrorMessage(message);
+		});
+	}
 }
 
 /****************************************************/
