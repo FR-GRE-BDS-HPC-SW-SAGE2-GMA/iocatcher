@@ -67,16 +67,39 @@ mode:
   make install
 
 You can then enable the debug messages of the server by listing the debugging
-groups you want to filter of providing all to enable all.
+groups you want to filter or providing `all` to enable all the messages.
+
+You can also use the `code` keyword to display the source code location
+before all the log messages.
 
 .. code-block:: shell
 
   # display all debug messages
   iocatcher-server-no-mero -v all 127.0.0.1
 
+  # display all debug messages and print source code location
+  iocatcher-server-no-mero -v all,code 127.0.0.1
+
   # display messages from hook:ping
   iocatcher-server-no-mero -v hook:ping 127.0.0.1
   
   # display all subclass hook messages
   iocatcher-server-no-mero -v hook 127.0.0.1
-  
+
+If you get a bug in unit tests, you can enable the debug logging by using the
+`IOC_DEBUG` environnement variable just as you do with the `-v` option.
+
+.. code-block:: shell
+  IOC_DEBUG="hook:obj,client" ./src/server/hooks/tests/TestHookObjectRead
+
+Getting core dump on fatal() and assume() failure
+-------------------------------------------------
+
+By default those functions call abort() in debug mode which generate a core dump.
+In production, it call exit avoiding filling the local drive with unexpected core dumps.
+In this case, you can re-enable the call to abort() by using the `IOC_ABORT` environnement
+variable.
+
+.. code-block:: shell
+  IOC_ABORT=yes iocatcher-server-no-mero 127.0.0.1
+  IOC_ABORT=true iocatcher-server-no-mero 127.0.0.1

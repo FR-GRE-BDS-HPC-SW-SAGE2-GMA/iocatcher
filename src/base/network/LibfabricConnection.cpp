@@ -69,6 +69,9 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool passiv
 	this->checkClientAuth = false;
 	this->disableReceive = false;
 
+	//debug
+	IOC_DEBUG("libfabric:conn", "Create new connection");
+
 	//extract
 	fi_info *fi = lfDomain->getFiInfo();
 	fid_domain *domain = lfDomain->getDomain();
@@ -181,6 +184,9 @@ void LibfabricConnection::repostRecive(size_t id)
 	//check
 	assumeArg(id <recvBuffersCount, "Invalid recive buffer ID: %1").arg(id).end();
 
+	//debug
+	IOC_DEBUG_ARG("libfabric:conn", "Repost recive buffer %1").arg(id).end();
+
 	//post
 	int err = fi_recv(this->ep, this->recvBuffers[id], recvBuffersSize, 0, 0, (void*)id);
 	LIBFABRIC_CHECK_STATUS("fi_recv", err);
@@ -205,6 +211,9 @@ void LibfabricConnection::joinServer(void)
 	//vars
 	int err;
 	size_t addrlen = IOC_LF_MAX_ADDR_LEN;
+
+	//debug
+	IOC_DEBUG("libfabric:conn", "Join server");
 
 	//insert server address in address vector
 	err = fi_av_insert(this->av, this->lfDomain->getFiInfo()->dest_addr, 1, &this->remoteLiAddr[IOC_LF_SERVER_ID], 0, NULL);
@@ -246,6 +255,9 @@ void LibfabricConnection::joinServer(void)
 
 	//wait send
 	this->poll(true);
+
+	//debug
+	IOC_DEBUG("libfabric:conn", "Server joined");
 }
 
 /****************************************************/
@@ -257,6 +269,9 @@ void LibfabricConnection::joinServer(void)
 **/
 void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
 {
+	//debug
+	IOC_DEBUG_ARG("libfabric:conn", "Broadcast error message to all clients : %1").arg(message).end();
+
 	//allocate buffer
 	const size_t size = sizeof(LibfabricMessageHeader) + message.size() + 1;
 	void * buffer = malloc(size);
@@ -308,6 +323,9 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 	assert(buffer != NULL);
 	assert(size <= recvBuffersSize);
 
+	//debug
+	IOC_DEBUG_ARG("libfabric:msg", "Send message: dest=%1, buffer=%2").arg(destinationEpId).arg(buffer).end();
+
 	//search
 	auto it = this->remoteLiAddr.find(destinationEpId);
 	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
@@ -340,6 +358,9 @@ void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, in
 	assert(buffer != NULL);
 	assert(size <= recvBuffersSize);
 
+	//debug
+	IOC_DEBUG_ARG("libfabric:msg", "Send message without poll wakeup: dest=%1, buffer=%2").arg(destinationEpId).arg(buffer).end();
+
 	//search
 	auto it = this->remoteLiAddr.find(destinationEpId);
 	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
@@ -371,6 +392,14 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
 {
 	//check
 	assert(localAddr != NULL);
+
+	//debug
+	IOC_DEBUG_ARG("libfabric:rdma", "Start RDMA read: dest=%1, localAddr=%2, remoteAddr=%3, size=%4")
+		.arg(destinationEpId)
+		.arg(localAddr)
+		.arg(remoteAddr)
+		.arg(size)
+		.end();
 
 	//get
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
@@ -413,6 +442,14 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 	//check
 	assert(iov != NULL);
 	assert(count > 0);
+
+	//debug
+	IOC_DEBUG_ARG("libfabric:rdma", "Start RDMA read: dest=%1, iov=%2, remoteAddr=%3, count=%4")
+		.arg(destinationEpId)
+		.arg(iov)
+		.arg(remoteAddr)
+		.arg(count)
+		.end();
 
 	//go
 	void ** mrDesc = new void*[count];
@@ -462,6 +499,14 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 	assert(iov != NULL);
 	assert(count > 0);
 
+	//debug
+	IOC_DEBUG_ARG("libfabric:rdma", "Start RDMA write: dest=%1, iov=%2, remoteAddr=%3, count=%4")
+		.arg(destinationEpId)
+		.arg(iov)
+		.arg(remoteAddr)
+		.arg(count)
+		.end();
+
 	//get mr
 	void ** mrDesc = new void*[count];
 	for (int i = 0 ; i < count ; i++) {
@@ -506,6 +551,14 @@ void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void 
 	//checks
 	assert(localAddr != NULL);
 	assert(size > 0);
+
+	//debug
+	IOC_DEBUG_ARG("libfabric:rdma", "Start RDMA write: dest=%1, localAddr=%2, remoteAddr=%3, size=%4")
+		.arg(destinationEpId)
+		.arg(localAddr)
+		.arg(remoteAddr)
+		.arg(size)
+		.end();
 
 	//get mr
 	fid_mr * mr = lfDomain->getFidMR(localAddr,size);
@@ -571,6 +624,11 @@ bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, Li
 	//vars
 	fi_cq_msg_entry entry;
 
+	//debug
+	IOC_DEBUG_ARG("libfabric:msg", "Wait message: type=%1")
+		.arg(expectedMessageType)
+		.end();
+
 	//fill default
 	clientMessage.lfClientId = -1;
 	clientMessage.message = NULL;
@@ -593,6 +651,9 @@ bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, Li
 				}
 				
 			} else if (entry.op_context != IOC_LF_NO_WAKEUP_POST_ACTION) {
+				IOC_DEBUG_ARG("libfabric:msg", "Get message: type=%1")
+					.arg(expectedMessageType)
+					.end();
 				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
 				LibfabricActionResult status = action->runPostAction();
 				delete action;
@@ -830,6 +891,11 @@ void LibfabricConnection::registerHook(int messageType, Hook * hook)
 	//check
 	assert(hook != NULL);
 
+	//debug
+	IOC_DEBUG_ARG("libfabric:hook", "Register hook: type=%1")
+		.arg(messageType)
+		.end();
+
 	//check if already exist and delete
 	auto it = this->hooks.find(messageType);
 	if (it == this->hooks.end()) {
@@ -866,6 +932,10 @@ void LibfabricConnection::registerHook(int messageType, HookLambdaDef function)
 **/
 void LibfabricConnection::unregisterHook(int messageType)
 {
+	//debug
+	IOC_DEBUG_ARG("libfabric:hook", "Unregister hook: type=%1")
+		.arg(messageType)
+		.end();
 	this->hooks.erase(messageType);
 }
 
@@ -897,7 +967,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	msg->data.firstHandshakeResponse.protocolVersion = IOC_LF_PROTOCOL_VERSION;
 
 	//debug
-	IOC_DEBUG_ARG("client:libfabric", "Recive client in libfabric tcpId=%1, lfId=%2")
+	IOC_DEBUG_ARG("libfabric:client", "Recive client in libfabric lfId=%1, epId=%2")
 		.arg(message->header.lfClientId)
 		.arg(epId)
 		.end();

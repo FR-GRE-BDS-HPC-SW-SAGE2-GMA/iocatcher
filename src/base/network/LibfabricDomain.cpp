@@ -86,6 +86,9 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	this->virtMrMode = true;
 	if (strncmp(fi->fabric_attr->prov_name, "tcp;", 4) == 0)
 		this->virtMrMode = false;
+
+	//debug
+	IOC_DEBUG_ARG("libfaric:domain", "Create domaine with provider '%1'").arg(getLFProviderName()).end();
 }
 
 /****************************************************/
@@ -175,6 +178,12 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	assert(size > 0);
 	assert(getMR(ptr, size) == nullptr);
 
+	//debug
+	IOC_DEBUG_ARG("libfaric:register", "Register segment ptr=%1, size=%2")
+		.arg(ptr)
+		.arg(size)
+		.end();
+
 	//access
 	uint64_t accessFlag = 0;
 	if (read)
@@ -226,6 +235,12 @@ void LibfabricDomain::unregisterSegment(void * ptr, size_t size)
 {
 	//checks
 	assert(ptr != NULL);
+
+	//debug
+	IOC_DEBUG_ARG("libfaric:register", "Unregister segment ptr=%1, size=%2")
+		.arg(ptr)
+		.arg(size)
+		.end();
 
 	//CRITICAL SECTION
 	{

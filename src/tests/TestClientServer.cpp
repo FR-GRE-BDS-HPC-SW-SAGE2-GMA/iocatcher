@@ -33,6 +33,7 @@ class TestClientServer : public ::testing::Test
 			this->thread = std::thread([this](){
 				this->server->poll();
 			});
+			usleep(1000);
 			this->server->setOnClientConnect([](int){});
 			this->client = ioc_client_init("127.0.0.1", p);
 		}
@@ -313,19 +314,26 @@ TEST_F(TestClientServer, obj_cow_range)
 	res = ioc_client_obj_write(client, 10, 20, buffer, size, 0);
 	ASSERT_EQ(0, res);
 
+	//write other object before cow
+	memset(buffer, 2, size);
+	res = ioc_client_obj_write(client, 10, 21, buffer, size/2, 0);
+	res = ioc_client_obj_write(client, 10, 21, buffer, size/2, size/2);
+	ASSERT_EQ(0, res);
+
 	//make copy on write
 	status = ioc_client_obj_cow(client, 10, 20, 10, 21, true, size/2, size/2);
 	ASSERT_EQ(0, status);
 
 	//read again cow object to check content
 	char buffer2[size];
+	memset(buffer2, 0, size);
 	ioc_client_obj_read(client, 10, 21, buffer2, size, 0);
 	ASSERT_EQ(0, res);
 
 	//check content
 	for (size_t i = 0 ; i < size ; i++)
 		if (i < size / 2)
-			ASSERT_EQ(0, buffer2[i]) << "index " << i;
+			ASSERT_EQ(2, buffer2[i]) << "index " << i;
 		else
 			ASSERT_EQ(1, buffer2[i]) << "index " << i;
 }

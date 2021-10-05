@@ -21,6 +21,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 //internal
+#include "../common/Debug.hpp"
 #include "TcpServer.hpp"
 #include "Protocol.hpp"
 #include "../common/Debug.hpp"
@@ -99,6 +100,7 @@ void TcpServer::sendClientId(TcpClientInfo *client)
 	uint64_t key;
 	int16_t protocolVersion = IOC_LF_PROTOCOL_VERSION;
 	this->onConnect(&id, &key, client);
+	IOC_DEBUG_ARG("tcp:conn", "Send id=%1, key=%2 to client").arg(id).arg(key).end();
 	client->id = id;
 	int rc;
 	rc = write(client->fd, &protocolVersion, sizeof(protocolVersion));
@@ -121,6 +123,7 @@ void TcpServer::sendClientId(TcpClientInfo *client)
 void TcpServer::acceptOneClientCallback(evutil_socket_t fd, short unused_events, void * tcpServer)
 {
 	TcpServer * server = static_cast<TcpServer *>(tcpServer);
+	IOC_DEBUG("tcp:conn", "Accept incoming connection");
 
 	trace("accept on fd %d\n", fd);
 	int newfd = accept(fd, NULL, 0);

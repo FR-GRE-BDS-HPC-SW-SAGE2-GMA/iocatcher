@@ -57,6 +57,7 @@ DebugCategoryMap * Debug::catMap = &ref;
 int Debug::catMaxWidth = 0;
 int Debug::rank = -1;
 bool Debug::disabled = true;
+bool Debug::debugMsgLocation = false;
 std::function<void(const std::string& message)> Debug::beforeAbort;
 
 /*******************  FUNCTION  *********************/
@@ -122,6 +123,8 @@ void Debug::end()
 			#ifndef NDEBUG
 				if (showCat(cat))
 				{
+					if (line != 0 && debugMsgLocation)
+						buf << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 					//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') <<  "] " << '[' << std::left << std::setw(catMaxWidth) << cat << "] " << *this << cstPostfix << std::endl;
 					buf << cstLevelPrefix[level] << '[' << std::left << std::setw(catMaxWidth) << cat << "] " << *this << cstPostfix << std::endl;
 					std::cout << buf.str();
@@ -131,7 +134,7 @@ void Debug::end()
 		case MESSAGE_INFO:
 		case MESSAGE_NORMAL:
 			///if (line != 0)
-			//	std::cout << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+			//	std::cout << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cout << buf.str();
@@ -141,7 +144,7 @@ void Debug::end()
 				break;
 			#else
 				if (line != 0)
-					buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+					buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 				//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 				buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 				std::cout << buf.str();
@@ -152,20 +155,30 @@ void Debug::end()
 		case MESSAGE_WARNING:
 		case MESSAGE_ERROR:
 			if (line != 0)
-				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cerr << buf.str();
 			break;
 		case MESSAGE_FATAL:
 			if (line != 0)
-				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : \n";
+				buf << std::endl << cstLevelPrefix[level] << "At " <<  file << ':' << line << " : " << std::endl;
 			//buf << cstLevelPrefix[level] << '[' << std::setw(3) << std::setfill('0') << rank << std::setfill(' ') << "] " << *this << cstPostfix << std::endl;
 			buf << cstLevelPrefix[level] << *this << cstPostfix << std::endl;
 			std::cerr << buf.str();
 			if (beforeAbort)
 				beforeAbort(buf.str());
-			exit(EXIT_FAILURE);
+			//check exit mode. In debug mode we abort by default
+			//in production we depend on env var not to generate big core dump if not wanted.
+			#ifdef NDEBUG
+				const char * abortEnv = getenv("IOC_ABORT");
+				if ( abortEnv != NULL && (strncmp("true", abortEnv, 4) == 0 || strncmp("yes", abortEnv, 3) == 0))
+					abort();
+				else
+					exit(EXIT_FAILURE);
+			#else
+				abort();
+			#endif
 			break;
 	}
 }
@@ -303,7 +316,7 @@ void Debug::setBeforeAbortHandler(std::function<void(const std::string& message)
 	Debug::beforeAbort = handler;
 }
 
-/********************** CONSTS **********************/
+/*******************  FUNCTION  *********************/
 /**
  * Enable verbosity for the given categories listed as a string with
  * comma separated values.
@@ -316,15 +329,53 @@ void Debug::setVerbosity ( const std::string& value )
 	while(std::getline(iss, token, ',')) {
 		if (token == "all" || token == "*")
 			enableAll();
+		else if (token == "code")
+			enableDebugCodeLocation();
 		else
 			enableCat(token);
 	}
 }
 
-/********************  GLOBALS  *********************/
+/*******************  FUNCTION  *********************/
+/**
+ * When enabled it prints the code location before every debug log messages.
+ * This is not done by default to stay readable. But printing can help to find
+ * where the messages are generated.
+**/
+void Debug::enableDebugCodeLocation(void)
+{
+	Debug::debugMsgLocation = true;
+}
+
+/*******************  FUNCTION  *********************/
 const DebugCategoryMap * Debug::getCatMap ()
 {
 	return catMap;
 }
+
+/********************  GLOBALS  *********************/
+void Debug::initLoadEnv(void)
+{
+	const char * env = getenv("IOC_DEBUG");
+	if (env != NULL) {
+		Debug::catMap = new DebugCategoryMap;
+		DAQ_INFO("Enabling debugging logs via IOC_DEBUG environnement variable !");
+		Debug::setVerbosity(env);
+	}
+}
+
+/********************  GLOBALS  *********************/
+/**
+ * We use a class constructor to be init after stdc++ otherwise if we use
+ * c lib constructor we arrive too soon which make crashing when using
+ * some objects.
+**/
+class DebugInitializer {
+	public:
+		DebugInitializer(void) {
+			Debug::initLoadEnv();
+		}
+};
+static DebugInitializer gblDebugInitializer;
 
 }
