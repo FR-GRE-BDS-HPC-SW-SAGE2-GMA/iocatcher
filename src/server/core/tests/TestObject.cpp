@@ -181,7 +181,7 @@ TEST(TestObject, data_load_failure)
 	//expect call to load
 	EXPECT_CALL(storage, pread(10, 20, _, 1000, 1000))
 		.Times(2)
-		.WillOnce(Return(-1));
+		.WillRepeatedly(Return(-1));
 
 	//make request with load
 	ObjectSegmentList lst;
