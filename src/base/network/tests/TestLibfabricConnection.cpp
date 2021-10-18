@@ -535,8 +535,9 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 // Connect and client send a message.
 TEST(TestLibfabricConnection, broadcastErrrorMessage)
 {
-	int gotConnection = 0;
-	int gotErrorMessage = 0;
+	volatile int gotConnection = 0;
+	volatile bool gotErrorMessage1 = false;
+	volatile bool gotErrorMessage2 = false;
 	volatile bool serverReady = false;
 
 	//server
@@ -562,14 +563,14 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	while(!serverReady) {};
 
 	//client
-	std::thread client1([&gotErrorMessage]{
+	std::thread client1([&gotErrorMessage1]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
 		//hook
-		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage](LibfabricConnection * connection, int clientId, size_t bufferId, void * buffer){
-			gotErrorMessage++;
+		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage1](LibfabricConnection * connection, int clientId, size_t bufferId, void * buffer){
+			gotErrorMessage1 = true;
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		//poll unit message to be sent
@@ -577,14 +578,14 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	});
 
 	//client
-	std::thread client2([&gotErrorMessage]{
+	std::thread client2([&gotErrorMessage2]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
 		//hook
-		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage](LibfabricConnection * connection, int clientId, size_t bufferId, void * buffer){
-			gotErrorMessage++;
+		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage2](LibfabricConnection * connection, int clientId, size_t bufferId, void * buffer){
+			gotErrorMessage2 = true;
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		//poll unit message to be sent
@@ -598,5 +599,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 
 	//check
 	ASSERT_EQ(2, gotConnection);
-	ASSERT_EQ(2, gotErrorMessage);
+	ASSERT_TRUE(gotErrorMessage1);
+	ASSERT_TRUE(gotErrorMessage1);
 }
