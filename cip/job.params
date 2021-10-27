@@ -13,6 +13,11 @@ jobParams = [
         type: 'booleanParam',
         descr: "Publish rpms and wheels",
         val:  false
+    ],
+    ARCH: [
+        type: 'choice',
+        descr: "Architecture",
+        val: ['X86_64']
     ]
 ]
 
