@@ -29,7 +29,7 @@ sfPipeline('gce-pool', sfEnvironment) {
 		}
 
 		stage("Build") {
-			timeout(time: 10, unit: 'MINUTES') {
+			timeout(time: 15, unit: 'MINUTES') {
 				sfBuilder.build(
 					buildDistrib: "${env.DISTRIB}",
 					buildArch: "${env.ARCH}",
