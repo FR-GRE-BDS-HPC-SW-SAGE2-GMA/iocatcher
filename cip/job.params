@@ -13,6 +13,16 @@ jobParams = [
         type: 'booleanParam',
         descr: "Publish rpms and wheels",
         val:  false
+    ],
+    DISTRIB: [
+        type: 'choice',
+        descr: 'Distribution',
+        val: ['RHEL84','RHEL83']
+    ],
+    ARCH: [
+        type: 'choice',
+        descr: "Architecture",
+        val: ['X86_64']
     ]
 ]
 
