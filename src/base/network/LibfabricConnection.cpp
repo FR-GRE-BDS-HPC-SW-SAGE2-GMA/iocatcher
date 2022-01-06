@@ -1131,4 +1131,87 @@ void LibfabricConnection::setOnBadAuth(std::function<LibfabricActionResult(void)
 	this->hookOnBadAuth = hookOnBadAuth;
 }
 
+/****************************************************/
+void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock)
+{
+	//prepare message
+	LibfabricMessage * msg = new LibfabricMessage;
+	msg->header.msgType = msgType;
+	msg->header.lfClientId = lfClientId;
+	msg->data.response.status = status;
+	msg->data.response.msgDataSize = 0;
+	msg->data.response.msgHasData = false;
+
+	//send message
+	this->sendMessage(msg, sizeof (*msg), lfClientId, [msg, unblock](void){
+		delete msg;
+		if (unblock)
+			return LF_WAIT_LOOP_UNBLOCK;
+		else
+			return LF_WAIT_LOOP_KEEP_WAITING;
+	});
+}
+
+/****************************************************/
+void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock)
+{
+	//prepare message
+	size_t bufferSize = sizeof(LibfabricMessage)+size;
+	void * buffer = malloc(bufferSize);
+	LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+	msg->header.msgType = msgType;
+	msg->header.lfClientId = lfClientId;
+	msg->data.response.status = status;
+	msg->data.response.msgDataSize = size;
+	msg->data.response.msgHasData = true;
+	memcpy(msg->extraData, data, size);
+
+	//send message
+	this->sendMessage(msg, bufferSize, lfClientId, [buffer, unblock](void){
+		free(buffer);
+		if (unblock)
+			return LF_WAIT_LOOP_UNBLOCK;
+		else
+			return LF_WAIT_LOOP_KEEP_WAITING;
+	});
+}
+
+/****************************************************/
+void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * buffers, size_t cntBuffers, bool unblock)
+{
+	//check
+	assert(buffers != NULL);
+
+	//calc
+	size_t sumSize = 0;
+	for (size_t i = 0 ; i < cntBuffers ; i++)
+		sumSize += buffers[i].size;
+
+	//prepare message
+	size_t bufferSize = sizeof(LibfabricMessage) + sumSize;
+	void * buffer = malloc(bufferSize);
+	LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+	msg->header.msgType = msgType;
+	msg->header.lfClientId = lfClientId;
+	msg->data.response.status = status;
+	msg->data.response.msgDataSize = sumSize;
+	msg->data.response.msgHasData = true;
+
+	//copy all & concat
+	char * cursor = msg->extraData;
+	for (size_t i = 0 ; i < cntBuffers ; i++) {
+		memcpy(cursor, buffers[i].buffer, buffers[i].size);
+		cursor += buffers[i].size;
+	}
+
+	//send message
+	this->sendMessage(msg, bufferSize, lfClientId, [buffer, unblock](void){
+		free(buffer);
+		if (unblock)
+			return LF_WAIT_LOOP_UNBLOCK;
+		else
+			return LF_WAIT_LOOP_KEEP_WAITING;
+	});
+}
+
 }

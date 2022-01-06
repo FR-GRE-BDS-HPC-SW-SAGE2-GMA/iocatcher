@@ -44,17 +44,8 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 	else
 		status = this->container->makeObjectRangeCow(sourceId, destId, objectCow.allowExist, objectCow.rangeOffset, objectCow.rangeSize); 
 
-	//fill response
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_COW_ACK;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = (status)?0:-1;
-
-	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendReponse(IOC_LF_MSG_OBJ_COW_ACK, lfClientId, (status)?0:-1);
 
 	//republish
 	connection->repostRecive(msgBufferId);

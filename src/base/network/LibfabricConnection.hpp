@@ -35,6 +35,16 @@ class LibfabricConnection;
 
 /****************************************************/
 /**
+ * Define a buffer with its size.
+**/
+struct LibfabricBuffer
+{
+	void * buffer;
+	size_t size;
+};
+
+/****************************************************/
+/**
  * Define a post action when we recive a message or when an RDMA operation finish.
  * @brief Post action on RDMA operations.
 **/
@@ -125,6 +135,9 @@ class LibfabricConnection
 		ClientRegistry & getClientRegistry(void);
 		void setCheckClientAuth(bool value);
 		void setOnBadAuth(std::function<LibfabricActionResult(void)> hookOnBadAuth);
+		void sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock = false);
+		void sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock = false);
+		void sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * buffers, size_t cntBuffers, bool unblock = false);
 	private:
 		bool pollRx(void);
 		bool pollTx(void);

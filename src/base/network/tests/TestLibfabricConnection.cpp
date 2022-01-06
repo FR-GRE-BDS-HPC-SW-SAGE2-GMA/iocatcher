@@ -131,6 +131,192 @@ TEST(TestLibfabricConnection, message)
 
 /****************************************************/
 // Connect and client send a message.
+TEST(TestLibfabricConnection, sendResponse)
+{
+	bool gotConnection = false;
+	bool gotMessage = false;
+	volatile bool serverReady = false;
+
+	//server
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
+		LibfabricDomain domain("127.0.0.1", "8446", true);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection = true;
+		});
+
+		//wait connection
+		serverReady = true;
+		while (!gotConnection) 
+			connection.poll(false);
+
+		//register hook
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
+			LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+			EXPECT_EQ(-1, msg->data.response.status);
+			gotMessage = true;
+			connection->repostRecive(id);
+			//say to unblock the poll(true) loop when return
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+
+		//poll unit get message
+		connection.poll(true);
+	});
+
+	//wait server
+	while(!serverReady){};
+
+	//client
+	std::thread client([]{
+		LibfabricDomain domain("127.0.0.1", "8446", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		connection.sendReponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, true);
+		//poll unit message to be sent
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	ASSERT_TRUE(gotConnection);
+	ASSERT_TRUE(gotMessage);
+}
+
+/****************************************************/
+// Connect and client send a message.
+TEST(TestLibfabricConnection, sendResponse_with_data)
+{
+	bool gotConnection = false;
+	bool gotMessage = false;
+	volatile bool serverReady = false;
+
+	//server
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
+		LibfabricDomain domain("127.0.0.1", "8446", true);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection = true;
+		});
+
+		//wait connection
+		serverReady = true;
+		while (!gotConnection) 
+			connection.poll(false);
+
+		//register hook
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
+			LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+			EXPECT_EQ(-1, msg->data.response.status);
+			EXPECT_EQ(6, msg->data.response.msgDataSize);
+			EXPECT_TRUE(msg->data.response.msgHasData);
+			EXPECT_STREQ("hello", msg->extraData);
+			gotMessage = true;
+			connection->repostRecive(id);
+			//say to unblock the poll(true) loop when return
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+
+		//poll unit get message
+		connection.poll(true);
+	});
+
+	//wait server
+	while(!serverReady){};
+
+	//client
+	std::thread client([]{
+		LibfabricDomain domain("127.0.0.1", "8446", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		connection.sendReponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, "hello", 6, true);
+		//poll unit message to be sent
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	ASSERT_TRUE(gotConnection);
+	ASSERT_TRUE(gotMessage);
+}
+
+/****************************************************/
+// Connect and client send a message.
+TEST(TestLibfabricConnection, sendResponse_with_data_multi)
+{
+	bool gotConnection = false;
+	bool gotMessage = false;
+	volatile bool serverReady = false;
+
+	//server
+	std::thread server([&gotConnection, &gotMessage, &serverReady]{
+		LibfabricDomain domain("127.0.0.1", "8446", true);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(1024*1024, 64);
+		connection.setHooks([&gotConnection](int id) {
+			gotConnection = true;
+		});
+
+		//wait connection
+		serverReady = true;
+		while (!gotConnection) 
+			connection.poll(false);
+
+		//register hook
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
+			LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+			EXPECT_EQ(-1, msg->data.response.status);
+			EXPECT_EQ(11, msg->data.response.msgDataSize);
+			EXPECT_TRUE(msg->data.response.msgHasData);
+			EXPECT_STREQ("HelloWorld", msg->extraData);
+			gotMessage = true;
+			connection->repostRecive(id);
+			//say to unblock the poll(true) loop when return
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+
+		//poll unit get message
+		connection.poll(true);
+	});
+
+	//wait server
+	while(!serverReady){};
+
+	//client
+	std::thread client([]{
+		LibfabricDomain domain("127.0.0.1", "8446", false);
+		LibfabricConnection connection(&domain, false);
+		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.joinServer();
+		char b1[] = "Hello";
+		char b2[] = "World";
+		LibfabricBuffer buffers[2] = {{b1, 5},{b2,6}};
+		connection.sendReponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, buffers, 2, true);
+		//poll unit message to be sent
+		connection.poll(true);
+	});
+
+	//join
+	server.join();
+	client.join();
+
+	//check
+	ASSERT_TRUE(gotConnection);
+	ASSERT_TRUE(gotMessage);
+}
+
+/****************************************************/
+// Connect and client send a message.
 TEST(TestLibfabricConnection, pollMessage)
 {
 	bool gotConnection = false;
