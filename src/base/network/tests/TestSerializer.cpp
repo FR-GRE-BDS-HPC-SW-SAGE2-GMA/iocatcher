@@ -13,6 +13,30 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+struct DataA
+{
+	void applySerializerDef(SerializerBase & serialize) {
+		serialize.apply("integer", integer);
+		serialize.apply("str", str);
+	};
+	uint64_t integer;
+	std::string str;
+};
+
+/****************************************************/
+struct DataB
+{
+	void applySerializerDef(SerializerBase & serialize) {
+		serialize.apply("ptrSize", ptrSize);
+		serialize.serializeOrPoint("ptr", ptr, this->ptrSize);
+		serialize.apply("data", data);
+	};
+	uint64_t ptrSize;
+	const char * ptr;
+	DataA data;
+};
+
+/****************************************************/
 // Test the basic constructor.
 TEST(TestSerializerBase, constructor)
 {
@@ -216,6 +240,27 @@ TEST(TestSerializerBase, serializeOrPoint)
 
 /****************************************************/
 // Test the basic constructor.
+TEST(TestSerializerBase, toString)
+{
+	//vars
+	DataB data = {
+		.ptrSize = 6,
+		.ptr = (const char*)0x20,
+		.data = {
+			.integer = 10,
+			.str = "hello",
+		}
+	};
+
+	//convert
+	std::string out = Serializer::toString(data);
+
+	//check
+	EXPECT_EQ("{ ptrSize: 6, ptr: 0x20, { integer: 10, str: \"hello\" } }", out);
+}
+
+/****************************************************/
+// Test the basic constructor.
 TEST(TestSerialerDeserializer, simple)
 {
 	//vars
@@ -239,4 +284,34 @@ TEST(TestSerialerDeserializer, simple)
 
 	//check
 	EXPECT_EQ(in1, out1);
+}
+
+/****************************************************/
+TEST(TestSerialerDeserializer, struct)
+{
+	//vars
+	DataB data = {
+		.ptrSize = 6,
+		.ptr = "world",
+		.data = {
+			.integer = 10,
+			.str = "hello",
+		}
+	};
+	
+	//serialize
+	char buffer[1024];
+	Serializer serializer(buffer, 1024);
+	serializer.apply("data", data);
+
+	//deserialize
+	DataB dataOut;
+	DeSerializer deserializer(buffer, 1024);
+	deserializer.apply("dataOut", dataOut);
+
+	//compare
+	EXPECT_EQ(data.ptrSize, dataOut.ptrSize);
+	EXPECT_STREQ(data.ptr, dataOut.ptr);
+	EXPECT_EQ(data.data.integer, dataOut.data.integer);
+	EXPECT_EQ(data.data.str, dataOut.data.str);
 }
