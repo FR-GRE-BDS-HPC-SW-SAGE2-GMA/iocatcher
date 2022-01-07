@@ -240,7 +240,7 @@ TEST(TestSerializerBase, serializeOrPoint)
 
 /****************************************************/
 // Test the basic constructor.
-TEST(TestSerializerBase, toString)
+TEST(TestSerializerBase, stringify)
 {
 	//vars
 	DataB data = {
@@ -253,7 +253,7 @@ TEST(TestSerializerBase, toString)
 	};
 
 	//convert
-	std::string out = Serializer::toString(data);
+	std::string out = Serializer::stringify(data);
 
 	//check
 	EXPECT_EQ("{ ptrSize: 6, ptr: 0x20, { integer: 10, str: \"hello\" } }", out);

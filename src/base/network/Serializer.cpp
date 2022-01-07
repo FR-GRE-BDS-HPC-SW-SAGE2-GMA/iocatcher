@@ -63,7 +63,9 @@ SerializerBase::~SerializerBase(void)
 
 /****************************************************/
 /**
- * Push an integer on the buffer.
+ * Apply the serializeation or deserialization on a boolean value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
  * @param value The value to push.
 **/
 void SerializerBase::apply(const char * fieldName, bool & value)
@@ -89,7 +91,9 @@ void SerializerBase::apply(const char * fieldName, bool & value)
 
 /****************************************************/
 /**
- * Push an integer on the buffer.
+ * Apply the serializeation or deserialization on an integer value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
  * @param value The value to push.
 **/
 void SerializerBase::apply(const char * fieldName, uint32_t & value)
@@ -115,7 +119,9 @@ void SerializerBase::apply(const char * fieldName, uint32_t & value)
 
 /****************************************************/
 /**
- * Push an integer on the buffer.
+ * Apply the serializeation or deserialization on an integer value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
  * @param value The value to push.
 **/
 void SerializerBase::apply(const char * fieldName, int32_t & value)
@@ -141,7 +147,9 @@ void SerializerBase::apply(const char * fieldName, int32_t & value)
 
 /****************************************************/
 /**
- * Push an integer on the buffer.
+ * Apply the serializeation or deserialization on an integer value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
  * @param value The value to push.
 **/
 void SerializerBase::apply(const char * fieldName, int64_t & value)
@@ -167,7 +175,9 @@ void SerializerBase::apply(const char * fieldName, int64_t & value)
 
 /****************************************************/
 /**
- * Push an integer on the buffer.
+ * Apply the serializeation or deserialization on an integer value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
  * @param value The value to push.
 **/
 void SerializerBase::apply(const char * fieldName, uint64_t & value)
@@ -192,6 +202,12 @@ void SerializerBase::apply(const char * fieldName, uint64_t & value)
 }
 
 /****************************************************/
+/**
+ * Apply the serializeation or deserialization on a string value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
+ * @param value The value to push.
+**/
 void SerializerBase::apply(const char * fieldName, std::string & value)
 {
 	//check
@@ -226,6 +242,12 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 }
 
 /****************************************************/
+/**
+ * Apply the serializeation on a string value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
+ * @param value The value to push.
+**/
 void SerializerBase::apply(const char * fieldName, const std::string & value)
 {
 		//check
@@ -253,6 +275,13 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
 }
 
 /****************************************************/
+/**
+ * Apply the serializeation or deserialization on a raw value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
+ * @param buffer The data to push/pop
+ * @param size The size of the buffer to push/pop.
+**/
 void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 {
 	//check
@@ -277,6 +306,15 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 }
 
 /****************************************************/
+/**
+ * Apply the serializeation or deserialization on a raw value. On deserialization
+ * if just points the location in the original buffer do avoid a copy and temporary
+ * memory allocation.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
+ * @param buffer The data to push/pop
+ * @param size The size of the buffer to push/pop.
+**/
 void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buffer, size_t size)
 {
 	//check
@@ -299,6 +337,13 @@ void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buf
 }
 
 /****************************************************/
+/**
+ * Apply the serializeation or deserialization on a raw value.
+ * @param fieldName Name of the value to be used for stringification and error 
+ * message in case of buffer overflow.
+ * @param buffer The data to push/pop
+ * @param size The size of the buffer to push/pop.
+**/
 void SerializerBase::apply(const char * fieldName, const void * buffer, size_t size)
 {
 	//check
@@ -321,12 +366,20 @@ void SerializerBase::apply(const char * fieldName, const void * buffer, size_t s
 }
 
 /****************************************************/
+/**
+ * Return the cursor position in the buffer.
+**/
 const size_t SerializerBase::getCursor(void)
 {
 	return this->cursor;
 }
 
 /****************************************************/
+/**
+ * Internal function to perform size pre-checking to forbid any buffer overflow.
+ * @param fieldName The name of the field name to be used in the error message.
+ * @param size Size of the desired move.
+**/
 void SerializerBase::checkSize(const char * fieldName, size_t size)
 {
 	if (this->action != STRINGIFY) {

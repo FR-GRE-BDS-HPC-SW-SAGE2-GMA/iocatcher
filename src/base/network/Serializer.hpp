@@ -60,7 +60,7 @@ class SerializerBase
 		const size_t getCursor(void);
 		void * getData(void);
 		size_t getDataSize(void);
-		template <class T> static std::string toString(T & value);
+		template <class T> static std::string stringify(T & value);
 	private:
 		void checkSize(const char * fieldName, size_t size);
 	private:
@@ -73,6 +73,9 @@ class SerializerBase
 };
 
 /****************************************************/
+/**
+ * Specialization for serialization.
+**/
 class Serializer : public SerializerBase
 {
 	public:
@@ -80,6 +83,9 @@ class Serializer : public SerializerBase
 };
 
 /****************************************************/
+/**
+ * DeSerializer for serialization.
+**/
 class DeSerializer : public SerializerBase
 {
 	public:
@@ -89,6 +95,23 @@ class DeSerializer : public SerializerBase
 };
 
 /****************************************************/
+/**
+ * Apply the serialization / deserialization on any unknown type.
+ * The given type must have a applySerializerDef(SerializationBase & serializer)
+ * member function to be used to know how to serialize.
+ * 
+ * Example:
+ * @code
+ * struct {
+ * 	void applySerializerDef(SerializationBase & serializer) {
+ * 		serialize.apply("a", this->a);
+ * 		serialize.apply("b", this->b);
+ * 	};
+ * 	uint64_t a;
+ * 	uint64_t b;
+ * }
+ * @endcode
+**/
 template <class T >
 void SerializerBase::apply(const char * fieldName, T & value)
 {
@@ -110,6 +133,11 @@ void SerializerBase::apply(const char * fieldName, T & value)
 }
 
 /****************************************************/
+/**
+ * Pop a value from the derserialize. This is just a wrapper on the apply
+ * method.
+ * @param value The value to be extracted from the buffer.
+**/
 template <class T>
 void DeSerializer::pop(T & value)
 {
@@ -117,6 +145,9 @@ void DeSerializer::pop(T & value)
 }
 
 /****************************************************/
+/**
+ * Make possible to use the stream operator to deserialize.
+**/
 template <class T>
 T & operator << (T & out, DeSerializer & deserializer)
 {
@@ -125,8 +156,11 @@ T & operator << (T & out, DeSerializer & deserializer)
 }
 
 /****************************************************/
+/**
+ * 
+**/
 template <class T>
-std::string SerializerBase::toString(T & value)
+std::string SerializerBase::stringify(T & value)
 {
 	std::stringstream sout;
 	SerializerBase serialize(&sout);
