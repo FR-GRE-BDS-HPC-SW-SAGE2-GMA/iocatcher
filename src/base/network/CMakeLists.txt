@@ -5,7 +5,14 @@
 ######################################################
 
 ######################################################
-set(NETWORK_SRC LibfabricDomain.cpp LibfabricConnection.cpp TcpClient.cpp TcpServer.cpp ClientRegistry.cpp HookLambdaFunction.cpp Protocol.cpp)
+set(NETWORK_SRC LibfabricDomain.cpp
+                LibfabricConnection.cpp
+                TcpClient.cpp
+                TcpServer.cpp
+                ClientRegistry.cpp
+                HookLambdaFunction.cpp
+                Protocol.cpp
+                Serializer.cpp)
 
 ######################################################
 add_library(ioc-network OBJECT ${NETWORK_SRC})
