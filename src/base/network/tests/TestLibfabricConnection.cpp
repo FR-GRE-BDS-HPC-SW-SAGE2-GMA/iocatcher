@@ -19,6 +19,7 @@
 using namespace IOC;
 
 /****************************************************/
+//helper function to quickly build a client connected to a server and play exchanges
 void clientServer(std::function<void(LibfabricConnection & connection,int clientId)> serverAction, std::function<void(LibfabricConnection & connection)> clientAction)
 {
 	bool gotConnection = false;
@@ -87,7 +88,7 @@ TEST(TestLibfabricConnection, connect)
 }
 
 /****************************************************/
-// Connect and client send a request.
+// Connect and client send a message.
 TEST(TestLibfabricConnection, message)
 {
 	//vars
@@ -110,7 +111,7 @@ TEST(TestLibfabricConnection, message)
 		connection.poll(true);
 	},[&sendMessage](LibfabricConnection & connection){
 		//>>>> client <<<<
-		
+
 		//send message
 		LibfabricMessage msg;
 		memset(&msg, 0, sizeof(msg));
