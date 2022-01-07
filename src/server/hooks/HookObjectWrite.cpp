@@ -40,11 +40,11 @@ HookObjectWrite::HookObjectWrite(Container * container, ServerStats * stats)
  * @param clientMessage Pointer the the message requesting the RDMA write operation.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)
 {
 	//build iovec
-	iovec * iov = Object::buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
-	size_t size = clientMessage->data.objReadWrite.size;
+	iovec * iov = Object::buildIovec(segments, objReadWrite.offset, objReadWrite.size);
+	size_t size = objReadWrite.size;
 
 	//count number of ops
 	int  * ops = new int;
@@ -61,8 +61,8 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, u
 			cnt = IOC_LF_MAX_RDMA_SEGS;
 
 		//emit rdma write vec & implement callback
-		char * addr = (char*)clientMessage->data.objReadWrite.iov.addr + offset;
-		uint64_t key = clientMessage->data.objReadWrite.iov.key;
+		char * addr = (char*)objReadWrite.iov.addr + offset;
+		uint64_t key = objReadWrite.iov.key;
 		connection->rdmaReadv(clientId, iov + i, cnt, addr, key, [connection, ops, size, this, clientId](void){
 			//decrement
 			(*ops)--;
@@ -138,37 +138,40 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
 {
+	//extract
+	LibfabricObjReadWriteInfos & objReadWrite = message.message->data.objReadWrite;
+
 	//debug
 	IOC_DEBUG_ARG("hook:obj:write", "Get object write on %1 for %2->%3 from client %4")
-		.arg(clientMessage->data.objReadWrite.objectId)
-		.arg(clientMessage->data.objReadWrite.offset)
-		.arg(clientMessage->data.objReadWrite.size)
-		.arg(lfClientId)
+		.arg(objReadWrite.objectId)
+		.arg(objReadWrite.offset)
+		.arg(objReadWrite.size)
+		.arg(message.lfClientId)
 		.end();
 
 	//get buffers from object
-	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
+	Object & object = this->container->getObject(objReadWrite.objectId);
 	ObjectSegmentList segments;
-	bool status = object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_WRITE, true, true);
+	bool status = object.getBuffers(segments, objReadWrite.offset, objReadWrite.size, ACCESS_WRITE, true, true);
 
 	//eager or rdma
 	if (status) {
-		if (clientMessage->data.objReadWrite.msgHasData) {
-			objEagerExtractFromMessage(connection, lfClientId, clientMessage, segments);
+		if (objReadWrite.msgHasData) {
+			objEagerExtractFromMessage(connection, message.lfClientId, message.message, segments);
 		} else {
-			objRdmaFetchFromClient(connection, lfClientId, clientMessage, segments);
+			objRdmaFetchFromClient(connection, message.lfClientId, objReadWrite, segments);
 		}
 	} else {
-		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, lfClientId, 0);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, message.lfClientId, 0);
 	}
 
 	//mark dirty
-	object.markDirty(clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+	object.markDirty(objReadWrite.offset, objReadWrite.size);
 
 	//republish
-	connection->repostReceive(msgBufferId);
+	connection->repostReceive(message.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

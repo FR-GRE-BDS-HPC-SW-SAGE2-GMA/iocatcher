@@ -81,20 +81,6 @@ class LibfabricPostActionFunction : public LibfabricPostAction
 		std::function<LibfabricActionResult(void)> function;
 };
 
-/****************************************************/
-/**
- * Structure used to return the message info from pollMessage.
-**/
-struct LibfabricClientMessage
-{
-	/** ID of the client which sends the message. **/
-	int lfClientId;
-	/** Message buffer to be returned to the connection after using the data.**/
-	size_t msgBufferId;
-	/** Pointer to the client message. **/
-	LibfabricMessage * message;
-};
-
 
 /****************************************************/
 /**
@@ -124,7 +110,7 @@ class LibfabricConnection
 		void repostReceive(size_t id);
 		void repostReceive(const LibfabricClientMessage & clientMessage);
 		void registerHook(int messageType, Hook * hook);
-		void registerHook(int messageType, std::function<LibfabricActionResult(LibfabricConnection *, int, size_t, void*)> function);
+		void registerHook(int messageType, HookLambdaDef function);
 		void unregisterHook(int messageType);
 		int getClientId(void) { return clientId;};
 		LibfabricDomain & getDomain(void) {return *lfDomain;};

@@ -15,8 +15,6 @@
 namespace IOC
 {
 
-typedef std::function<LibfabricActionResult(LibfabricConnection * connection, int, size_t, void*)> HookLambdaDef;
-
 /****************************************************/
 /**
  * Implement a hook redirection to a lambda function.
@@ -26,7 +24,7 @@ class HookLambdaFunction : public Hook
 	public:
 		HookLambdaFunction(HookLambdaDef function);
 		virtual ~HookLambdaFunction(void);
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientMessage & message) override;
 	private:
 		/** Store the lambda function to be called when recieving a message. **/
 		HookLambdaDef function;

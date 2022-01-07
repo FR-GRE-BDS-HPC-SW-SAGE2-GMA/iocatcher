@@ -34,9 +34,9 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	msg.data.iov = iov;
 
 	//register hook
-	connection.registerHook(IOC_LF_MSG_PONG, [](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
+	connection.registerHook(IOC_LF_MSG_PONG, [](LibfabricConnection * connection, LibfabricClientMessage & message) {
 		//printf("get 11 %d\n", clientId);
-		connection->repostReceive(id);
+		connection->repostReceive(message.msgBufferId);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 

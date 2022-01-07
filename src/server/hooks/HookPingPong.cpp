@@ -13,11 +13,11 @@
 using namespace IOC;
 
 /****************************************************/
-LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
 {
 	//debug
 	IOC_DEBUG_ARG("hook:ping", "Get ping message from client %1")
-		.arg(lfClientId)
+		.arg(message.lfClientId)
 		.end();
 
 	//prepare answer
@@ -26,13 +26,13 @@ LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, 
 	msg->header.lfClientId = 0;
 
 	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](void){
+	connection->sendMessage(msg, sizeof (*msg), message.lfClientId, [msg](void){
 		delete msg;
 		return LF_WAIT_LOOP_KEEP_WAITING;
 	});
 
 	//republish
-	connection->repostReceive(msgBufferId);
+	connection->repostReceive(message.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

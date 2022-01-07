@@ -229,18 +229,17 @@ void LibfabricConnection::joinServer(void)
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
 	//register hook
-	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, int clientId, size_t msgId, void * buffer) {
+	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, LibfabricClientMessage & message) {
 		//assign id
 		//printf("get clientID %d\n", clientId);
-		this->clientId = clientId;
-		connection->repostReceive(msgId);
+		this->clientId = message.lfClientId;
+		connection->repostReceive(message.msgBufferId);
 
 		//check protocol version
-		LibfabricMessage * message = static_cast<LibfabricMessage*>(buffer);
-		assumeArg(message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
+		assumeArg(message.message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
 			"Invalid rdma protocol version from server, expect %1, as %2")
 				.arg(IOC_LF_PROTOCOL_VERSION)
-				.arg(message->data.firstHandshakeResponse.protocolVersion)
+				.arg(message.message->data.firstHandshakeResponse.protocolVersion)
 				.end();
 
 		//return back
@@ -631,6 +630,7 @@ bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, Li
 
 	//fill default
 	clientMessage.lfClientId = -1;
+	clientMessage.header = NULL;
 	clientMessage.message = NULL;
 	clientMessage.msgBufferId = -1;
 
@@ -780,6 +780,14 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	void * buffer =  this->recvBuffers[id];
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
+	//build struct
+	LibfabricClientMessage clientMessage = {
+		.header = &message->header,
+		.message = message,
+		.msgBufferId = id,
+		.lfClientId = message->header.lfClientId,
+	};
+
 	//switch
 	switch(message->header.msgType) {
 		case IOC_LF_MSG_CONNECT_INIT:
@@ -805,7 +813,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 				//handle
 				if (it != this->hooks.end())
-					return it->second->onMessage(this, message->header.lfClientId, id, message);
+					return it->second->onMessage(this, clientMessage);
 				else
 					IOC_FATAL_ARG("Server has send error message !\n%s").arg((char*)&message->data).end();
 				break;
@@ -821,7 +829,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 				//handle
 				if (it != this->hooks.end())
-					return it->second->onMessage(this, message->header.lfClientId, id, message);
+					return it->second->onMessage(this, clientMessage);
 				else
 					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.msgType).end();
 				break;
@@ -871,6 +879,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 			return false;
 		
 		//fill the struct
+		clientMessage.header = &message->header;
 		clientMessage.message = message;
 		clientMessage.lfClientId = message->header.lfClientId;
 		clientMessage.msgBufferId = id;

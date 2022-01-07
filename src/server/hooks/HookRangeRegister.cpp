@@ -25,34 +25,37 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
 {
+	//extract
+	LibfabricRegisterRange & registerRange = message.message->data.registerRange;
+
 	//get object
-	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
+	Object & object = this->container->getObject(registerRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 	//check
 	int status = 0;
 	ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-	if (clientMessage->data.registerRange.write)
+	if (registerRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+		status = tracker.registerRange(message.header->tcpClientId, registerRange.offset, registerRange.size, mode);
 	
 	//debug
 	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
-		.arg(clientMessage->data.registerRange.objectId)
-		.arg(clientMessage->data.registerRange.offset)
-		.arg(clientMessage->data.registerRange.size)
-		.arg(lfClientId)
+		.arg(registerRange.objectId)
+		.arg(registerRange.offset)
+		.arg(registerRange.size)
+		.arg(message.lfClientId)
 		.arg(status)
 		.end();
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, lfClientId, status);
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, message.lfClientId, status);
 
 	//republish
-	connection->repostReceive(msgBufferId);
+	connection->repostReceive(message.msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

@@ -24,7 +24,7 @@ class HookRangeUnregister : public Hook
 {
 	public:
 		HookRangeUnregister(const Config * config, Container * container);
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientMessage & message) override;
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;

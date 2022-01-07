@@ -25,38 +25,38 @@ HookRangeUnregister::HookRangeUnregister(const Config * config, Container * cont
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
 {
+	//extract
+	LibfabricUnregisterRange & unregisterRange = message.message->data.unregisterRange;
+
 	//debug
 	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 on object %2 (%3->%4) from client %5")
-		.arg(clientMessage->data.unregisterRange.id)
-		.arg(clientMessage->data.registerRange.objectId)
-		.arg(clientMessage->data.registerRange.offset)
-		.arg(clientMessage->data.registerRange.size)
-		.arg(lfClientId)
+		.arg(unregisterRange.id)
+		.arg(unregisterRange.objectId)
+		.arg(unregisterRange.offset)
+		.arg(unregisterRange.size)
+		.arg(message.lfClientId)
 		.end();
 
 	//get object
-	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
+	Object & object = this->container->getObject(unregisterRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
-
-	//extract
-	LibfabricUnregisterRange &data = clientMessage->data.unregisterRange;
 
 	//check
 	int status = 0;
 	ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-	if (data.write)
+	if (unregisterRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		if (!tracker.unregisterRange(clientMessage->header.tcpClientId, data.id, data.offset, data.size, mode))
+		if (!tracker.unregisterRange(message.header->tcpClientId, unregisterRange.id, unregisterRange.offset, unregisterRange.size, mode))
 			status = -1;
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, lfClientId, status);
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, message.lfClientId, status);
 
 	//republish
-	connection->repostReceive(msgBufferId);
+	connection->repostReceive(message.msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

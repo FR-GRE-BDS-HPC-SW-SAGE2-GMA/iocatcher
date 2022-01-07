@@ -31,6 +31,28 @@ enum LibfabricActionResult
 
 /****************************************************/
 /**
+ * Structure used to return the message info from pollMessage.
+**/
+struct LibfabricClientMessage
+{
+	/** ID of the client which sends the message. **/
+	uint64_t lfClientId;
+	/** Message buffer to be returned to the connection after using the data.**/
+	size_t msgBufferId;
+	/** Header of the client message containing the protocol informations. **/
+	LibfabricMessageHeader * header;
+	/** Pointer to the client message. **/
+	LibfabricMessage * message;
+};
+
+/****************************************************/
+/**
+ * Signature of a hook function to avoid duplicating the signature at many places.
+**/
+typedef std::function<LibfabricActionResult(LibfabricConnection * connection, LibfabricClientMessage & message)> HookLambdaDef;
+
+/****************************************************/
+/**
  * Define a hook to be used when a message arrive.
 **/
 class Hook
@@ -46,7 +68,7 @@ class Hook
 		 * @param clientMessage Pointer to the buffer containing the client message.
 		 * @return It returns an enum saying if the polling loop need to exit or not.
 		**/
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage) = 0;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientMessage & message) = 0;
 };
 
 }
