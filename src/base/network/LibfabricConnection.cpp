@@ -237,7 +237,7 @@ void LibfabricConnection::joinServer(void)
 
 		//check protocol version
 		assumeArg(request.message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
-			"Invalid rdma protocol version from server, expect %1, as %2")
+			"Invalid rdma protocol version from server, expect %1, has %2")
 				.arg(IOC_LF_PROTOCOL_VERSION)
 				.arg(request.message->data.firstHandshakeResponse.protocolVersion)
 				.end();
