@@ -80,7 +80,7 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint6
 				this->stats->readSize += size;
 
 				//send response
-				connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
+				connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 
 				//clean
 				delete ops;
@@ -148,7 +148,7 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 	this->stats->readSize += dataSize;
 
 	//send ack message
-	connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0, buffers, segments.size());
+	connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0, buffers, segments.size());
 
 	//free mem
 	delete [] buffers;
@@ -178,11 +178,11 @@ LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection
 			this->objRdmaPushToClient(connection, lfClientId, clientMessage, segments);
 		}
 	} else {
-		connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, lfClientId, -1);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, lfClientId, -1);
 	}
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

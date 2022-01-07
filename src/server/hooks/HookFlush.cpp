@@ -38,10 +38,10 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, uin
 	int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
 	//send response
-	connection->sendReponse(IOC_LF_MSG_OBJ_FLUSH_ACK, lfClientId, ret);
+	connection->sendResponse(IOC_LF_MSG_OBJ_FLUSH_ACK, lfClientId, ret);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

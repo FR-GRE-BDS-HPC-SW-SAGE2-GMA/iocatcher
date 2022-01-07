@@ -36,7 +36,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	//register hook
 	connection.registerHook(IOC_LF_MSG_PONG, [](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 		//printf("get 11 %d\n", clientId);
-		connection->repostRecive(id);
+		connection->repostReceive(id);
 		return LF_WAIT_LOOP_UNBLOCK;
 	});
 
@@ -55,7 +55,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 		assume(hasMessage, "Fail to get message from pollMessage !");
 
 		///repost message
-		connection.repostRecive(serverResponse);
+		connection.repostReceive(serverResponse);
 	}
 
 	//time
@@ -118,7 +118,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 	}
 
 	//repost recv buffer
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 	connection.getDomain().retMsgBuffer(msg);
 
 	//unregister
@@ -180,7 +180,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 
 	//extract status and repost buffers
 	int status = serverResponse.message->data.response.status;
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 	connection.getDomain().retMsgBuffer(msg);
 
 	//unregister
@@ -223,7 +223,7 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 
 	//extract status & repost buffer
 	int status = serverResponse.message->data.response.status;
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 
 	//check status
 	if (status != 0)
@@ -265,7 +265,7 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 
 	//extract status
 	int status = serverResponse.message->data.response.status;
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 
 	//check status
 	//if (status != 0)
@@ -307,7 +307,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 
 	//extract status & repost buffer
 	int status = serverResponse.message->data.response.status;
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 
 	//check status
 	//if (status != 0)
@@ -341,7 +341,7 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 
 	//extract status & report buffer
 	int status = serverResponse.message->data.response.status;
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 
 	//check status
 	//if (status != 0)
@@ -382,7 +382,7 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 
 	//extrace status & repost message
 	int status = serverResponse.message->data.response.status;
-	connection.repostRecive(serverResponse);
+	connection.repostReceive(serverResponse);
 
 	//check status
 	//if (status != 0)

@@ -49,10 +49,10 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 		.end();
 
 	//send response
-	connection->sendReponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, lfClientId, status);
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, lfClientId, status);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

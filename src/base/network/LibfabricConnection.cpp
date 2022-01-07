@@ -32,7 +32,7 @@ void LibfabricPostAction::freeBuffer(void)
 {
 	if (connection != NULL)
 		if (isRecv)
-			connection->repostRecive(bufferId);
+			connection->repostReceive(bufferId);
 }
 
 /****************************************************/
@@ -170,7 +170,7 @@ void LibfabricConnection::postRecives(size_t size, int count)
 		//LIBFABRIC_CHECK_STATUS("fi_mr_reg", err);
 
 		//post
-		this->repostRecive(i);
+		this->repostReceive(i);
 	}
 }
 
@@ -179,7 +179,7 @@ void LibfabricConnection::postRecives(size_t size, int count)
  * Republish a recive buffer to libfabric by identifying it by its ID.
  * @param id ID of the buffer to repost.
 **/
-void LibfabricConnection::repostRecive(size_t id)
+void LibfabricConnection::repostReceive(size_t id)
 {
 	//check
 	assumeArg(id <recvBuffersCount, "Invalid recive buffer ID: %1").arg(id).end();
@@ -197,9 +197,9 @@ void LibfabricConnection::repostRecive(size_t id)
  * Republish a recive buffer to libfabric by identifying it by its ID.
  * @param clientMessage The client message struct containing the message buffer ID.
 **/
-void LibfabricConnection::repostRecive(const LibfabricClientMessage & clientMessage)
+void LibfabricConnection::repostReceive(const LibfabricClientMessage & clientMessage)
 {
-	this->repostRecive(clientMessage.msgBufferId);
+	this->repostReceive(clientMessage.msgBufferId);
 }
 
 /****************************************************/
@@ -233,7 +233,7 @@ void LibfabricConnection::joinServer(void)
 		//assign id
 		//printf("get clientID %d\n", clientId);
 		this->clientId = clientId;
-		connection->repostRecive(msgId);
+		connection->repostReceive(msgId);
 
 		//check protocol version
 		LibfabricMessage * message = static_cast<LibfabricMessage*>(buffer);
@@ -784,12 +784,12 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	switch(message->header.msgType) {
 		case IOC_LF_MSG_CONNECT_INIT:
 			onConnInit(message);
-			repostRecive(id);
+			repostReceive(id);
 			break;
 		case IOC_LF_MSG_BAD_AUTH:
 			if (this->hookOnBadAuth) {
 				LibfabricActionResult res = this->hookOnBadAuth();
-				repostRecive(id);
+				repostReceive(id);
 				return res;
 			} else {
 				IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
@@ -853,7 +853,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 	if (message->header.msgType == IOC_LF_MSG_BAD_AUTH) {
 		if (this->hookOnBadAuth) {
 			this->hookOnBadAuth();
-			repostRecive(id);
+			repostReceive(id);
 			return false;
 		} else {
 			IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
@@ -1139,7 +1139,7 @@ void LibfabricConnection::setOnBadAuth(std::function<LibfabricActionResult(void)
  * @param status The status code to put in the response.
  * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
 **/
-void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock)
+void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock)
 {
 	//prepare message
 	LibfabricMessage * msg = new LibfabricMessage;
@@ -1169,7 +1169,7 @@ void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfC
  * @param size Size of the data buffer to be added to the message
  * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
 **/
-void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock)
+void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock)
 {
 	//prepare message
 	size_t bufferSize = sizeof(LibfabricMessage)+size;
@@ -1202,7 +1202,7 @@ void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfC
  * @param cntFragments Number of fragments to consider.
  * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
 **/
-void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * fragments, size_t cntFragments, bool unblock)
+void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * fragments, size_t cntFragments, bool unblock)
 {
 	//check
 	assert(fragments != NULL);

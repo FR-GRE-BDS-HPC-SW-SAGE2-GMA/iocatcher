@@ -45,10 +45,10 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 		status = this->container->makeObjectRangeCow(sourceId, destId, objectCow.allowExist, objectCow.rangeOffset, objectCow.rangeSize); 
 
 	//send response
-	connection->sendReponse(IOC_LF_MSG_OBJ_COW_ACK, lfClientId, (status)?0:-1);
+	connection->sendResponse(IOC_LF_MSG_OBJ_COW_ACK, lfClientId, (status)?0:-1);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

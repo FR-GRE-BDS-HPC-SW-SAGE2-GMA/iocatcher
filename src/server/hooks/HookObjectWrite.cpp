@@ -72,7 +72,7 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, u
 				this->stats->writeSize += size;
 
 				//send response
-				connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
+				connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 
 				//clean
 				delete ops;
@@ -134,7 +134,7 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 	this->stats->writeSize += cur;
 
 	//send response
-	connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
+	connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 }
 
 /****************************************************/
@@ -161,14 +161,14 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 			objRdmaFetchFromClient(connection, lfClientId, clientMessage, segments);
 		}
 	} else {
-		connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, lfClientId, 0);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, lfClientId, 0);
 	}
 
 	//mark dirty
 	object.markDirty(clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

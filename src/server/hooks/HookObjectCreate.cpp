@@ -36,10 +36,10 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 	int ret = object.create();
 
 	//send response
-	connection->sendReponse(IOC_LF_MSG_OBJ_CREATE_ACK, lfClientId, ret);
+	connection->sendResponse(IOC_LF_MSG_OBJ_CREATE_ACK, lfClientId, ret);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

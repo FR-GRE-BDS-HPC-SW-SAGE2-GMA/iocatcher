@@ -101,7 +101,7 @@ TEST(TestLibfabricConnection, message)
 		//register hook
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 			gotMessage = true;
-			connection->repostRecive(id);
+			connection->repostReceive(id);
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -145,7 +145,7 @@ TEST(TestLibfabricConnection, sendResponse)
 
 			//end
 			gotMessage = true;
-			connection->repostRecive(id);
+			connection->repostReceive(id);
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -154,7 +154,7 @@ TEST(TestLibfabricConnection, sendResponse)
 		connection.poll(true);
 	},[](LibfabricConnection & connection){
 		//>>>> client <<<<
-		connection.sendReponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, true);
+		connection.sendResponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, true);
 		connection.poll(true);
 	});
 }
@@ -179,7 +179,7 @@ TEST(TestLibfabricConnection, sendResponse_with_data)
 
 			//end
 			gotMessage = true;
-			connection->repostRecive(id);
+			connection->repostReceive(id);
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -188,7 +188,7 @@ TEST(TestLibfabricConnection, sendResponse_with_data)
 		connection.poll(true);
 	},[](LibfabricConnection & connection){
 		//>>>> client <<<<
-		connection.sendReponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, "hello", 6, true);
+		connection.sendResponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, "hello", 6, true);
 		connection.poll(true);
 	});
 
@@ -213,7 +213,7 @@ TEST(TestLibfabricConnection, sendResponse_with_data_multi)
 			EXPECT_TRUE(msg->data.response.msgHasData);
 			EXPECT_STREQ("HelloWorld", msg->extraData);
 			gotMessage = true;
-			connection->repostRecive(id);
+			connection->repostReceive(id);
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -228,7 +228,7 @@ TEST(TestLibfabricConnection, sendResponse_with_data_multi)
 		LibfabricBuffer buffers[2] = {{b1, 5},{b2,6}};
 
 		//send all in one go
-		connection.sendReponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, buffers, 2, true);
+		connection.sendResponse(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, -1, buffers, 2, true);
 
 		//wait
 		connection.poll(true);
@@ -455,7 +455,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 			connection.poll(false);
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 			gotMessage = true;
-			connection->repostRecive(id);
+			connection->repostReceive(id);
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
@@ -517,7 +517,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 			connection.poll(false);
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, int clientId, size_t id, void * buffer) {
 			gotMessage = true;
-			connection->repostRecive(id);
+			connection->repostReceive(id);
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);

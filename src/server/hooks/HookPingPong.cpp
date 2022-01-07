@@ -32,7 +32,7 @@ LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, 
 	});
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }
