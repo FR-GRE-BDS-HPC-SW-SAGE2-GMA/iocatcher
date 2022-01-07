@@ -35,31 +35,6 @@ HookObjectWrite::HookObjectWrite(Container * container, ServerStats * stats)
 
 /****************************************************/
 /**
- * Send an error answer due to read failure.
- * @param connection Connection handler.
- * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA read operation.
- * @param segments The list of object segments to transfer.
-**/
-void HookObjectWrite::respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage)
-{
-	//send open
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.lfClientId = 0;
-	msg->data.response.msgHasData = false;
-	msg->data.response.msgDataSize = 0;
-	msg->data.response.status = -1;
-
-	//send ack message
-	connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
-}
-
-/****************************************************/
-/**
  * Fetch data from the client via RDMA.
  * @param clientId Define the libfabric client ID.
  * @param clientMessage Pointer the the message requesting the RDMA write operation.
@@ -93,22 +68,11 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, u
 			(*ops)--;
 
 			if (*ops == 0) {
-				//send open
-				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-				msg->header.lfClientId = 0;
-				msg->data.response.msgHasData = false;
-				msg->data.response.msgDataSize = 0;
-				msg->data.response.status = 0;
-
 				//stats
 				this->stats->writeSize += size;
 
-				//send ack message
-				connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-					delete msg;
-					return LF_WAIT_LOOP_KEEP_WAITING;
-				});
+				//send response
+				connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 
 				//clean
 				delete ops;
@@ -166,20 +130,11 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 		cur += copySize;
 	}
 
-	//send open
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.lfClientId = 0;
-	msg->data.response.status = 0;
-
 	//stats
 	this->stats->writeSize += cur;
 
-	//send ack message
-	connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 }
 
 /****************************************************/
@@ -206,14 +161,14 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 			objRdmaFetchFromClient(connection, lfClientId, clientMessage, segments);
 		}
 	} else {
-		this->respondError(connection, lfClientId, clientMessage);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, lfClientId, 0);
 	}
 
 	//mark dirty
 	object.markDirty(clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

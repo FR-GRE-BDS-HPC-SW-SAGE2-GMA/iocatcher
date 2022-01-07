@@ -35,20 +35,11 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 	Object & object = this->container->getObject(clientMessage->data.objCreate.objectId);
 	int ret = object.create();
 
-	//fill response
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_CREATE_ACK;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = ret;
-
-	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_CREATE_ACK, lfClientId, ret);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

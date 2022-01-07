@@ -28,7 +28,6 @@ class HookObjectWrite : public Hook
 	private:
 		void objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
 		void objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
-		void respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage);
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;

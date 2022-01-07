@@ -48,21 +48,11 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 		.arg(status)
 		.end();
 
-	//fill response
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = status;
-	msg->data.response.msgHasData = false;
-
-	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, lfClientId, status);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

@@ -37,20 +37,11 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, uin
 	Object & object = this->container->getObject(clientMessage->data.objFlush.objectId);
 	int ret = object.flush(clientMessage->data.objFlush.offset, clientMessage->data.objFlush.size);
 
-	//prepare message
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_FLUSH_ACK;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = ret;
-
-	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_FLUSH_ACK, lfClientId, ret);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }
