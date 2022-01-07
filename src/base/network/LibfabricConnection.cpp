@@ -247,11 +247,9 @@ void LibfabricConnection::joinServer(void)
 	if (err != 1)
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 
-	//new message
-	LibfabricMessage * msg = new LibfabricMessage;
-	memset(msg, 0, sizeof(*msg));
-	msg->header.msgType = IOC_LF_MSG_CONNECT_INIT;
-	err = fi_getname(&this->ep->fid, msg->data.firstClientMessage.addr, &addrlen);
+	//build message data
+	LibfabricFirstClientMessage firstClientMessage;
+	err = fi_getname(&this->ep->fid, firstClientMessage.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
@@ -274,10 +272,7 @@ void LibfabricConnection::joinServer(void)
 	});
 
 	//send
-	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, [msg](){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	this->sendMessageNoPollWakeup(IOC_LF_MSG_CONNECT_INIT, IOC_LF_SERVER_ID, firstClientMessage);
 
 	//wait send
 	this->poll(true);
