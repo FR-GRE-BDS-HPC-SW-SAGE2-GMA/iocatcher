@@ -1132,6 +1132,13 @@ void LibfabricConnection::setOnBadAuth(std::function<LibfabricActionResult(void)
 }
 
 /****************************************************/
+/**
+ * Build a response message and send it to the client.
+ * @param msgType Define the type of message to be used.
+ * @param lfClientId Define the libfabric ID of the client to which to send the message.
+ * @param status The status code to put in the response.
+ * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
+**/
 void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock)
 {
 	//prepare message
@@ -1153,6 +1160,15 @@ void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfC
 }
 
 /****************************************************/
+/**
+ * Build a response message and send it to the client with attached data.
+ * @param msgType Define the type of message to be used.
+ * @param lfClientId Define the libfabric ID of the client to which to send the message.
+ * @param status The status code to put in the response.
+ * @param data Address of the data to concat at the end of the message.
+ * @param size Size of the data buffer to be added to the message
+ * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
+**/
 void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock)
 {
 	//prepare message
@@ -1177,15 +1193,24 @@ void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfC
 }
 
 /****************************************************/
-void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * buffers, size_t cntBuffers, bool unblock)
+/**
+ * Build a response message and send it to the client with attached data build from several fragments.
+ * @param msgType Define the type of message to be used.
+ * @param lfClientId Define the libfabric ID of the client to which to send the message.
+ * @param status The status code to put in the response.
+ * @param fragments Array of fragments to concatenate in the message.
+ * @param cntFragments Number of fragments to consider.
+ * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
+**/
+void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * fragments, size_t cntFragments, bool unblock)
 {
 	//check
-	assert(buffers != NULL);
+	assert(fragments != NULL);
 
 	//calc
 	size_t sumSize = 0;
-	for (size_t i = 0 ; i < cntBuffers ; i++)
-		sumSize += buffers[i].size;
+	for (size_t i = 0 ; i < cntFragments ; i++)
+		sumSize += fragments[i].size;
 
 	//prepare message
 	size_t bufferSize = sizeof(LibfabricMessage) + sumSize;
@@ -1199,9 +1224,9 @@ void LibfabricConnection::sendReponse(LibfabricMessageType msgType, uint64_t lfC
 
 	//copy all & concat
 	char * cursor = msg->extraData;
-	for (size_t i = 0 ; i < cntBuffers ; i++) {
-		memcpy(cursor, buffers[i].buffer, buffers[i].size);
-		cursor += buffers[i].size;
+	for (size_t i = 0 ; i < cntFragments ; i++) {
+		memcpy(cursor, fragments[i].buffer, fragments[i].size);
+		cursor += fragments[i].size;
 	}
 
 	//send message

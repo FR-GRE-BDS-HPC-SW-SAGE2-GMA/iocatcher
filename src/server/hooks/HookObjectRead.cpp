@@ -149,6 +149,9 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 
 	//send ack message
 	connection->sendReponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0, buffers, segments.size());
+
+	//free mem
+	delete [] buffers;
 }
 
 /****************************************************/
