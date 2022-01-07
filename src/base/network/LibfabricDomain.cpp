@@ -219,7 +219,7 @@ Iov LibfabricDomain::registerSegment(void * ptr, size_t size, bool read, bool wr
 	}
 
 	Iov iov;
-	iov.addr = (virtMrMode) ? ptr : 0;
+	iov.addr = (virtMrMode) ? (LibfabricAddr)ptr : 0;
 	iov.key = fi_mr_key(region.mr);
 
 	return iov;

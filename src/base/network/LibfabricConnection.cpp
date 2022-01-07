@@ -224,7 +224,7 @@ void LibfabricConnection::joinServer(void)
 	LibfabricMessage * msg = new LibfabricMessage;
 	memset(msg, 0, sizeof(*msg));
 	msg->header.msgType = IOC_LF_MSG_CONNECT_INIT;
-	err = fi_getname(&this->ep->fid, msg->data.addr, &addrlen);
+	err = fi_getname(&this->ep->fid, msg->data.firstClientMessage.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
@@ -387,7 +387,7 @@ void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, in
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
 {
 	//check
 	assert(localAddr != NULL);
@@ -436,7 +436,7 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, LibfabricAddr remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
 {
 	//check
 	assert(iov != NULL);
@@ -492,7 +492,7 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, LibfabricAddr remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
 {
 	//checks
 	assert(iov != NULL);
@@ -545,7 +545,7 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
 {
 	//checks
 	assert(localAddr != NULL);
@@ -963,7 +963,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	uint64_t epId = this->nextEndpointId++;
 
 	//insert server address in address vector
-	int err = fi_av_insert(this->av, message->data.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
+	int err = fi_av_insert(this->av, message->data.firstClientMessage.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
 	if (err != 1) {
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 	}

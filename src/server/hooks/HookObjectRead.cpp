@@ -67,7 +67,7 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint6
 			cnt = IOC_LF_MAX_RDMA_SEGS;
 
 		//extract
-		char * addr = (char*)objReadWrite.iov.addr + offset;
+		LibfabricAddr addr = objReadWrite.iov.addr + offset;
 		uint64_t key = objReadWrite.iov.key;
 
 		//emit rdma write vec & implement callback
