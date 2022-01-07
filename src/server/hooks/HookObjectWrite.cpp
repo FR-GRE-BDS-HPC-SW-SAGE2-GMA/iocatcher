@@ -138,17 +138,17 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjReadWriteInfos & objReadWrite = message.message->data.objReadWrite;
+	LibfabricObjReadWriteInfos & objReadWrite = request.message->data.objReadWrite;
 
 	//debug
 	IOC_DEBUG_ARG("hook:obj:write", "Get object write on %1 for %2->%3 from client %4")
 		.arg(objReadWrite.objectId)
 		.arg(objReadWrite.offset)
 		.arg(objReadWrite.size)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.end();
 
 	//get buffers from object
@@ -159,19 +159,19 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 	//eager or rdma
 	if (status) {
 		if (objReadWrite.msgHasData) {
-			objEagerExtractFromMessage(connection, message.lfClientId, message.message, segments);
+			objEagerExtractFromMessage(connection, request.lfClientId, request.message, segments);
 		} else {
-			objRdmaFetchFromClient(connection, message.lfClientId, objReadWrite, segments);
+			objRdmaFetchFromClient(connection, request.lfClientId, objReadWrite, segments);
 		}
 	} else {
-		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, message.lfClientId, 0);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, request.lfClientId, 0);
 	}
 
 	//mark dirty
 	object.markDirty(objReadWrite.offset, objReadWrite.size);
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

@@ -23,15 +23,15 @@ HookObjectCreate::HookObjectCreate(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjCreateInfos & objCreate = message.message->data.objCreate;
+	LibfabricObjCreateInfos & objCreate = request.message->data.objCreate;
 
 	//debug
 	IOC_DEBUG_ARG("hook:obj:create", "Get create object %1 from client %2")
 		.arg(objCreate.objectId)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.end();
 
 	//create object
@@ -39,10 +39,10 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 	int ret = object.create();
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_CREATE_ACK, message.lfClientId, ret);
+	connection->sendResponse(IOC_LF_MSG_OBJ_CREATE_ACK, request.lfClientId, ret);
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

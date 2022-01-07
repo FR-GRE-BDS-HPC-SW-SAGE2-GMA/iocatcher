@@ -155,17 +155,17 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjReadWriteInfos & objReadWrite = message.message->data.objReadWrite;
+	LibfabricObjReadWriteInfos & objReadWrite = request.message->data.objReadWrite;
 
 	//debug
 	IOC_DEBUG_ARG("hook:obj:read", "Get object read on %1 for %2->%3 from client %4")
 		.arg(objReadWrite.objectId)
 		.arg(objReadWrite.offset)
 		.arg(objReadWrite.size)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.end();
 
 	//get buffers from object
@@ -176,16 +176,16 @@ LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection
 	//eager or rdma
 	if (status) {
 		if (objReadWrite.size <= IOC_EAGER_MAX_READ) {
-			this->objEagerPushToClient(connection, message.lfClientId, objReadWrite, segments);
+			this->objEagerPushToClient(connection, request.lfClientId, objReadWrite, segments);
 		} else {
-			this->objRdmaPushToClient(connection, message.lfClientId, objReadWrite, segments);
+			this->objRdmaPushToClient(connection, request.lfClientId, objReadWrite, segments);
 		}
 	} else {
-		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, message.lfClientId, -1);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, request.lfClientId, -1);
 	}
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

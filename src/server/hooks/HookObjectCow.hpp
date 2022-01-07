@@ -23,7 +23,7 @@ class HookObjectCow : public Hook
 {
 	public:
 		HookObjectCow(Container * container);
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientMessage & message) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientRequest & request) override;
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;

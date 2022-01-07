@@ -25,10 +25,10 @@ HookRangeUnregister::HookRangeUnregister(const Config * config, Container * cont
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricUnregisterRange & unregisterRange = message.message->data.unregisterRange;
+	LibfabricUnregisterRange & unregisterRange = request.message->data.unregisterRange;
 
 	//debug
 	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 on object %2 (%3->%4) from client %5")
@@ -36,7 +36,7 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 		.arg(unregisterRange.objectId)
 		.arg(unregisterRange.offset)
 		.arg(unregisterRange.size)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.end();
 
 	//get object
@@ -49,14 +49,14 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 	if (unregisterRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		if (!tracker.unregisterRange(message.header->tcpClientId, unregisterRange.id, unregisterRange.offset, unregisterRange.size, mode))
+		if (!tracker.unregisterRange(request.header->tcpClientId, unregisterRange.id, unregisterRange.offset, unregisterRange.size, mode))
 			status = -1;
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, message.lfClientId, status);
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, request.lfClientId, status);
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

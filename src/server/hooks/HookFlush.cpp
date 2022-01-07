@@ -23,28 +23,28 @@ HookFlush::HookFlush(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjFlushInfos & objFlush = message.message->data.objFlush;
+	LibfabricObjFlushInfos & objFlush = request.message->data.objFlush;
 
 	//debug
 	IOC_DEBUG_ARG("hook:obj:flush", "Get flush object %1 on %2->%3 from client %4")
 		.arg(objFlush.objectId)
 		.arg(objFlush.offset)
 		.arg(objFlush.size)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.end();
 
 	//flush object
-	Object & object = this->container->getObject(message.message->data.objFlush.objectId);
-	int ret = object.flush(message.message->data.objFlush.offset, objFlush.size);
+	Object & object = this->container->getObject(request.message->data.objFlush.objectId);
+	int ret = object.flush(request.message->data.objFlush.offset, objFlush.size);
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_FLUSH_ACK, message.lfClientId, ret);
+	connection->sendResponse(IOC_LF_MSG_OBJ_FLUSH_ACK, request.lfClientId, ret);
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

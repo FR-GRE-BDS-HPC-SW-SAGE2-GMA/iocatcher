@@ -24,7 +24,7 @@ class HookLambdaFunction : public Hook
 	public:
 		HookLambdaFunction(HookLambdaDef function);
 		virtual ~HookLambdaFunction(void);
-		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientMessage & message) override;
+		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientRequest & request) override;
 	private:
 		/** Store the lambda function to be called when recieving a message. **/
 		HookLambdaDef function;

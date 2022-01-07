@@ -25,10 +25,10 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricRegisterRange & registerRange = message.message->data.registerRange;
+	LibfabricRegisterRange & registerRange = request.message->data.registerRange;
 
 	//get object
 	Object & object = this->container->getObject(registerRange.objectId);
@@ -40,22 +40,22 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 	if (registerRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		status = tracker.registerRange(message.header->tcpClientId, registerRange.offset, registerRange.size, mode);
+		status = tracker.registerRange(request.header->tcpClientId, registerRange.offset, registerRange.size, mode);
 	
 	//debug
 	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
 		.arg(registerRange.objectId)
 		.arg(registerRange.offset)
 		.arg(registerRange.size)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.arg(status)
 		.end();
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, message.lfClientId, status);
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, request.lfClientId, status);
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

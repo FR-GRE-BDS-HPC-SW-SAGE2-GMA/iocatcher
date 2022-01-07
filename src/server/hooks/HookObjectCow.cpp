@@ -23,16 +23,16 @@ HookObjectCow::HookObjectCow(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, LibfabricClientMessage & message)
+LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjectCow & objCow = message.message->data.objCow;
+	LibfabricObjectCow & objCow = request.message->data.objCow;
 
 	//debug
 	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3")
 		.arg(objCow.sourceObjectId)
 		.arg(objCow.destObjectId)
-		.arg(message.lfClientId)
+		.arg(request.lfClientId)
 		.end();
 	
 	//extract id
@@ -48,10 +48,10 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 		status = this->container->makeObjectRangeCow(sourceId, destId, objectCow.allowExist, objectCow.rangeOffset, objectCow.rangeSize); 
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_COW_ACK, message.lfClientId, (status)?0:-1);
+	connection->sendResponse(IOC_LF_MSG_OBJ_COW_ACK, request.lfClientId, (status)?0:-1);
 
 	//republish
-	connection->repostReceive(message.msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;
