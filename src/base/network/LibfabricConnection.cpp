@@ -332,8 +332,9 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 		.end();
 
 	//send
+	LibfabricPostActionFunction * handler = new LibfabricPostActionFunction(postAction);
 	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, new LibfabricPostActionFunction(postAction));
+		err = fi_send(this->ep, buffer, size, NULL, it->second, handler);
 		if (err == -FI_EAGAIN)
 			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
