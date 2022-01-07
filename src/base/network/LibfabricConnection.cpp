@@ -24,15 +24,32 @@ namespace IOC
 {
 
 /****************************************************/
+void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, void * domainBuffer)
+{
+	//check
+	assert(this->connection == NULL);
+	assert(this->domainBuffer == NULL);
+	assert(connection != NULL);
+	assert(domainBuffer != NULL);
+
+	//setup
+	this->connection = connection;
+	this->domainBuffer = domainBuffer;
+}
+
+/****************************************************/
 /**
  * On deletion of the object we free the attached recieve buffer to return it to
  * the connection.
 **/
 void LibfabricPostAction::freeBuffer(void)
 {
-	if (connection != NULL)
-		if (isRecv)
+	if (connection != NULL) {
+		if (isRecv && bufferId != -1)
 			connection->repostReceive(bufferId);
+		if (this->domainBuffer != NULL)
+			connection->getDomain().retMsgBuffer(this->domainBuffer);
+	}
 }
 
 /****************************************************/
@@ -42,6 +59,16 @@ void LibfabricPostAction::freeBuffer(void)
 LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 {
 	return this->function();
+}
+
+/****************************************************/
+/**
+ * Nop function, do nothing.
+**/
+LibfabricActionResult LibfabricPostActionNop::runPostAction(void)
+{
+	//nothing to do
+	return this->result;
 }
 
 /****************************************************/
@@ -313,7 +340,7 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::sendRawMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction)
 {
 	//vars
 	int err;
@@ -332,13 +359,27 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 		.end();
 
 	//send
-	LibfabricPostActionFunction * handler = new LibfabricPostActionFunction(postAction);
 	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, handler);
+		err = fi_send(this->ep, buffer, size, NULL, it->second, postAction);
 		if (err == -FI_EAGAIN)
 			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
+}
+
+/****************************************************/
+/**
+ * Send a message to the given destination ID.
+ * @param buffer Buffer to be sent.
+ * @param size Size of the given buffer.
+ * @param destrinationEpId ID of the destination.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
+void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
+{
+	this->sendRawMessage(buffer, size, destinationEpId, new LibfabricPostActionFunction(postAction));
 }
 
 /****************************************************/
@@ -351,29 +392,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 **/
 void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId)
 {
-	//vars
-	int err;
-
-	//checks
-	assert(buffer != NULL);
-	assert(size <= recvBuffersSize);
-
-	//debug
-	IOC_DEBUG_ARG("libfabric:msg", "Send message without poll wakeup: dest=%1, buffer=%2").arg(destinationEpId).arg(buffer).end();
-
-	//search
-	auto it = this->remoteLiAddr.find(destinationEpId);
-	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
-		.arg(destinationEpId)
-		.end();
-
-	//send
-	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, IOC_LF_NO_WAKEUP_POST_ACTION);
-		if (err == -FI_EAGAIN)
-			this->pollAllCqInCache();
-	} while(err == -FI_EAGAIN);
-	LIBFABRIC_CHECK_STATUS("fi_send", err);
+	this->sendRawMessage(buffer, size, destinationEpId, IOC_LF_NO_WAKEUP_POST_ACTION);
 }
 
 /****************************************************/

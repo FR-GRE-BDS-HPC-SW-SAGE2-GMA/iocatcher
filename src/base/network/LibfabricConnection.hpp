@@ -12,12 +12,14 @@
 //std
 #include <functional>
 #include <map>
+#include <cassert>
 //libfabric
 #include <rdma/fabric.h>
 #include <rdma/fi_errno.h>
 #include <rdma/fi_endpoint.h>
 //local
 #include "LibfabricDomain.hpp"
+#include "Serializer.hpp"
 #include "Protocol.hpp"
 #include "Hook.hpp"
 
@@ -28,7 +30,7 @@ namespace IOC
 /****************************************************/
 /** Position of the server in the address list. **/
 #define IOC_LF_SERVER_ID 0
-#define IOC_LF_NO_WAKEUP_POST_ACTION ((void*)-1)
+#define IOC_LF_NO_WAKEUP_POST_ACTION ((LibfabricPostAction*)-1)
 
 /****************************************************/
 class LibfabricConnection;
@@ -51,11 +53,12 @@ struct LibfabricBuffer
 class LibfabricPostAction
 {
 	public:
-		LibfabricPostAction(void) {this->bufferId = -1; this->connection = NULL;};
+		LibfabricPostAction(void) {this->bufferId = -1; this->connection = NULL; this->domainBuffer = NULL;};
 		virtual ~LibfabricPostAction(void) {this->freeBuffer();};
 		virtual LibfabricActionResult runPostAction(void) = 0;
 		void registerBuffer(LibfabricConnection * connection, bool isRecv, size_t bufferId);
 		void freeBuffer(void);
+		void attachDomainBuffer(LibfabricConnection * connection, void * domainBuffer);
 	protected:
 		/** Keep track of the connection. **/
 		LibfabricConnection * connection;
@@ -63,6 +66,8 @@ class LibfabricPostAction
 		bool isRecv;
 		/** A buffer ID to clean when then post action terminate. **/
 		size_t bufferId;
+		/** keep track of the buffer. **/
+		void * domainBuffer;
 };
 
 /****************************************************/
@@ -81,6 +86,20 @@ class LibfabricPostActionFunction : public LibfabricPostAction
 		std::function<LibfabricActionResult(void)> function;
 };
 
+/****************************************************/
+/**
+ * Implement the core part of the post operation via a lambda function passed to
+ * the constructor.
+ * @brief Post action based on a lambda operation.
+**/
+class LibfabricPostActionNop : public LibfabricPostAction
+{
+	public:
+		LibfabricPostActionNop(LibfabricActionResult result) {this->result = result;};
+		virtual LibfabricActionResult runPostAction(void);
+	private:
+		LibfabricActionResult result;
+};
 
 /****************************************************/
 /**
@@ -101,6 +120,9 @@ class LibfabricConnection
 		bool pollMessage(LibfabricRemoteResponse & response, LibfabricMessageType expectedMessageType);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
 		void broadcastErrrorMessage(const std::string & message);
+		template <class T> void sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, LibfabricPostAction * postAction);
+		template <class T> void sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, std::function<LibfabricActionResult(void)> postAction);
+		template <class T> void sendMessageNoPollWakeup(LibfabricMessageType msgType, int destinationEpId, T & data);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
 		void sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId);
 		void rdmaRead(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
@@ -125,6 +147,7 @@ class LibfabricConnection
 		void sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock = false);
 		void sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * buffers, size_t cntBuffers, bool unblock = false);
 	private:
+		void sendRawMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction);
 		bool pollRx(void);
 		bool pollTx(void);
 		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache = true);
@@ -191,6 +214,70 @@ class LibfabricConnection
 		/** Buffer to store batch readed completion queue entries **/
 		std::list<fi_cq_msg_entry> cqEntries;
 };
+
+/****************************************************/
+/**
+ * Serialize the given structure and send it as a message.
+ * @param msgType Define the type of message.
+ * @param destinationEpId Define the ID of the remote entity to target.
+ * @param value Define the value to send.
+ * @param portAction Provide a lambda function to be called when the message has been sent.
+**/
+template <class T>
+void LibfabricConnection::sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, std::function<LibfabricActionResult(void)> postAction)
+{
+	this->sendMessage(msgType, destinationEpId, data, new LibfabricPostActionFunction(postAction));
+}
+
+/****************************************************/
+/**
+ * Serialize the given structure and send it as a message.
+ * @param msgType Define the type of message.
+ * @param destinationEpId Define the ID of the remote entity to target.
+ * @param value Define the value to send.
+**/
+template <class T> 
+void LibfabricConnection::sendMessageNoPollWakeup(LibfabricMessageType msgType, int destinationEpId, T & data)
+{
+	this->sendMessage(msgType, destinationEpId, data, new LibfabricPostActionNop(LF_WAIT_LOOP_KEEP_WAITING));
+}
+
+/**
+ * Serialize the given structure and send it as a message.
+ * @param msgType Define the type of message.
+ * @param destinationEpId Define the ID of the remote entity to target.
+ * @param value Define the value to send.
+ * @param portAction Provide a lambda function to be called when the message has been sent.
+**/
+template <class T>
+void LibfabricConnection::sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, LibfabricPostAction * postAction)
+{
+	//check
+	assert(postAction != NULL);
+	assert(postAction != IOC_LF_NO_WAKEUP_POST_ACTION);
+
+	//get a buffer
+	void * buffer = this->lfDomain->getMsgBuffer();
+	size_t bufferSize = this->lfDomain->getMsgBufferSize();
+
+	//register it to be freed when the postaction will be deleted
+	postAction->attachDomainBuffer(this, buffer);
+
+	//build the header
+	LibfabricMessageHeader header;
+	this->fillProtocolHeader(header, msgType);
+
+	//serialize
+	Serializer serializer(buffer, bufferSize);
+	serializer.apply("header", header);
+	serializer.apply("data", data);
+
+	//extract size
+	size_t finalSize = serializer.getCursor();
+
+	//send the messahe
+	this->sendRawMessage(buffer, finalSize, destinationEpId, postAction);
+}
 
 }
 
