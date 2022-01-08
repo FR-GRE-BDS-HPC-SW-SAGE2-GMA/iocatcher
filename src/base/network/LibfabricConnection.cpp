@@ -1238,31 +1238,21 @@ void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lf
 	for (size_t i = 0 ; i < cntFragments ; i++)
 		sumSize += fragments[i].size;
 
-	//prepare message
-	size_t bufferSize = sizeof(LibfabricMessage) + sumSize;
-	void * buffer = malloc(bufferSize);
-	LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
-	msg->header.msgType = msgType;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = status;
-	msg->data.response.msgDataSize = sumSize;
-	msg->data.response.msgHasData = true;
-
-	//copy all & concat
-	char * cursor = msg->extraData;
-	for (size_t i = 0 ; i < cntFragments ; i++) {
-		memcpy(cursor, fragments[i].buffer, fragments[i].size);
-		cursor += fragments[i].size;
-	}
+	//build response
+	LibfabricResponse response = {
+			.msgDataSize = sumSize,
+			.status = status,
+			.msgHasData = true,
+			.optionalData = NULL,
+			.optionalDataFragments = fragments,
+			.optionalDataFragmentCount = cntFragments,
+	};
 
 	//send message
-	this->sendMessage(msg, bufferSize, lfClientId, [buffer, unblock](void){
-		free(buffer);
-		if (unblock)
-			return LF_WAIT_LOOP_UNBLOCK;
-		else
-			return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	if (unblock)
+		this->sendMessage(msgType, lfClientId, response, new LibfabricPostActionNop(LF_WAIT_LOOP_UNBLOCK));
+	else
+		this->sendMessage(msgType, lfClientId, response, new LibfabricPostActionNop(LF_WAIT_LOOP_KEEP_WAITING));
 }
 
 }

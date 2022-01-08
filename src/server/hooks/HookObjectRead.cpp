@@ -158,13 +158,12 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjReadWriteInfos & objReadWrite = request.message->data.objReadWrite;
+	LibfabricObjReadWriteInfos objReadWrite;
+	request.deserializer.apply("objReadWrite", objReadWrite);
 
 	//debug
-	IOC_DEBUG_ARG("hook:obj:read", "Get object read on %1 for %2->%3 from client %4")
-		.arg(objReadWrite.objectId)
-		.arg(objReadWrite.offset)
-		.arg(objReadWrite.size)
+	IOC_DEBUG_ARG("hook:obj:read", "Get object read %1 from client %2")
+		.arg(Serializer::stringify(objReadWrite))
 		.arg(request.lfClientId)
 		.end();
 

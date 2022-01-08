@@ -36,16 +36,6 @@ class LibfabricConnection;
 
 /****************************************************/
 /**
- * Define a buffer with its size.
-**/
-struct LibfabricBuffer
-{
-	void * buffer;
-	size_t size;
-};
-
-/****************************************************/
-/**
  * Define a post action when we receive a message or when a RDMA operation finishes.
  * @brief Post action on RDMA operations.
 **/

@@ -290,6 +290,37 @@ TEST(TestProtocol, LibfabricResponse)
 }
 
 /****************************************************/
+TEST(TestProtocol, LibfabricResponse_data_fragments)
+{
+	//fragments
+	char f1[] = "Hello";
+	char f2[] = "World";
+	LibfabricBuffer fragments[2] = {
+		{f1, 5},
+		{f2, 6}
+	};
+
+	//allocate
+	LibfabricResponse out, in = {
+		.msgDataSize = 5,
+		.status = 10,
+		.msgHasData = true,
+		.optionalData = NULL,
+		.optionalDataFragments = fragments,
+		.optionalDataFragmentCount = 2
+	};
+
+	//apply
+	serializeDeserialize(in, out, 24);
+
+	//check
+	EXPECT_EQ(in.msgDataSize, out.msgDataSize);
+	EXPECT_EQ(in.status, out.status);
+	EXPECT_EQ(in.msgHasData, out.msgHasData);
+	EXPECT_STREQ("HelloWorld", out.optionalData);
+}
+
+/****************************************************/
 TEST(TestProtocol, LibfabricFirstHandshake)
 {
 	//allocate

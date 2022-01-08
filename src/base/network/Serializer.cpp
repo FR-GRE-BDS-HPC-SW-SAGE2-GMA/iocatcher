@@ -419,3 +419,12 @@ void SerializerBase::checkSize(const char * fieldName, size_t size)
 			.end();
 	}
 }
+
+/****************************************************/
+/**
+ * Return the configured action.
+**/
+SerializerAction SerializerBase::getAction(void) const
+{
+	return action;
+}

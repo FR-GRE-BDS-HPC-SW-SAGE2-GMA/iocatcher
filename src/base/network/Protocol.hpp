@@ -100,6 +100,16 @@ typedef uint64_t LibfabricAddr;
 
 /****************************************************/
 /**
+ * Define a buffer with its size.
+**/
+struct LibfabricBuffer
+{
+	void * buffer;
+	size_t size;
+};
+
+/****************************************************/
+/**
  * Define an empty struct to be serialized if we have no data to send
  * in the message.
 **/
@@ -286,6 +296,10 @@ struct LibfabricResponse
 	bool msgHasData;
 	/** pointer to the optional data. **/
 	const char * optionalData;
+	/** Optional data in a multi-fragment representation (will go in optionalData on deserialize). **/
+	const LibfabricBuffer * optionalDataFragments;
+	/** Number of fragments. **/
+	uint64_t optionalDataFragmentCount;
 };
 
 /****************************************************/

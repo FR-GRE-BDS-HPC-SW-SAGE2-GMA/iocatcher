@@ -65,6 +65,7 @@ class SerializerBase
 		void * getData(void);
 		size_t getDataSize(void);
 		template <class T> static std::string stringify(T & value);
+		SerializerAction getAction(void) const;
 	private:
 		void checkSize(const char * fieldName, size_t size);
 	private:

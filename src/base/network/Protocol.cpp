@@ -123,6 +123,8 @@ void LibfabricResponse::initStatusOnly(int32_t status)
 	this->optionalData = NULL;
 	this->status = status;
 	this->msgHasData = false;
+	this->optionalDataFragments = NULL;
+	this->optionalDataFragmentCount = 0;
 }
 
 /****************************************************/
@@ -131,8 +133,15 @@ void LibfabricResponse::applySerializerDef(SerializerBase & serializer)
 	serializer.apply("msgDataSize", this->msgDataSize);
 	serializer.apply("status", this->status);
 	serializer.apply("msgHasData", this->msgHasData);
-	if (this->msgHasData)
-		serializer.serializeOrPoint("optionalData", this->optionalData, this->msgDataSize);
+	if (this->msgHasData) {
+		if (serializer.getAction() == SERIALIZER_PACK && this->optionalDataFragments != NULL) {
+			assert(this->optionalData == NULL);
+			for (uint64_t i = 0 ; i < this->optionalDataFragmentCount ; i++)
+				serializer.apply("optionalDataFragment", this->optionalDataFragments[i].buffer, this->optionalDataFragments[i].size);
+		} else {
+			serializer.serializeOrPoint("optionalData", this->optionalData, this->msgDataSize);
+		}
+	}
 }
 
 /****************************************************/
