@@ -643,7 +643,7 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 
 	//fill default
 	response.lfClientId = -1;
-	response.header = NULL;
+	memset(&response.header,0, sizeof(response.header));
 	response.message = NULL;
 	response.msgBufferId = -1;
 
@@ -790,14 +790,12 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	LibfabricClientRequest request = {
 		.lfClientId = message->header.lfClientId,
 		.msgBufferId = id,
-		.header = &message->header,
 		.message = message,
 	};
 
 	//deserialize
 	DeSerializer deserializer(buffer, this->recvBuffersSize);
-	LibfabricMessageHeader header;
-	deserializer.apply("header", header);
+	deserializer.apply("header", request.header);
 	request.deserializer = deserializer;
 
 	//switch
@@ -901,7 +899,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 			return false;
 		
 		//fill the struct
-		response.header = &message->header;
+		response.header = header;
 		response.message = message;
 		response.lfClientId = message->header.lfClientId;
 		response.msgBufferId = id;

@@ -41,7 +41,7 @@ struct LibfabricClientRequest
 	/** Message buffer to be returned to the connection after using the data.**/
 	size_t msgBufferId;
 	/** Header of the client message containing the protocol informations. **/
-	LibfabricMessageHeader * header;
+	LibfabricMessageHeader header;
 	/** Pointer to the client message. **/
 	LibfabricMessage * message;
 	/** The deserialization tool. **/

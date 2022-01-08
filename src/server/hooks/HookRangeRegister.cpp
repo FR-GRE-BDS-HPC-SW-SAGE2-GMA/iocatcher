@@ -40,7 +40,7 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 	if (registerRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		status = tracker.registerRange(request.header->tcpClientId, registerRange.offset, registerRange.size, mode);
+		status = tracker.registerRange(request.header.tcpClientId, registerRange.offset, registerRange.size, mode);
 	
 	//debug
 	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
