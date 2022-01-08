@@ -28,14 +28,12 @@ HookRangeUnregister::HookRangeUnregister(const Config * config, Container * cont
 LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricUnregisterRange & unregisterRange = request.message->data.unregisterRange;
+	LibfabricUnregisterRange unregisterRange;
+	request.deserializer.apply("unregisterRange", unregisterRange);
 
 	//debug
-	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 on object %2 (%3->%4) from client %5")
-		.arg(unregisterRange.id)
-		.arg(unregisterRange.objectId)
-		.arg(unregisterRange.offset)
-		.arg(unregisterRange.size)
+	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 from client %5")
+		.arg(Serializer::stringify(unregisterRange.id))
 		.arg(request.lfClientId)
 		.end();
 
