@@ -21,7 +21,16 @@ namespace IOC
 class HookPingPong : public Hook
 {
 	public:
+		HookPingPong(LibfabricDomain * domain);
+		~HookPingPong(void);
 		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientRequest & request) override;
+	private:
+		void reallocateBuffer(size_t rdmaSize);
+	private:
+		char * buffer;
+		size_t bufferSize;
+		LibfabricDomain * domain;
+		Iov bufferIov;
 };
 
 }

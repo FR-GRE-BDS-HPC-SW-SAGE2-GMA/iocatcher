@@ -81,6 +81,31 @@ TEST(TestProtocol, Iov)
 }
 
 /****************************************************/
+TEST(TestProtocol, LibfabricPing)
+{
+	//allocate
+	LibfabricPing out, in = {
+		.rdmaSize = 10,
+		.eagerSize = 5,
+		.rdmaIov = {
+			.addr = 0x1,
+			.key = 0x2
+		},
+		.eagerData = "0123"
+	};
+
+	//apply
+	serializeDeserialize(in, out, 37);
+
+	//check
+	EXPECT_EQ(in.rdmaSize, out.rdmaSize);
+	EXPECT_EQ(in.eagerSize, out.eagerSize);
+	EXPECT_EQ(in.rdmaIov.addr, out.rdmaIov.addr);
+	EXPECT_EQ(in.rdmaIov.key, out.rdmaIov.key);
+	EXPECT_STREQ(in.eagerData, out.eagerData);
+}
+
+/****************************************************/
 TEST(TestProtocol, LibfabricObjectId)
 {
 	//allocate

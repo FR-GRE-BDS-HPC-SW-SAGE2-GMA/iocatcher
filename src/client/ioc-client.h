@@ -86,8 +86,10 @@ int ioc_client_obj_create(ioc_client_t * client, int64_t high, int64_t low);
  * @param client Reference to the client connection handler to use.
  * @param connection Reference to the client connection to be used.
  * @param cnt Number of time to make the ping pong roundtrip.
+ * @param eagerSize size of the data to send in the message.
+ * @param rdmaSize size of the data to send as RDMA.
 **/
-void ioc_client_ping_pong(ioc_client_t * client, int cnt);
+void ioc_client_ping_pong(ioc_client_t * client, int cnt, size_t eagerSize, size_t rdmaSize);
 /**
  * Perform a range registrion to notify we make a mapping on this part of the object.
  * This is used to prevent coherency issue by mapping in write mode several time the

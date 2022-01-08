@@ -137,6 +137,27 @@ struct Iov
 
 /****************************************************/
 /**
+ * Message to make a ping pong operation between the client and the server.
+ * The client send a ping with some data and the server respond a pong without
+ * data. The data are send as eager in the message and as RDMA.
+ * @brief Structure for the ping pong.
+**/
+struct LibfabricPing
+{
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	/** Data to be fetch by the server via RDMA. **/
+	uint64_t rdmaSize;
+	/** Size of the eager communication (embedded in the request message). **/
+	uint64_t eagerSize;
+	/** Iov to make the rdma. **/
+	Iov rdmaIov;
+	/** Pointer to the eager data. **/
+	const char * eagerData;
+};
+
+/****************************************************/
+/**
  * Define an object ID for all operations.
 **/
 struct LibfabricObjectId

@@ -30,6 +30,8 @@ enum SerializerAction
 	SERIALIZER_UNPACK,
 	/** To convert to a string. **/
 	SERIALIZER_STRINGIFY,
+	/** Only compute size. **/
+	SERIALIZER_SIZE,
 	/** 
 	 * To say it is not yet configured. This is used in the LibfabricClientRequest
 	 * structure to be initialied empty and then configured.
@@ -65,6 +67,7 @@ class SerializerBase
 		void * getData(void);
 		size_t getDataSize(void);
 		template <class T> static std::string stringify(T & value);
+		template <class T> static size_t computeSize(T & value);
 		SerializerAction getAction(void) const;
 	private:
 		void checkSize(const char * fieldName, size_t size);
@@ -191,6 +194,18 @@ std::string SerializerBase::stringify(T & value)
 	SerializerBase serialize(&sout);
 	serialize.apply("value", value);
 	return sout.str();
+}
+
+/****************************************************/
+/**
+ * Only compute the size of the final buffer.
+**/
+template <class T>
+size_t SerializerBase::computeSize(T & value)
+{
+	SerializerBase serialize(NULL, SIZE_MAX, SERIALIZER_SIZE);
+	serialize.apply("value", value);
+	return serialize.getCursor();
 }
 
 }

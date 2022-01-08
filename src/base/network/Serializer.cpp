@@ -23,7 +23,7 @@ using namespace IOC;
 SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction action)
 {
 	//check
-	if (action != SERIALIZER_UNSET) {
+	if (action != SERIALIZER_UNSET && action != SERIALIZER_SIZE) {
 		assert(buffer != NULL);
 		assert(size > 0);
 	}
@@ -78,18 +78,21 @@ SerializerBase::~SerializerBase(void)
 void SerializerBase::apply(const char * fieldName, bool & value)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
-	if (this->action == SERIALIZER_PACK)
+	if (this->action == SERIALIZER_PACK) {
 		memcpy(this->buffer + this->cursor, &value, sizeof(value));
-	else if (this->action == SERIALIZER_UNPACK)
+	} else if (this->action == SERIALIZER_UNPACK) {
 		memcpy(&value, this->buffer + this->cursor, sizeof(value));
-	else if (this->action == SERIALIZER_STRINGIFY)
+	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << (value ? "true" : "false");
-	else
-		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
+	} else {
+		IOC_FATAL_ARG("Unspported action %1 !").arg(this->action).end();
+	}
 
 	//move forward
 	this->cursor += sizeof(value);
@@ -106,18 +109,21 @@ void SerializerBase::apply(const char * fieldName, bool & value)
 void SerializerBase::apply(const char * fieldName, uint32_t & value)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
-	if (this->action == SERIALIZER_PACK)
+	if (this->action == SERIALIZER_PACK) {
 		memcpy(this->buffer + this->cursor, &value, sizeof(value));
-	else if (this->action == SERIALIZER_UNPACK)
+	} else if (this->action == SERIALIZER_UNPACK) {
 		memcpy(&value, this->buffer + this->cursor, sizeof(value));
-	else if (this->action == SERIALIZER_STRINGIFY)
+	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
-	else
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
+	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
+	}
 
 	//move forward
 	this->cursor += sizeof(value);
@@ -134,18 +140,21 @@ void SerializerBase::apply(const char * fieldName, uint32_t & value)
 void SerializerBase::apply(const char * fieldName, int32_t & value)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
-	if (this->action == SERIALIZER_PACK)
+	if (this->action == SERIALIZER_PACK) {
 		memcpy(this->buffer + this->cursor, &value, sizeof(value));
-	else if (this->action == SERIALIZER_UNPACK)
+	} else if (this->action == SERIALIZER_UNPACK) {
 		memcpy(&value, this->buffer + this->cursor, sizeof(value));
-	else if (this->action == SERIALIZER_STRINGIFY)
+	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
-	else
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
+	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
+	}
 
 	//move forward
 	this->cursor += sizeof(value);
@@ -162,18 +171,21 @@ void SerializerBase::apply(const char * fieldName, int32_t & value)
 void SerializerBase::apply(const char * fieldName, int64_t & value)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
-	if (this->action == SERIALIZER_PACK)
+	if (this->action == SERIALIZER_PACK) {
 		memcpy(this->buffer + this->cursor, &value, sizeof(value));
-	else if (this->action == SERIALIZER_UNPACK)
+	} else if (this->action == SERIALIZER_UNPACK) {
 		memcpy(&value, this->buffer + this->cursor, sizeof(value));
-	else if (this->action == SERIALIZER_STRINGIFY)
+	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
-	else
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
+	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
+	}
 
 	//move forward
 	this->cursor += sizeof(value);
@@ -190,18 +202,21 @@ void SerializerBase::apply(const char * fieldName, int64_t & value)
 void SerializerBase::apply(const char * fieldName, uint64_t & value)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
-	if (this->action == SERIALIZER_PACK)
+	if (this->action == SERIALIZER_PACK) {
 		memcpy(this->buffer + this->cursor, &value, sizeof(value));
-	else if (this->action == SERIALIZER_UNPACK)
+	} else if (this->action == SERIALIZER_UNPACK) {
 		memcpy(&value, this->buffer + this->cursor, sizeof(value));
-	else if (this->action == SERIALIZER_STRINGIFY)
+	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
-	else
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
+	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
+	}
 
 	//move forward
 	this->cursor += sizeof(value);
@@ -218,7 +233,7 @@ void SerializerBase::apply(const char * fieldName, uint64_t & value)
 void SerializerBase::apply(const char * fieldName, std::string & value)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 
 	//modes
 	if (this->action == SERIALIZER_PACK) {
@@ -240,6 +255,8 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 		this->cursor += len;
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": \"" << value << "\"";
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
 	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
@@ -258,7 +275,7 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 void SerializerBase::apply(const char * fieldName, const std::string & value)
 {
 		//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 
 	//modes
 	if (this->action == SERIALIZER_PACK) {
@@ -273,6 +290,8 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
 		this->apply(fieldName, value.c_str(), len);
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": \"" << value << "\"";
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
 	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
@@ -304,7 +323,7 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 {
 	//check
 	assert(buffer != NULL);
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, size);
 
 	//modes
@@ -314,6 +333,8 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 		memcpy(buffer, this->buffer + this->cursor, size);
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << buffer;
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
 	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
@@ -336,7 +357,7 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
  * \code
  * size_t size = 21;
  * serializer.apply("bufferSize", size);
- * const char * buffer = "msg to push if PACK";
+ * const char * buffer = "msg to push if SERIALIZER_PACK";
  * serializer.serializeOrPoint("buffer", buffer);
  * \code
  * @param fieldName Name of the value to be used for stringification and error 
@@ -347,7 +368,7 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buffer, size_t size)
 {
 	//check
-	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action == SERIALIZER_UNPACK || this->action == SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, size);
 
 	//modes
@@ -357,6 +378,8 @@ void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buf
 		buffer = this->buffer + this->cursor;
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << (void*)buffer;
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
 	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
@@ -377,7 +400,7 @@ void SerializerBase::apply(const char * fieldName, const void * buffer, size_t s
 {
 	//check
 	assert(buffer != NULL);
-	assert(this->action == SERIALIZER_PACK || this->action ==  SERIALIZER_STRINGIFY);
+	assert(this->action == SERIALIZER_PACK || this->action ==  SERIALIZER_STRINGIFY || this->action == SERIALIZER_SIZE);
 	this->checkSize(fieldName, size);
 
 	//modes
@@ -385,6 +408,8 @@ void SerializerBase::apply(const char * fieldName, const void * buffer, size_t s
 		memcpy(this->buffer + this->cursor, buffer, size);
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": \"" << buffer << "\"";
+	} else if (this->action == SERIALIZER_SIZE) {
+		//do nothing
 	} else {
 		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}

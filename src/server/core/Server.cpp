@@ -81,7 +81,7 @@ Server::Server(const Config * config, const std::string & port)
 	this->container = new Container(storageBackend, memoryBackend, 8*1024*1024);
 
 	//register hooks
-	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong());
+	this->connection->registerHook(IOC_LF_MSG_PING, new HookPingPong(this->domain));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_FLUSH, new HookFlush(this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_REGISTER, new HookRangeRegister(this->config, this->container));
 	this->connection->registerHook(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, new HookRangeUnregister(this->config, this->container));
