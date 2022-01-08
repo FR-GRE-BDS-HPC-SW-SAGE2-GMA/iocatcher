@@ -34,6 +34,7 @@ SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction acti
 	this->action = action;
 	this->out = NULL;
 	this->outFirst = false;
+	this->root = true;
 }
 
 /****************************************************/
@@ -53,6 +54,7 @@ SerializerBase::SerializerBase(std::ostream * out)
 	this->action = SERIALIZER_STRINGIFY;
 	this->out = out;
 	this->outFirst = true;
+	this->root = true;
 }
 
 /****************************************************/

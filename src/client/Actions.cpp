@@ -204,16 +204,15 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 **/
 int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_FLUSH);
-	msg.data.objFlush.objectId = objectId;
-	msg.data.objFlush.offset = offset;
-	msg.data.objFlush.size = size;
+	//build message
+	LibfabricObjFlushInfos objFlush = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_FLUSH, IOC_LF_SERVER_ID, objFlush);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -221,7 +220,9 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status & repost buffer
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status

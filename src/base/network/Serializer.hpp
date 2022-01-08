@@ -84,6 +84,7 @@ class SerializerBase
 		 * to separate the fields.
 		**/
 		bool outFirst;
+		bool root;
 };
 
 /****************************************************/
@@ -132,11 +133,12 @@ void SerializerBase::apply(const char * fieldName, T & value)
 	//open bracket for objects
 	if (this->action == SERIALIZER_STRINGIFY) {
 		assert(this->out != NULL);
-		*this->out << (this->outFirst ? "" : ", ") << "{ ";
+		*this->out << (this->outFirst ? "" : ", ") << ((this->root) ? "" : fieldName) << ((this->root) ? "" : ": ") << "{ ";
 		this->outFirst = true;
 	}
 
-	//serialize the value to string
+	//serialize the value
+	this->root = false;
 	value.applySerializerDef(*this);
 
 	//close bracket for objects
