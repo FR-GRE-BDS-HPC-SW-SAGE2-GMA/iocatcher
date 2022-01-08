@@ -28,7 +28,8 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricRegisterRange & registerRange = request.message->data.registerRange;
+	LibfabricRegisterRange registerRange;
+	request.deserializer.apply("registerRange", registerRange);
 
 	//get object
 	Object & object = this->container->getObject(registerRange.objectId);
@@ -43,10 +44,8 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 		status = tracker.registerRange(request.header->tcpClientId, registerRange.offset, registerRange.size, mode);
 	
 	//debug
-	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
-		.arg(registerRange.objectId)
-		.arg(registerRange.offset)
-		.arg(registerRange.size)
+	IOC_DEBUG_ARG("hook:range:register", "Get range register %1 from client %4, response=%5")
+		.arg(Serializer::stringify(registerRange))
 		.arg(request.lfClientId)
 		.arg(status)
 		.end();
@@ -57,6 +56,6 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 	//republish
 	connection->repostReceive(request.msgBufferId);
 
-	//
+	//let poll waiting
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

@@ -247,17 +247,16 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 **/
 int32_t IOC::obj_range_register(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_REGISTER);
-	msg.data.registerRange.objectId = objectId;
-	msg.data.registerRange.offset = offset;
-	msg.data.registerRange.size = size;
-	msg.data.registerRange.write = write;
+	//setup request
+	LibfabricRegisterRange registerRange = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+		.write = write
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_RANGE_REGISTER, IOC_LF_SERVER_ID, registerRange);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -265,7 +264,9 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
