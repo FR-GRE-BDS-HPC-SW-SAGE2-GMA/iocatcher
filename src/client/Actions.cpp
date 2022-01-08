@@ -362,18 +362,17 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 **/
 int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist, size_t offset, size_t size)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_COW);
-	msg.data.objCow.sourceObjectId = sourceObjectId;
-	msg.data.objCow.destObjectId = destObjectId;
-	msg.data.objCow.allowExist = allowExist;
-	msg.data.objCow.rangeOffset = offset;
-	msg.data.objCow.rangeSize = size;
+	//build message
+	LibfabricObjectCow objCow = {
+		.sourceObjectId = sourceObjectId,
+		.destObjectId = destObjectId,
+		.allowExist = allowExist,
+		.rangeOffset = offset,
+		.rangeSize = size
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_COW, IOC_LF_SERVER_ID, objCow);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -381,7 +380,9 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extrace status & repost message
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
