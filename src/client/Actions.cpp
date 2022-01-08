@@ -325,14 +325,13 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 **/
 int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & objectId)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_CREATE);
-	msg.data.objFlush.objectId = objectId;
+	//build message
+	LibfabricObjCreateInfos objCreate = {
+		.objectId = objectId
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_CREATE, IOC_LF_SERVER_ID, objCreate);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -340,7 +339,9 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status & report buffer
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
