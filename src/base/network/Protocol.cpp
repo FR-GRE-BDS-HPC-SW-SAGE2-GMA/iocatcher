@@ -139,6 +139,7 @@ void LibfabricResponse::applySerializerDef(SerializerBase & serializer)
 void LibfabricFirstHandshake::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("protocolVersion", this->protocolVersion);
+	serializer.apply("assignLfClientId", this->assignLfClientId);
 }
 
 /****************************************************/

@@ -299,6 +299,8 @@ struct LibfabricFirstHandshake
 	void applySerializerDef(SerializerBase & serializer);
 	/** Define the protocol version in use by the server. **/
 	int32_t protocolVersion;
+	/** Define the client ID to assign. **/
+	uint64_t assignLfClientId;
 };
 
 /****************************************************/

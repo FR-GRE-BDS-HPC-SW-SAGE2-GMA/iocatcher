@@ -23,8 +23,10 @@ using namespace IOC;
 SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction action)
 {
 	//check
-	assert(buffer != NULL);
-	assert(size > 0);
+	if (action != SERIALIZER_UNSET) {
+		assert(buffer != NULL);
+		assert(size > 0);
+	}
 	assert(action != SERIALIZER_STRINGIFY);
 
 	//setup

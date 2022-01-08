@@ -8,6 +8,7 @@
 #define IOC_HOOK_HPP
 
 /****************************************************/
+#include "Serializer.hpp"
 #include "Protocol.hpp"
 
 /****************************************************/
@@ -43,6 +44,8 @@ struct LibfabricClientRequest
 	LibfabricMessageHeader * header;
 	/** Pointer to the client message. **/
 	LibfabricMessage * message;
+	/** The deserialization tool. **/
+	DeSerializer deserializer;
 };
 
 /****************************************************/
