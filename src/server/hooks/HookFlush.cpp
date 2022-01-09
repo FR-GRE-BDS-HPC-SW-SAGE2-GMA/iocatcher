@@ -43,7 +43,7 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, Lib
 	connection->sendResponse(IOC_LF_MSG_OBJ_FLUSH_ACK, request.lfClientId, ret);
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

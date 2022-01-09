@@ -54,7 +54,7 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, request.lfClientId, status);
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

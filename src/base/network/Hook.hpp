@@ -36,12 +36,16 @@ enum LibfabricActionResult
 **/
 struct LibfabricClientRequest
 {
+	/** Terminate the request and repost the buffer.**/
+	void terminate(void);
 	/** ID of the client which sends the message. **/
 	uint64_t lfClientId;
 	/** Message buffer to be returned to the connection after using the data.**/
 	size_t msgBufferId;
 	/** Header of the client message containing the protocol informations. **/
 	LibfabricMessageHeader header;
+	/** Keep track of the connection handling the request.**/
+	LibfabricConnection * connection;
 	/** The deserialization tool. **/
 	DeSerializer deserializer;
 };

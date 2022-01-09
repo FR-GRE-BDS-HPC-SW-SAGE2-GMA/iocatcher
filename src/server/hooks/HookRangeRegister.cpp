@@ -54,7 +54,7 @@ LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connect
 	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, request.lfClientId, status);
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	//let poll waiting
 	return LF_WAIT_LOOP_KEEP_WAITING;

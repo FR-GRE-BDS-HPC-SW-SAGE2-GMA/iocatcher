@@ -171,7 +171,7 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 	object.markDirty(objReadWrite.offset, objReadWrite.size);
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

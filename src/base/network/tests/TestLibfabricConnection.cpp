@@ -102,7 +102,7 @@ TEST(TestLibfabricConnection, message)
 		//register hook
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -145,7 +145,7 @@ TEST(TestLibfabricConnection, sendResponse)
 
 			//end
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -180,7 +180,7 @@ TEST(TestLibfabricConnection, sendResponse_with_data)
 
 			//end
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -215,7 +215,7 @@ TEST(TestLibfabricConnection, sendResponse_with_data_multi)
 			EXPECT_TRUE(response.msgHasData);
 			EXPECT_STREQ("HelloWorld", response.optionalData);
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -455,7 +455,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 			connection.poll(false);
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
@@ -515,7 +515,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 			connection.poll(false);
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		connection.poll(true);
@@ -597,7 +597,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 		//hook
 		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage1](LibfabricConnection * connection, LibfabricClientRequest & request){
 			gotErrorMessage1 = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		//poll unit message to be sent
@@ -613,7 +613,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 		//hook
 		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage2](LibfabricConnection * connection, LibfabricClientRequest & request){
 			gotErrorMessage2 = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		//poll unit message to be sent
@@ -651,7 +651,7 @@ TEST(TestLibfabricConnection, sendMessage_serialize)
 
 			//end
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -697,7 +697,7 @@ TEST(TestLibfabricConnection, sendMessageNoPollWakeup_serialize)
 
 			//end
 			gotMessage = true;
-			connection->repostReceive(request.msgBufferId);
+			request.terminate();
 
 			//respond
 			connection->sendResponse(IOC_LF_MSG_PONG, request.lfClientId, 0, true);
