@@ -782,10 +782,10 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 	//build struct
 	LibfabricClientRequest request = {
+		.lfClientId = message->header.lfClientId,
+		.msgBufferId = id,
 		.header = &message->header,
 		.message = message,
-		.msgBufferId = id,
-		.lfClientId = message->header.lfClientId,
 	};
 
 	//switch
