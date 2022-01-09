@@ -52,7 +52,7 @@ void clientServer(std::function<void(LibfabricConnection & connection,int client
 	std::thread client([&clientAction]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		clientAction(connection);
 	});
@@ -113,10 +113,8 @@ TEST(TestLibfabricConnection, message)
 		//>>>> client <<<<
 
 		//send message
-		LibfabricMessage msg;
-		memset(&msg, 0, sizeof(msg));
-		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+		LibfabricEmpty empty;
+		connection.sendMessage(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, empty , [&sendMessage](){
 			sendMessage = true;
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
@@ -141,7 +139,8 @@ TEST(TestLibfabricConnection, sendResponse)
 		//register hook
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			//extract & check
-			LibfabricResponse & response = request.message->data.response;
+			LibfabricResponse response;
+			request.deserializer.apply("response", response);
 			EXPECT_EQ(-1, response.status);
 
 			//end
@@ -252,15 +251,13 @@ TEST(TestLibfabricConnection, pollMessage)
 		//poll message
 		LibfabricRemoteResponse remoteResponse;
 		bool status = connection.pollMessage(remoteResponse, IOC_LF_MSG_PING);
-		if (status && remoteResponse.message->header.msgType == IOC_LF_MSG_PING)
+		if (status && remoteResponse.header.msgType == IOC_LF_MSG_PING)
 			gotMessage = true;
 	},[&sendMessage](LibfabricConnection & connection){
 		//>>>> client <<<<
 		//send message
-		LibfabricMessage msg;
-		memset(&msg, 0, sizeof(msg));
-		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+		LibfabricEmpty empty;
+		connection.sendMessage(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, empty, [&sendMessage](){
 			sendMessage = true;
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
@@ -472,13 +469,11 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		LibfabricDomain domain("127.0.0.1", "8455", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123456789);
-		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//send message
-		LibfabricMessage msg;
-		memset(&msg, 0, sizeof(msg));
-		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+		LibfabricEmpty empty;
+		connection.sendMessage(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, empty, [&sendMessage](){
 			sendMessage = true;
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -534,7 +529,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		LibfabricDomain domain("127.0.0.1", "8465", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123);
-		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//on error
 		connection.setOnBadAuth([&gotError](){
@@ -542,9 +537,8 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 		//send message
-		LibfabricMessage msg;
-		connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
-		connection.sendMessage(&msg, sizeof (msg), IOC_LF_SERVER_ID, [&sendMessage](){
+		LibfabricEmpty empty;
+		connection.sendMessage(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, empty, [&sendMessage](){
 			sendMessage = true;
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
@@ -598,7 +592,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	std::thread client1([&gotErrorMessage1]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//hook
 		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage1](LibfabricConnection * connection, LibfabricClientRequest & request){
@@ -614,7 +608,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	std::thread client2([&gotErrorMessage2]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
+		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//hook
 		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage2](LibfabricConnection * connection, LibfabricClientRequest & request){
@@ -650,7 +644,8 @@ TEST(TestLibfabricConnection, sendMessage_serialize)
 		//register hook
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			//extract & check
-			LibfabricObjCreateInfos & response = request.message->data.objCreate;
+			LibfabricObjCreateInfos response;
+			request.deserializer.apply("response", response);
 			EXPECT_EQ(10, response.objectId.low);
 			EXPECT_EQ(20, response.objectId.high);
 
@@ -695,7 +690,8 @@ TEST(TestLibfabricConnection, sendMessageNoPollWakeup_serialize)
 		//register hook
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			//extract & check
-			LibfabricObjCreateInfos & response = request.message->data.objCreate;
+			LibfabricObjCreateInfos response;
+			request.deserializer.apply("response", response);
 			EXPECT_EQ(10, response.objectId.low);
 			EXPECT_EQ(20, response.objectId.high);
 

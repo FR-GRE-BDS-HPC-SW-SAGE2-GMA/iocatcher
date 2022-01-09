@@ -59,11 +59,11 @@ Server::Server(const Config * config, const std::string & port)
 
 	//setup domain
 	this->domain = new LibfabricDomain(config->listenIP, port, true);
-	this->domain->setMsgBufferSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
+	this->domain->setMsgBufferSize(IOC_POST_RECEIVE_READ);
 
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, !config->activePolling);
-	assert(IOC_EAGER_MAX_WRITE < 1024*1024 - sizeof(LibfabricMessage));
+	assert(IOC_POST_RECEIVE_WRITE < 1024*1024);
 	this->connection->postRecives(1024*1024, 128);
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);

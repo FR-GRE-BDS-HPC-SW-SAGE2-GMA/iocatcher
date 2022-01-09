@@ -159,43 +159,42 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 **/
 ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId & objectId, const void* buffer, size_t size, size_t offset)
 {
-	//setup message request
-	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
-	memset(msg, 0, sizeof(*msg));
-	connection.fillProtocolHeader(msg->header, IOC_LF_MSG_OBJ_WRITE);
-	msg->data.objReadWrite.objectId = objectId;
-	msg->data.objReadWrite.offset = offset;
-	msg->data.objReadWrite.size = size;
-	msg->data.objReadWrite.msgHasData = false;
+	//build request
+	LibfabricObjReadWriteInfos objReadWrite = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+		.msgHasData = false,
+		.optionalData = NULL
+	};
 
 	//if rdma
 	if (size > IOC_EAGER_MAX_WRITE)
 	{
 		//register
 		Iov iov = connection.getDomain().registerSegment((char*)buffer, size, true, false, false);
-		msg->data.objReadWrite.iov = iov;
+		objReadWrite.iov = iov;
 	}
 
 	//embed small data in message
-	size_t toSend = sizeof(*msg);
 	if (size <= IOC_EAGER_MAX_WRITE) {
-		memcpy(msg->extraData, buffer, size);
-		msg->data.objReadWrite.msgHasData = true;
-		toSend += size;
+		objReadWrite.msgHasData = true;
+		objReadWrite.optionalData = (const char*)buffer;
 	}
 
 	//send message
-	connection.sendMessageNoPollWakeup(msg, toSend, IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_WRITE, IOC_LF_SERVER_ID, objReadWrite);
 
 	//poll server response
 	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
-	//extract status and repost buffers
-	int status = serverResponse.message->data.response.status;
+	//get status
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
-	connection.getDomain().retMsgBuffer(msg);
 
 	//unregister
 	if (size > IOC_EAGER_MAX_WRITE)

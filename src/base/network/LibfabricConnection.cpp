@@ -276,16 +276,20 @@ void LibfabricConnection::joinServer(void)
 
 	//register hook
 	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, LibfabricClientRequest & request) {
+		//extract
+		LibfabricFirstHandshake firstHandshakeResponse;
+		request.deserializer.apply("firstHandshakeResponse", firstHandshakeResponse);
+
 		//assign id
 		//printf("get clientID %d\n", clientId);
-		this->clientId = request.message->data.firstHandshakeResponse.assignLfClientId;
+		this->clientId = firstHandshakeResponse.assignLfClientId;
 		connection->repostReceive(request.msgBufferId);
 
 		//check protocol version
-		assumeArg(request.message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
+		assumeArg(firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
 			"Invalid rdma protocol version from server, expected %1, got %2")
 				.arg(IOC_LF_PROTOCOL_VERSION)
-				.arg(request.message->data.firstHandshakeResponse.protocolVersion)
+				.arg(firstHandshakeResponse.protocolVersion)
 				.end();
 
 		//return back
@@ -663,7 +667,6 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 	//fill default
 	response.lfClientId = -1;
 	memset(&response.header, 0, sizeof(response.header));
-	response.message = NULL;
 	response.msgBufferId = -1;
 
 	//poll
@@ -673,8 +676,8 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 			if (entry.flags & FI_RECV) {
 				bool status = this->onRecvMessage(response, (size_t)entry.op_context);
 				if (status) {
-					assumeArg(response.message->header.msgType == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
-						.arg(response.message->header.msgType)
+					assumeArg(response.header.msgType == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
+						.arg(response.header.msgType)
 						.arg(expectedMessageType)
 						.end();
 					return true;
@@ -761,17 +764,14 @@ void LibfabricConnection::onSent(void * buffer)
  * @return True in case of succes, false otherwise (and a message will automatically be
  * send to the client).
 **/
-bool LibfabricConnection::checkAuth(LibfabricMessage * message, uint64_t lfClientId, int id)
+bool LibfabricConnection::checkAuth(LibfabricMessageHeader & header, uint64_t lfClientId, int id)
 {
-	//checks
-	assert(message != NULL);
-
 	//no auth
 	if (this->checkClientAuth == false)
 		return true;
 	
 	//check
-	bool ok = this->clientRegistry.checkIdentification(message->header.tcpClientId, message->header.tcpClientKey);
+	bool ok = this->clientRegistry.checkIdentification(header.tcpClientId, header.tcpClientKey);
 
 	//handle cases
 	if (ok) {
@@ -779,8 +779,8 @@ bool LibfabricConnection::checkAuth(LibfabricMessage * message, uint64_t lfClien
 	} else {
 		//info
 		IOC_WARNING_ARG("Encounter wrong auth: ID = %1, KEY = %2")
-					.arg(message->header.tcpClientId)
-					.arg(message->header.tcpClientKey)
+					.arg(header.tcpClientId)
+					.arg(header.tcpClientKey)
 					.end();
 
 		//send message
@@ -801,26 +801,23 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	//check
 	assert(id < this->recvBuffersCount);
 
-	//cast
-	void * buffer =  this->recvBuffers[id];
-	LibfabricMessage * message = (LibfabricMessage *)buffer;
+	//deserialize
+	LibfabricMessageHeader header;
+	DeSerializer deserializer(this->recvBuffers[id], this->recvBuffersSize);
+	deserializer.apply("header", header);
 
 	//build struct
 	LibfabricClientRequest request = {
-		.lfClientId = message->header.lfClientId,
+		.lfClientId = header.lfClientId,
 		.msgBufferId = id,
-		.message = message,
+		.header = header,
+		.deserializer = deserializer,
 	};
 
-	//deserialize
-	DeSerializer deserializer(buffer, this->recvBuffersSize);
-	deserializer.apply("header", request.header);
-	request.deserializer = deserializer;
-
 	//switch
-	switch(message->header.msgType) {
+	switch(header.msgType) {
 		case IOC_LF_MSG_CONNECT_INIT:
-			onConnInit(message);
+			onConnInit(request);
 			repostReceive(id);
 			break;
 		case IOC_LF_MSG_BAD_AUTH:
@@ -838,7 +835,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 		case IOC_LF_MSG_FATAL_ERROR:
 			{
 				//find handler
-				auto it = this->hooks.find(message->header.msgType);
+				auto it = this->hooks.find(header.msgType);
 
 				//handle
 				if (it != this->hooks.end()) {
@@ -853,17 +850,17 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 		default:
 			{
 				//check auth
-				if (this->checkAuth(message, message->header.lfClientId, id) == false)
+				if (this->checkAuth(header, header.lfClientId, id) == false)
 					return LF_WAIT_LOOP_UNBLOCK;
 
 				//find handler
-				auto it = this->hooks.find(message->header.msgType);
+				auto it = this->hooks.find(header.msgType);
 
 				//handle
 				if (it != this->hooks.end())
 					return it->second->onMessage(this, request);
 				else
-					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.msgType).end();
+					IOC_FATAL_ARG("Invalid message type %1").arg(header.msgType).end();
 				break;
 			}
 	}
@@ -887,7 +884,6 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 
 	//cast
 	void * buffer =  this->recvBuffers[id];
-	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
 	//deserialize
 	DeSerializer deserializer(buffer, this->recvBuffersSize);
@@ -895,7 +891,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 	deserializer.apply("header", header);
 
 	//switch
-	if (message->header.msgType == IOC_LF_MSG_BAD_AUTH) {
+	if (header.msgType == IOC_LF_MSG_BAD_AUTH) {
 		if (this->hookOnBadAuth) {
 			this->hookOnBadAuth();
 			repostReceive(id);
@@ -907,20 +903,19 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 				.end();
 			return false;
 		}
-	} else if (message->header.msgType == IOC_LF_MSG_FATAL_ERROR) {
+	} else if (header.msgType == IOC_LF_MSG_FATAL_ERROR) {
 		LibfabricErrorMessage errorMessage;
 		deserializer.apply("errorMessage", errorMessage);
 		IOC_FATAL_ARG("Server has send error message !\n%1").arg(errorMessage.errorMessage).end();
 		return false;
 	} else {
 		//check auth
-		if (this->checkAuth(message, message->header.lfClientId, id) == false)
+		if (this->checkAuth(header, header.lfClientId, id) == false)
 			return false;
 		
 		//fill the struct
 		response.header = header;
-		response.message = message;
-		response.lfClientId = message->header.lfClientId;
+		response.lfClientId = header.lfClientId;
 		response.msgBufferId = id;
 		response.deserializer = deserializer;
 
@@ -993,24 +988,27 @@ void LibfabricConnection::unregisterHook(int messageType)
  * Function to be called on connection initialization.
  * @param message The first message recived to establish the connection.
 **/
-void LibfabricConnection::onConnInit(LibfabricMessage * message)
+void LibfabricConnection::onConnInit(LibfabricClientRequest & request)
 {
 	//check
-	assert(message != NULL);
-	assert(message->header.msgType == IOC_LF_MSG_CONNECT_INIT);
+	assert(request.header.msgType == IOC_LF_MSG_CONNECT_INIT);
+
+	//extract
+	LibfabricFirstClientMessage firstClientMessage;
+	request.deserializer.apply("firstClientMessage", firstClientMessage);
 
 	//assign id
 	uint64_t epId = this->nextEndpointId++;
 
 	//insert server address in address vector
-	int err = fi_av_insert(this->av, message->data.firstClientMessage.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
+	int err = fi_av_insert(this->av, firstClientMessage.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
 	if (err != 1) {
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 	}
 
 	//debug
 	IOC_DEBUG_ARG("libfabric:client", "Recive client in libfabric lfId=%1, epId=%2")
-		.arg(message->header.lfClientId)
+		.arg(request.lfClientId)
 		.arg(epId)
 		.end();
 

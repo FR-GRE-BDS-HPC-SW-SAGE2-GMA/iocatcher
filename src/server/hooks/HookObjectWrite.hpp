@@ -27,7 +27,7 @@ class HookObjectWrite : public Hook
 		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientRequest & request) override;
 	private:
 		void objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments);
-		void objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments);
+		void objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments);
 	private:
 		/** Pointer to the container to be able to access objects **/
 		Container * container;

@@ -83,7 +83,7 @@ static LibfabricConnection * ioc_client_get_connection(ioc_client_t * client)
 	}
 
 	//calc recive size
-	size_t recvSize = sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ);
+	size_t recvSize = IOC_POST_RECEIVE_READ;
 
 	//to have enougth room for error message transmissions
 	if (recvSize < 4096)
@@ -122,7 +122,7 @@ ioc_client_t * ioc_client_init(const char * ip, const char * port)
 	//setup domain
 	client->domain = new LibfabricDomain(ip, port, false);
 	//client->domain->setMsgBuffeSize(sizeof(LibfabricMessage));
-	client->domain->setMsgBufferSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
+	client->domain->setMsgBufferSize(IOC_POST_RECEIVE_WRITE);
 	client->passive_wait = true;
 
 	//init semaphore

@@ -98,15 +98,16 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, u
  * @param clientMessage the request from the client to get the required informations.
  * @param segments The list of object segments to be sent.
 **/
-void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)
 {
 	//get base pointer
-	char * data = clientMessage->extraData;
+	const char * data = objReadWrite.optionalData;
+	assert(data != NULL);
 
 	//copy data
 	size_t cur = 0;
-	size_t dataSize = clientMessage->data.objReadWrite.size;
-	size_t baseOffset = clientMessage->data.objReadWrite.offset;
+	size_t dataSize = objReadWrite.size;
+	size_t baseOffset = objReadWrite.offset;
 	for (auto segment : segments) {
 		//compute copy size to stay in data limits
 		size_t copySize = segment.size;
@@ -141,13 +142,12 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjReadWriteInfos & objReadWrite = request.message->data.objReadWrite;
+	LibfabricObjReadWriteInfos objReadWrite;
+	request.deserializer.apply("objReadWrite", objReadWrite);
 
 	//debug
-	IOC_DEBUG_ARG("hook:obj:write", "Get object write on %1 for %2->%3 from client %4")
-		.arg(objReadWrite.objectId)
-		.arg(objReadWrite.offset)
-		.arg(objReadWrite.size)
+	IOC_DEBUG_ARG("hook:obj:write", "Get object write %1 from client %2")
+		.arg(Serializer::stringify(objReadWrite))
 		.arg(request.lfClientId)
 		.end();
 
@@ -159,7 +159,7 @@ LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connectio
 	//eager or rdma
 	if (status) {
 		if (objReadWrite.msgHasData) {
-			objEagerExtractFromMessage(connection, request.lfClientId, request.message, segments);
+			objEagerExtractFromMessage(connection, request.lfClientId, objReadWrite, segments);
 		} else {
 			objRdmaFetchFromClient(connection, request.lfClientId, objReadWrite, segments);
 		}
