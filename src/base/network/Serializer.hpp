@@ -157,7 +157,8 @@ T & operator << (T & out, DeSerializer & deserializer)
 
 /****************************************************/
 /**
- * 
+ * Take structure and stringify it to ease debug messages creation.
+ * @param value The value to stringify.
 **/
 template <class T>
 std::string SerializerBase::stringify(T & value)
