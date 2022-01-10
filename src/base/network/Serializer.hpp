@@ -24,13 +24,16 @@ namespace IOC
 enum SerializerAction
 {
 	/** Used to sirialize the given entries. **/
-	PACK,
+	SERIALIZER_PACK,
 	/** Used to deserializes the given entries. **/
-	UNPACK,
+	SERIALIZER_UNPACK,
 	/** To string. **/
-	STRINGIFY,
-	/** To say it is not yet configured. **/
-	UNSET,
+	SERIALIZER_STRINGIFY,
+	/** 
+	 * To say it is not yet configured. This is used in the LibfabricClientRequest
+	 * structure to be initialied empty and then configured.
+	**/
+	SERIALIZER_UNSET,
 };
 
 /****************************************************/
@@ -64,11 +67,21 @@ class SerializerBase
 	private:
 		void checkSize(const char * fieldName, size_t size);
 	private:
+		/** The buffer in which to serialize of to read from. **/
 		char * buffer;
+		/** Size of the buffer. **/
 		size_t size;
+		/** The cursor to move in the buffer. **/
 		size_t cursor;
+		/** Define the action to apply. **/
 		SerializerAction action;
+		/** For the stringification we allow to provide an exteran std::ostream. **/
 		std::ostream * out;
+		/** 
+		 * Remember if it is the first member of a sub-struct for the
+		 * stringification to know if we need to prepend a comma (", ")
+		 * to separate the fields.
+		**/
 		bool outFirst;
 };
 
@@ -79,7 +92,7 @@ class SerializerBase
 class Serializer : public SerializerBase
 {
 	public:
-		Serializer(void * buffer, size_t size) : SerializerBase(buffer, size, PACK) {};
+		Serializer(void * buffer, size_t size) : SerializerBase(buffer, size, SERIALIZER_PACK) {};
 };
 
 /****************************************************/
@@ -89,8 +102,8 @@ class Serializer : public SerializerBase
 class DeSerializer : public SerializerBase
 {
 	public:
-		DeSerializer(void) : SerializerBase(NULL, 0, UNSET) {};
-		DeSerializer(const void * buffer, size_t size) : SerializerBase((void*)buffer, size, UNPACK) {};
+		DeSerializer(void) : SerializerBase(NULL, 0, SERIALIZER_UNSET) {};
+		DeSerializer(const void * buffer, size_t size) : SerializerBase((void*)buffer, size, SERIALIZER_UNPACK) {};
 		template <class T> void pop(T & value);
 };
 
@@ -116,7 +129,7 @@ template <class T >
 void SerializerBase::apply(const char * fieldName, T & value)
 {
 	//open backet for objects
-	if (this->action == STRINGIFY) {
+	if (this->action == SERIALIZER_STRINGIFY) {
 		assert(this->out != NULL);
 		*this->out << (this->outFirst ? "" : ", ") << "{ ";
 		this->outFirst = true;
@@ -125,7 +138,7 @@ void SerializerBase::apply(const char * fieldName, T & value)
 	value.applySerializerDef(*this);
 
 	//close backend for objects
-	if (this->action == STRINGIFY)
+	if (this->action == SERIALIZER_STRINGIFY)
 		*this->out << (this->outFirst ? "" : " ") << "}";
 
 	//move
@@ -146,7 +159,9 @@ void DeSerializer::pop(T & value)
 
 /****************************************************/
 /**
- * Make possible to use the stream operator to deserialize.
+ * Make possible to use the stream operator to deserialize (similar to pop()).
+ * @param out Define the variable in which to apply the deserialization.
+ * @param deserializer Define the deserializer to use.
 **/
 template <class T>
 T & operator << (T & out, DeSerializer & deserializer)

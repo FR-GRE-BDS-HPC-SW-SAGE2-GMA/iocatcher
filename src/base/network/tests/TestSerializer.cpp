@@ -13,6 +13,8 @@ COPYRIGHT: 2020 Bull SAS
 using namespace IOC;
 
 /****************************************************/
+//Define a structure to be serialized to validate the apply() method
+//on a struct.
 struct DataA
 {
 	void applySerializerDef(SerializerBase & serialize) {
@@ -24,6 +26,8 @@ struct DataA
 };
 
 /****************************************************/
+//Define a structure with an inner sub-struct to be serialized to validate 
+//the apply() method on a struct.
 struct DataB
 {
 	void applySerializerDef(SerializerBase & serialize) {
@@ -41,11 +45,11 @@ struct DataB
 TEST(TestSerializerBase, constructor)
 {
 	char buffer[1024];
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Apply on a given type
 TEST(TestSerializerBase, apply_int32_t)
 {
 	//vars
@@ -56,7 +60,7 @@ TEST(TestSerializerBase, apply_int32_t)
 	int32_t out2 = 0;
 
 	//serialize
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 	serializer.apply("int1", in1);
 	serializer.apply("int2", in2);
 
@@ -64,7 +68,7 @@ TEST(TestSerializerBase, apply_int32_t)
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
 
 	//deserialize
-	SerializerBase deserializer(buffer, 1024, UNPACK);
+	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
 	deserializer.apply("out1", out1);
 	deserializer.apply("out2", out2);
 
@@ -77,7 +81,7 @@ TEST(TestSerializerBase, apply_int32_t)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Apply on a given type
 TEST(TestSerializerBase, apply_int64_t)
 {
 	//vars
@@ -88,7 +92,7 @@ TEST(TestSerializerBase, apply_int64_t)
 	int64_t out2 = 0;
 
 	//serialize
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 	serializer.apply("int1", in1);
 	serializer.apply("int2", in2);
 
@@ -96,7 +100,7 @@ TEST(TestSerializerBase, apply_int64_t)
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
 
 	//deserialize
-	SerializerBase deserializer(buffer, 1024, UNPACK);
+	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
 	deserializer.apply("out1", out1);
 	deserializer.apply("out2", out2);
 
@@ -109,7 +113,7 @@ TEST(TestSerializerBase, apply_int64_t)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Apply on a given type
 TEST(TestSerializerBase, apply_uint32_t)
 {
 	//vars
@@ -120,7 +124,7 @@ TEST(TestSerializerBase, apply_uint32_t)
 	uint32_t out2 = 0;
 
 	//serialize
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 	serializer.apply("int1", in1);
 	serializer.apply("int2", in2);
 
@@ -128,7 +132,7 @@ TEST(TestSerializerBase, apply_uint32_t)
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
 
 	//deserialize
-	SerializerBase deserializer(buffer, 1024, UNPACK);
+	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
 	deserializer.apply("out1", out1);
 	deserializer.apply("out2", out2);
 
@@ -141,7 +145,7 @@ TEST(TestSerializerBase, apply_uint32_t)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Apply on a given type
 TEST(TestSerializerBase, apply_uint64_t)
 {
 	//vars
@@ -152,7 +156,7 @@ TEST(TestSerializerBase, apply_uint64_t)
 	uint64_t out2 = 0;
 
 	//serialize
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 	serializer.apply("int1", in1);
 	serializer.apply("int2", in2);
 
@@ -160,7 +164,7 @@ TEST(TestSerializerBase, apply_uint64_t)
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
 
 	//deserialize
-	SerializerBase deserializer(buffer, 1024, UNPACK);
+	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
 	deserializer.apply("out1", out1);
 	deserializer.apply("out2", out2);
 
@@ -173,7 +177,7 @@ TEST(TestSerializerBase, apply_uint64_t)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Apply on a given type
 TEST(TestSerializerBase, apply_string)
 {
 	//vars
@@ -184,7 +188,7 @@ TEST(TestSerializerBase, apply_string)
 	std::string out2;
 
 	//serialize
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 	serializer.apply("int1", in1);
 	serializer.apply("int2", in2);
 
@@ -192,7 +196,7 @@ TEST(TestSerializerBase, apply_string)
 	EXPECT_EQ(2* sizeof(uint32_t) + in1.size() + in2.size() + 2, serializer.getCursor());
 
 	//deserialize
-	SerializerBase deserializer(buffer, 1024, UNPACK);
+	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
 	deserializer.apply("out1", out1);
 	deserializer.apply("out2", out2);
 
@@ -205,7 +209,7 @@ TEST(TestSerializerBase, apply_string)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Test the spacial serializeOrPoint method
 TEST(TestSerializerBase, serializeOrPoint)
 {
 	//vars
@@ -218,7 +222,7 @@ TEST(TestSerializerBase, serializeOrPoint)
 	const char * outData2 = NULL;
 
 	//serialize
-	SerializerBase serializer(buffer, 1024, PACK);
+	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
 	serializer.serializeOrPoint("data1", inData1, 8);
 	serializer.serializeOrPoint("data2", inData2, 8);
 
@@ -226,7 +230,7 @@ TEST(TestSerializerBase, serializeOrPoint)
 	EXPECT_EQ(16, serializer.getCursor());
 
 	//deserialize
-	SerializerBase deserializer(buffer, 1024, UNPACK);
+	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
 	deserializer.serializeOrPoint("data1", outData1, 8);
 	deserializer.serializeOrPoint("data2", outData2, 8);
 
@@ -239,7 +243,7 @@ TEST(TestSerializerBase, serializeOrPoint)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Test the stringification
 TEST(TestSerializerBase, stringify)
 {
 	//vars
@@ -260,7 +264,7 @@ TEST(TestSerializerBase, stringify)
 }
 
 /****************************************************/
-// Test the basic constructor.
+// Most simple use case
 TEST(TestSerialerDeserializer, simple)
 {
 	//vars
@@ -287,6 +291,7 @@ TEST(TestSerialerDeserializer, simple)
 }
 
 /****************************************************/
+//Serialize a composed structure
 TEST(TestSerialerDeserializer, struct)
 {
 	//vars
