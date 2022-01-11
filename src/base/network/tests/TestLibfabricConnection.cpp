@@ -248,7 +248,7 @@ TEST(TestLibfabricConnection, pollMessage)
 	clientServer([&gotMessage](LibfabricConnection & connection, int clientId){
 		//>>>> server <<<<
 		//poll message
-		LibfabricRemoteResonse remoteResponse;
+		LibfabricRemoteResponse remoteResponse;
 		bool status = connection.pollMessage(remoteResponse, IOC_LF_MSG_PING);
 		if (status && remoteResponse.message->header.msgType == IOC_LF_MSG_PING)
 			gotMessage = true;

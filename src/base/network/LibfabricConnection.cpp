@@ -195,7 +195,7 @@ void LibfabricConnection::repostReceive(size_t id)
 /****************************************************/
 /**
  * Republish a recive buffer to libfabric by identifying it by its ID.
- * @param clientMessage The client message struct containing the message buffer ID.
+ * @param request Reference to the request containing the receive buffer ID to be reposted.
 **/
 void LibfabricConnection::repostReceive(const LibfabricClientRequest & request)
 {
@@ -618,7 +618,7 @@ void LibfabricConnection::poll(bool waitMsg)
 }
 
 /****************************************************/
-bool LibfabricConnection::pollMessage(LibfabricRemoteResonse & response, LibfabricMessageType expectedMessageType)
+bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, LibfabricMessageType expectedMessageType)
 {
 	//vars
 	fi_cq_msg_entry entry;
@@ -843,12 +843,12 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 /****************************************************/
 /**
  * Function to be called when a message is recived by the pollMessage() function.
- * @param clientMessage The client message infos to be filled for the caller.
+ * @param response Reference to the response struct to be filled back when the message has been received.
  * @param id ID of the recive buffer where the message has been recived.
  * @return True if we get a message false otherwise. Caution, it does not check the type of message,
  * the responsability is left to the caller. It just check the eventuell auth.
 **/
-bool LibfabricConnection::onRecvMessage(LibfabricRemoteResonse & response, size_t id)
+bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size_t id)
 {
 	//check
 	assert(id < this->recvBuffersCount);

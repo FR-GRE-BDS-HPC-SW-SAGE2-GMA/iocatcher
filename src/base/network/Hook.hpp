@@ -46,7 +46,7 @@ struct LibfabricClientRequest
 };
 
 /****************************************************/
-typedef LibfabricClientRequest LibfabricRemoteResonse;
+typedef LibfabricClientRequest LibfabricRemoteResponse;
 
 /****************************************************/
 /**
@@ -66,7 +66,7 @@ class Hook
 		/**
 		 * Function to be called when a message for the current hook arrive.
 		 * @param connection The connection to be used to respond.
-		 * @param request Contain all the request informations (client identificatoin & message & buffer ID).
+		 * @param request Contain all the request informations (client identification & message & buffer ID).
 		 * @return It returns an enum saying if the polling loop need to exit or not.
 		**/
 		virtual LibfabricActionResult onMessage(LibfabricConnection * connection, LibfabricClientRequest & request) = 0;

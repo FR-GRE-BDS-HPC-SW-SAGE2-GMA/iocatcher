@@ -37,7 +37,7 @@ HookObjectRead::HookObjectRead(Container * container, ServerStats * stats)
 /**
  * Push data to the client via RDMA.
  * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA read operation.
+ * @param objReadWrite Reference to the read request information.
  * @param segments The list of object segments to transfer.
 **/
 void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)
@@ -103,7 +103,7 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint6
  * Push data to the client making an eager communication and adding the data after the response
  * to the client.
  * @param clientId the libfabric client ID to know the connection to be used.
- * @param clientMessage the request from the client to get the required informations.
+ * @param objReadWrite Reference to the read request information.
  * @param segments The list of object segments to be sent.
 **/
 void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)

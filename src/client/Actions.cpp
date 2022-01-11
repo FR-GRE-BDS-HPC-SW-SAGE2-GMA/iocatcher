@@ -50,7 +50,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 		connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 		//poll server response
-		LibfabricRemoteResonse serverResponse;
+		LibfabricRemoteResponse serverResponse;
 		bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_PONG);
 		assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -101,7 +101,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 	connection.sendMessageNoPollWakeup(msg, sizeof (*msg), IOC_LF_SERVER_ID);
 
 	//poll server response
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -174,7 +174,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 	connection.sendMessageNoPollWakeup(msg, toSend, IOC_LF_SERVER_ID);
 
 	//poll server response
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_READ_WRITE_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -217,7 +217,7 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_FLUSH_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -259,7 +259,7 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -301,7 +301,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -335,7 +335,7 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_CREATE_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
@@ -376,7 +376,7 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
 
 	//poll
-	LibfabricRemoteResonse serverResponse;
+	LibfabricRemoteResponse serverResponse;
 	bool hasMessage = connection.pollMessage(serverResponse, IOC_LF_MSG_OBJ_COW_ACK);
 	assume(hasMessage, "Fail to get message from pollMessage !");
 

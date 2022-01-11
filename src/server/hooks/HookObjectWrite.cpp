@@ -37,7 +37,7 @@ HookObjectWrite::HookObjectWrite(Container * container, ServerStats * stats)
 /**
  * Fetch data from the client via RDMA.
  * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA write operation.
+ * @param objReadWrite Reference to the write request information.
  * @param segments The list of object segments to transfer.
 **/
 void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)

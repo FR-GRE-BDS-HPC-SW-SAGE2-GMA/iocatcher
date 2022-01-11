@@ -98,7 +98,7 @@ class LibfabricConnection
 		void postRecives(size_t size, int count);
 		void joinServer(void);
 		void poll(bool waitMsg);
-		bool pollMessage(LibfabricRemoteResonse & response, LibfabricMessageType expectedMessageType);
+		bool pollMessage(LibfabricRemoteResponse & response, LibfabricMessageType expectedMessageType);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
 		void broadcastErrrorMessage(const std::string & message);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
@@ -129,7 +129,7 @@ class LibfabricConnection
 		bool pollTx(void);
 		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache = true);
 		LibfabricActionResult onRecv(size_t id);
-		bool onRecvMessage(LibfabricRemoteResonse & response, size_t id);
+		bool onRecvMessage(LibfabricRemoteResponse & response, size_t id);
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
 		bool checkAuth(LibfabricMessage * message, uint64_t clientId, int id);
