@@ -61,8 +61,8 @@ TEST(TestSerializerBase, apply_int32_t)
 
 	//serialize
 	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
-	serializer.apply("int1", in1);
-	serializer.apply("int2", in2);
+	serializer.apply("in1", in1);
+	serializer.apply("in2", in2);
 
 	//check
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
@@ -93,8 +93,8 @@ TEST(TestSerializerBase, apply_int64_t)
 
 	//serialize
 	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
-	serializer.apply("int1", in1);
-	serializer.apply("int2", in2);
+	serializer.apply("in1", in1);
+	serializer.apply("in2", in2);
 
 	//check
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
@@ -125,8 +125,8 @@ TEST(TestSerializerBase, apply_uint32_t)
 
 	//serialize
 	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
-	serializer.apply("int1", in1);
-	serializer.apply("int2", in2);
+	serializer.apply("in1", in1);
+	serializer.apply("in2", in2);
 
 	//check
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
@@ -157,8 +157,8 @@ TEST(TestSerializerBase, apply_uint64_t)
 
 	//serialize
 	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
-	serializer.apply("int1", in1);
-	serializer.apply("int2", in2);
+	serializer.apply("in1", in1);
+	serializer.apply("in2", in2);
 
 	//check
 	EXPECT_EQ(2*sizeof(in1), serializer.getCursor());
@@ -189,8 +189,8 @@ TEST(TestSerializerBase, apply_string)
 
 	//serialize
 	SerializerBase serializer(buffer, 1024, SERIALIZER_PACK);
-	serializer.apply("int1", in1);
-	serializer.apply("int2", in2);
+	serializer.apply("in1", in1);
+	serializer.apply("in2", in2);
 
 	//check
 	EXPECT_EQ(2* sizeof(uint32_t) + in1.size() + in2.size() + 2, serializer.getCursor());
@@ -274,7 +274,7 @@ TEST(TestSerialerDeserializer, simple)
 
 	//serialize
 	Serializer serializer(buffer, 1024);
-	serializer.apply("int1", in1);
+	serializer.apply("in1", in1);
 
 	//check
 	EXPECT_EQ(sizeof(in1), serializer.getCursor());

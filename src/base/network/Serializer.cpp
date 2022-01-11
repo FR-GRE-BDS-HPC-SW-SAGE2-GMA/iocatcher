@@ -279,6 +279,17 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
 /****************************************************/
 /**
  * Apply the serialization or deserialization on a raw value.
+ *
+ * \b Remark: This function is a low level function and let the responsibility
+ * to the caller to correctly track the size in a previous member.
+ *
+ * Example:
+ * \code
+ * size_t size = 100;
+ * serializer.apply("bufferSize", size);
+ * char * buffer = malloc(size);
+ * serializer.apply("buffer", buffer);
+ * \code
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param buffer The data to push/pop
@@ -312,6 +323,17 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
  * Apply the serialization or deserialization on a raw value. On deserialization
  * if just points the location in the original buffer do avoid a copy and temporary
  * memory allocation.
+ * 
+ * \b Remark: This function is a low level function and let the responsibility
+ * to the caller to correctly track the size in a previous member.
+ *
+ * Example:
+ * \code
+ * size_t size = 21;
+ * serializer.apply("bufferSize", size);
+ * const char * buffer = "msg to push if PACK";
+ * serializer.serializeOrPoint("buffer", buffer);
+ * \code
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param buffer The data to push/pop
