@@ -237,7 +237,7 @@ void LibfabricConnection::joinServer(void)
 
 		//check protocol version
 		assumeArg(request.message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
-			"Invalid rdma protocol version from server, expect %1, has %2")
+			"Invalid rdma protocol version from server, expected %1, got %2")
 				.arg(IOC_LF_PROTOCOL_VERSION)
 				.arg(request.message->data.firstHandshakeResponse.protocolVersion)
 				.end();
@@ -884,7 +884,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 		response.lfClientId = message->header.lfClientId;
 		response.msgBufferId = id;
 
-		//retu
+		//finish
 		return true;
 	}
 }

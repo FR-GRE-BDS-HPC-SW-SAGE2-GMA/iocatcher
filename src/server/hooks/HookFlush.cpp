@@ -37,8 +37,8 @@ LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, Lib
 		.end();
 
 	//flush object
-	Object & object = this->container->getObject(request.message->data.objFlush.objectId);
-	int ret = object.flush(request.message->data.objFlush.offset, objFlush.size);
+	Object & object = this->container->getObject(objFlush.objectId);
+	int ret = object.flush(objFlush.offset, objFlush.size);
 
 	//send response
 	connection->sendResponse(IOC_LF_MSG_OBJ_FLUSH_ACK, request.lfClientId, ret);

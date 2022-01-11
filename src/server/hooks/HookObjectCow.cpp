@@ -37,7 +37,7 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 	
 	//extract id
 	LibfabricObjectId & sourceId = objCow.sourceObjectId;
-	LibfabricObjectId & destId = objCow.destObjectId;;
+	LibfabricObjectId & destId = objCow.destObjectId;
 
 	//create object
 	bool status;
