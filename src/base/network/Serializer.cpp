@@ -65,7 +65,7 @@ SerializerBase::~SerializerBase(void)
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on a boolean value.
+ * Apply the serialization or deserialization on a boolean value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -84,16 +84,16 @@ void SerializerBase::apply(const char * fieldName, bool & value)
 	else if (this->action == SERIALIZER_STRINGIFY)
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << (value ? "true" : "false");
 	else
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 
-	//move formward
+	//move forward
 	this->cursor += sizeof(value);
 	this->outFirst = false;
 }
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on an integer value.
+ * Apply the serialization or deserialization on an integer value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -112,16 +112,16 @@ void SerializerBase::apply(const char * fieldName, uint32_t & value)
 	else if (this->action == SERIALIZER_STRINGIFY)
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
 	else
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 
-	//move formward
+	//move forward
 	this->cursor += sizeof(value);
 	this->outFirst = false;
 }
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on an integer value.
+ * Apply the serialization or deserialization on an integer value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -140,16 +140,16 @@ void SerializerBase::apply(const char * fieldName, int32_t & value)
 	else if (this->action == SERIALIZER_STRINGIFY)
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
 	else
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 
-	//move formward
+	//move forward
 	this->cursor += sizeof(value);
 	this->outFirst = false;
 }
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on an integer value.
+ * Apply the serialization or deserialization on an integer value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -168,16 +168,16 @@ void SerializerBase::apply(const char * fieldName, int64_t & value)
 	else if (this->action == SERIALIZER_STRINGIFY)
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
 	else
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 
-	//move formward
+	//move forward
 	this->cursor += sizeof(value);
 	this->outFirst = false;
 }
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on an integer value.
+ * Apply the serialization or deserialization on an integer value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -196,16 +196,16 @@ void SerializerBase::apply(const char * fieldName, uint64_t & value)
 	else if (this->action == SERIALIZER_STRINGIFY)
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << value;
 	else
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 
-	//move formward
+	//move forward
 	this->cursor += sizeof(value);
 	this->outFirst = false;
 }
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on a string value.
+ * Apply the serialization or deserialization on a string value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -220,7 +220,7 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 		this->apply(fieldName, (const std::string&)value);
 	} else if (this->action == SERIALIZER_UNPACK) {
 		//extract len
-		uint32_t len = 0;
+		uint64_t len = 0;
 		this->apply(fieldName, len);
 
 		//check as room to read
@@ -228,7 +228,7 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 
 		//load
 		char * str = this->buffer + this->cursor;
-		assume(str[len-1] == '\0', "Got a non null terminated string !");
+		assumeArg(str[len-1] == '\0', "Got a non null terminated string for field %1 !").arg(fieldName).end();
 		value = str;
 
 		//move forward
@@ -236,7 +236,7 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": \"" << value << "\"";
 	} else {
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
 
 	//move
@@ -245,7 +245,7 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
 
 /****************************************************/
 /**
- * Apply the serializeation on a string value.
+ * Apply the serialization on a string value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param value The value to push.
@@ -258,7 +258,7 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
 	//modes
 	if (this->action == SERIALIZER_PACK) {
 		//calc len
-		uint32_t len = value.size() + 1;
+		uint64_t len = value.size() + 1;
 
 		//check size
 		this->checkSize(fieldName, sizeof(uint32_t) + len);
@@ -269,7 +269,7 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": \"" << value << "\"";
 	} else {
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
 
 	//move
@@ -278,7 +278,7 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on a raw value.
+ * Apply the serialization or deserialization on a raw value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param buffer The data to push/pop
@@ -299,7 +299,7 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << buffer;
 	} else {
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
 
 	//move forward
@@ -309,7 +309,7 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on a raw value. On deserialization
+ * Apply the serialization or deserialization on a raw value. On deserialization
  * if just points the location in the original buffer do avoid a copy and temporary
  * memory allocation.
  * @param fieldName Name of the value to be used for stringification and error 
@@ -331,7 +331,7 @@ void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buf
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": " << (void*)buffer;
 	} else {
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
 
 	//move forward
@@ -340,7 +340,7 @@ void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buf
 
 /****************************************************/
 /**
- * Apply the serializeation or deserialization on a raw value.
+ * Apply the serialization or deserialization on a raw value.
  * @param fieldName Name of the value to be used for stringification and error 
  * message in case of buffer overflow.
  * @param buffer The data to push/pop
@@ -359,7 +359,7 @@ void SerializerBase::apply(const char * fieldName, const void * buffer, size_t s
 	} else if (this->action == SERIALIZER_STRINGIFY) {
 		*out << (this->outFirst ? "" : ", ") << fieldName << ": \"" << buffer << "\"";
 	} else {
-		IOC_FATAL("Unsupported action !");
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
 
 	//move forward

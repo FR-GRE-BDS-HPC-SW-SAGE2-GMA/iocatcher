@@ -19,15 +19,15 @@ namespace IOC
 
 /****************************************************/
 /**
- * Configure the serializeation mode (pack or unpack).
+ * Configure the serialization mode (pack or unpack).
 **/
 enum SerializerAction
 {
-	/** Used to sirialize the given entries. **/
+	/** Used to serialize the given entries. **/
 	SERIALIZER_PACK,
-	/** Used to deserializes the given entries. **/
+	/** Used to deserialize the given entries. **/
 	SERIALIZER_UNPACK,
-	/** To string. **/
+	/** To convert to a string. **/
 	SERIALIZER_STRINGIFY,
 	/** 
 	 * To say it is not yet configured. This is used in the LibfabricClientRequest
@@ -38,10 +38,10 @@ enum SerializerAction
 
 /****************************************************/
 /**
- * This class it used to serialize the protocol messages from their struct
+ * This class is used to serialize the protocol messages from their struct
  * representation to the message buffer to be exchanged between clients 
  * and servers
- * @brief Serialization and de-serializeation class for network messages.
+ * @brief Serialization and de-serialization class for network messages.
 **/
 class SerializerBase
 {
@@ -67,7 +67,7 @@ class SerializerBase
 	private:
 		void checkSize(const char * fieldName, size_t size);
 	private:
-		/** The buffer in which to serialize of to read from. **/
+		/** The buffer in which to serialize or to read from. **/
 		char * buffer;
 		/** Size of the buffer. **/
 		size_t size;
@@ -75,7 +75,7 @@ class SerializerBase
 		size_t cursor;
 		/** Define the action to apply. **/
 		SerializerAction action;
-		/** For the stringification we allow to provide an exteran std::ostream. **/
+		/** For the stringification we allow to provide an exteral std::ostream. **/
 		std::ostream * out;
 		/** 
 		 * Remember if it is the first member of a sub-struct for the
@@ -117,8 +117,8 @@ class DeSerializer : public SerializerBase
  * @code
  * struct {
  * 	void applySerializerDef(SerializationBase & serializer) {
- * 		serialize.apply("a", this->a);
- * 		serialize.apply("b", this->b);
+ * 		serializer.apply("a", this->a);
+ * 		serializer.apply("b", this->b);
  * 	};
  * 	uint64_t a;
  * 	uint64_t b;
@@ -147,7 +147,7 @@ void SerializerBase::apply(const char * fieldName, T & value)
 
 /****************************************************/
 /**
- * Pop a value from the derserialize. This is just a wrapper on the apply
+ * Pop a value from the deserialize. This is just a wrapper on the apply
  * method.
  * @param value The value to be extracted from the buffer.
 **/
