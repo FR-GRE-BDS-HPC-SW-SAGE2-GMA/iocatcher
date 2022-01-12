@@ -193,7 +193,7 @@ TEST(TestSerializerBase, apply_string)
 	serializer.apply("in2", in2);
 
 	//check
-	EXPECT_EQ(2* sizeof(uint32_t) + in1.size() + in2.size() + 2, serializer.getCursor());
+	EXPECT_EQ(2* sizeof(uint64_t) + in1.size() + in2.size() + 2, serializer.getCursor());
 
 	//deserialize
 	SerializerBase deserializer(buffer, 1024, SERIALIZER_UNPACK);
@@ -201,7 +201,7 @@ TEST(TestSerializerBase, apply_string)
 	deserializer.apply("out2", out2);
 
 	//check
-	EXPECT_EQ(2* sizeof(uint32_t) + in1.size() + in2.size() + 2, deserializer.getCursor());
+	EXPECT_EQ(2* sizeof(uint64_t) + in1.size() + in2.size() + 2, deserializer.getCursor());
 
 	//check
 	EXPECT_EQ(in1, out1);
