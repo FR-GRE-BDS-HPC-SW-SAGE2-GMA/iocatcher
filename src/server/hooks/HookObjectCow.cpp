@@ -23,32 +23,35 @@ HookObjectCow::HookObjectCow(Container * container)
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
+	//extract
+	LibfabricObjectCow & objCow = request.message->data.objCow;
+
 	//debug
 	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3")
-		.arg(clientMessage->data.objCow.sourceObjectId)
-		.arg(clientMessage->data.objCow.destObjectId)
-		.arg(lfClientId)
+		.arg(objCow.sourceObjectId)
+		.arg(objCow.destObjectId)
+		.arg(request.lfClientId)
 		.end();
 	
 	//extract id
-	LibfabricObjectId & sourceId = clientMessage->data.objCow.sourceObjectId;
-	LibfabricObjectId & destId = clientMessage->data.objCow.destObjectId;;
+	LibfabricObjectId & sourceId = objCow.sourceObjectId;
+	LibfabricObjectId & destId = objCow.destObjectId;
 
 	//create object
 	bool status;
-	LibfabricObjectCow & objectCow = clientMessage->data.objCow;
+	LibfabricObjectCow & objectCow = objCow;
 	if (objectCow.rangeSize == 0)
 		status = this->container->makeObjectFullCow(sourceId, destId, objectCow.allowExist);
 	else
 		status = this->container->makeObjectRangeCow(sourceId, destId, objectCow.allowExist, objectCow.rangeOffset, objectCow.rangeSize); 
 
 	//send response
-	connection->sendResponse(IOC_LF_MSG_OBJ_COW_ACK, lfClientId, (status)?0:-1);
+	connection->sendResponse(IOC_LF_MSG_OBJ_COW_ACK, request.lfClientId, (status)?0:-1);
 
 	//republish
-	connection->repostReceive(msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

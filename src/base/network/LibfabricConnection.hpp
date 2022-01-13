@@ -81,20 +81,6 @@ class LibfabricPostActionFunction : public LibfabricPostAction
 		std::function<LibfabricActionResult(void)> function;
 };
 
-/****************************************************/
-/**
- * Structure used to return the message info from pollMessage.
-**/
-struct LibfabricClientMessage
-{
-	/** ID of the client which sends the message. **/
-	int lfClientId;
-	/** Message buffer to be returned to the connection after using the data.**/
-	size_t msgBufferId;
-	/** Pointer to the client message. **/
-	LibfabricMessage * message;
-};
-
 
 /****************************************************/
 /**
@@ -112,7 +98,7 @@ class LibfabricConnection
 		void postRecives(size_t size, int count);
 		void joinServer(void);
 		void poll(bool waitMsg);
-		bool pollMessage(LibfabricClientMessage & clientMessage, LibfabricMessageType expectedMessageType);
+		bool pollMessage(LibfabricRemoteResponse & response, LibfabricMessageType expectedMessageType);
 		void setHooks(std::function<void(int)> hookOnEndpointConnect);
 		void broadcastErrrorMessage(const std::string & message);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
@@ -122,9 +108,9 @@ class LibfabricConnection
 		void rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
 		void repostReceive(size_t id);
-		void repostReceive(const LibfabricClientMessage & clientMessage);
+		void repostReceive(const LibfabricClientRequest & request);
 		void registerHook(int messageType, Hook * hook);
-		void registerHook(int messageType, std::function<LibfabricActionResult(LibfabricConnection *, int, size_t, void*)> function);
+		void registerHook(int messageType, HookLambdaDef function);
 		void unregisterHook(int messageType);
 		int getClientId(void) { return clientId;};
 		LibfabricDomain & getDomain(void) {return *lfDomain;};
@@ -143,7 +129,7 @@ class LibfabricConnection
 		bool pollTx(void);
 		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache = true);
 		LibfabricActionResult onRecv(size_t id);
-		bool onRecvMessage(LibfabricClientMessage & clientMessage, size_t id);
+		bool onRecvMessage(LibfabricRemoteResponse & response, size_t id);
 		void onSent(void * buffer);
 		void onConnInit(LibfabricMessage * message);
 		bool checkAuth(LibfabricMessage * message, uint64_t clientId, int id);
