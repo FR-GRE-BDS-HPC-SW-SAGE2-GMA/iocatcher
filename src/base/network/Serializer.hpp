@@ -128,16 +128,17 @@ class DeSerializer : public SerializerBase
 template <class T >
 void SerializerBase::apply(const char * fieldName, T & value)
 {
-	//open backet for objects
+	//open bracket for objects
 	if (this->action == SERIALIZER_STRINGIFY) {
 		assert(this->out != NULL);
 		*this->out << (this->outFirst ? "" : ", ") << "{ ";
 		this->outFirst = true;
 	}
 
+	//serialize the value to string
 	value.applySerializerDef(*this);
 
-	//close backend for objects
+	//close bracket for objects
 	if (this->action == SERIALIZER_STRINGIFY)
 		*this->out << (this->outFirst ? "" : " ") << "}";
 
