@@ -30,13 +30,13 @@ std::ostream & operator <<(std::ostream & out, const Iov & iov)
 /****************************************************/
 bool IOC::operator==(const Iov & a, const Iov & b)
 {
-	return a.addr == a.addr && a.key == a.key;
+	return a.addr == b.addr && a.key == b.key;
 }
 
 /****************************************************/
 bool IOC::operator==(const LibfabricObjectId & a, const LibfabricObjectId & b)
 {
-	return a.low == a.low && a.high == a.high;
+	return a.low == b.low && a.high == b.high;
 }
 
 /****************************************************/

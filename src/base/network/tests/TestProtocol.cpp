@@ -24,16 +24,36 @@ TEST(TestProtocol, object_id_ostream)
 }
 
 /****************************************************/
+TEST(TestProtocol, Iov_operator_equal_equal)
+{
+	Iov a = {0x10, 0x20};
+	Iov b = {0x10, 0x20};
+	Iov c = {0x11, 0x21};
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a == c);
+}
+
+/****************************************************/
+TEST(TestProtocol, LibfabricObjectId_operator_equal_equal)
+{
+	LibfabricObjectId a = {10, 20};
+	LibfabricObjectId b = {10, 20};
+	LibfabricObjectId c = {11, 21};
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a == c);
+}
+
+/****************************************************/
 //PLEASE USE HARD CODED VALUE FOR EXPECTED SIZE SO WE CAN DETECT
 //IF WE BROKE THE PROTOCOL VERSION BY CHANGING TYPES OR SIZES
 template <class T>
 void serializeDeserialize(T & in, T & out, size_t expectedSize)
 {
-	//memset the out struct
-	memset(&out, 0, sizeof(out));
-
-	//serialize & dersialize
+	//buffer to serialize in (pre-init with 1s inside to detect errors)
 	char buffer[1024];
+	memset(buffer, 1, 1024);
+
+	//serialize
 	Serializer serialize(buffer, 1024);
 	serialize.apply("in", in);
 	EXPECT_EQ(expectedSize, serialize.getCursor());
@@ -104,6 +124,10 @@ TEST(TestProtocol, LibfabricObjReadWriteInfos)
 {
 	//allocate
 	LibfabricObjReadWriteInfos out, in = {
+		.objectId = {
+			.low = 10,
+			.high = 20,
+		},
 		.iov = {
 			.addr = 0x1,
 			.key = 0x2,
@@ -111,7 +135,7 @@ TEST(TestProtocol, LibfabricObjReadWriteInfos)
 		.offset = 10,
 		.size = 5,
 		.msgHasData = true,
-		.optionalData = "01234",
+		.optionalData = "0123",
 	};
 
 	//apply
@@ -253,7 +277,7 @@ TEST(TestProtocol, LibfabricResponse)
 		.msgDataSize = 5,
 		.status = 10,
 		.msgHasData = true,
-		.optionalData = "01234",
+		.optionalData = "0123",
 	};
 
 	//apply
