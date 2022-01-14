@@ -28,7 +28,6 @@ void clientServer(std::function<void(LibfabricConnection & connection,int client
 	//server
 	std::thread server([&gotConnection, &serverReady, &serverAction]{
 		LibfabricDomain domain("127.0.0.1", "8446", true);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
 		int clientId = 0;
@@ -52,7 +51,6 @@ void clientServer(std::function<void(LibfabricConnection & connection,int client
 	//client
 	std::thread client([&clientAction]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
@@ -446,7 +444,6 @@ TEST(TestLibfabricConnection, message_auth_ok)
 	//server
 	std::thread server([&gotConnection, &gotMessage, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8455", true);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.getClientRegistry().registerClient(10, 123456789);
 		connection.setCheckClientAuth(true);
@@ -471,7 +468,6 @@ TEST(TestLibfabricConnection, message_auth_ok)
 	//client
 	std::thread client([&sendMessage]{
 		LibfabricDomain domain("127.0.0.1", "8455", false);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123456789);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -510,7 +506,6 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 	//server
 	std::thread server([&gotConnection, &gotMessage, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8465", true);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.getClientRegistry().registerClient(10, 123456789);
 		connection.setCheckClientAuth(true);
@@ -535,7 +530,6 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 	//client
 	std::thread client([&sendMessage, &gotError]{
 		LibfabricDomain domain("127.0.0.1", "8465", false);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
@@ -580,7 +574,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	//server
 	std::thread server([&gotConnection, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8446", true);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(1024*1024, 64);
 		connection.setHooks([&gotConnection](int id) {
@@ -593,7 +586,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 			connection.poll(false);
 
 		//send error and exit
-		domain.setMsgBuffeSize(1024*1024);
 		connection.broadcastErrrorMessage("This is a test error !");
 	});
 
@@ -603,7 +595,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	//client
 	std::thread client1([&gotErrorMessage1]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
@@ -620,7 +611,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	//client
 	std::thread client2([&gotErrorMessage2]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
-		domain.setMsgBuffeSize(1024*1024);
 		LibfabricConnection connection(&domain, false);
 		connection.postRecives(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ), 2);
 		connection.joinServer();
@@ -679,7 +669,6 @@ TEST(TestLibfabricConnection, sendMessage_serialize)
 				.high = 20,
 			}
 		};
-		connection.getDomain().setMsgBuffeSize(1024*1024);
 		connection.sendMessage(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, objCreate, [&sendMessage](void) {
 			sendMessage = true;
 			return LF_WAIT_LOOP_UNBLOCK;
@@ -729,7 +718,6 @@ TEST(TestLibfabricConnection, sendMessageNoPollWakeup_serialize)
 				.high = 20,
 			}
 		};
-		connection.getDomain().setMsgBuffeSize(1024*1024);
 		connection.sendMessageNoPollWakeup(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, objCreate);
 		sendMessage = true;
 

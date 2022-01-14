@@ -37,8 +37,8 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	assert(serverIp.empty() == false);
 	assert(port.empty() == false);
 
-	//defaults
-	this->msgBufferSize = 0;
+	//defaults is 1MB, can be changed by calling setMsgBuffeSize() before allocating buffers in the pool
+	this->msgBufferSize = 1024*1024;
 
 	//allocate fi
 	struct fi_info *hints;
@@ -334,6 +334,7 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
 **/
 void LibfabricDomain::setMsgBuffeSize(size_t size)
 {
+	assume(this->msgBuffers.empty(), "Try to change the message buffer size while we already allocated buffers in the pool !");
 	this->msgBufferSize = size;
 }
 
