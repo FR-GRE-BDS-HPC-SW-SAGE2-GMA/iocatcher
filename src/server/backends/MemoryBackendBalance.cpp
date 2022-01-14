@@ -119,7 +119,7 @@ void MemoryBackendBalance::deallocate(void * addr, size_t size)
  * Used in unit tests.
  * @param id Id of the memory backend we want to check.
 **/
-size_t MemoryBackendBalance::getMem(int id) const
+size_t MemoryBackendBalance::getMem(size_t id) const
 {
 	//check
 	assert(id >= 0);

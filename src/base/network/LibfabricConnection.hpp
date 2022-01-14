@@ -29,7 +29,10 @@ namespace IOC
 /****************************************************/
 /** Position of the server in the address list. **/
 #define IOC_LF_SERVER_ID 0
+/** No action. **/
 #define IOC_LF_NO_WAKEUP_POST_ACTION ((LibfabricPostAction*)-1)
+/** Has no buffer attached to the post action so nothing to repost in the recive queue. **/
+#define IOC_LF_NO_BUFFER ((size_t)-1)
 
 /****************************************************/
 class LibfabricConnection;
@@ -52,8 +55,8 @@ struct LibfabricBuffer
 class LibfabricPostAction
 {
 	public:
-		LibfabricPostAction(void) {this->bufferId = -1; this->connection = NULL; this->domainBuffer = NULL;};
-		virtual ~LibfabricPostAction(void) {this->freeBuffer();};
+		LibfabricPostAction(void);
+		virtual ~LibfabricPostAction(void);
 		virtual LibfabricActionResult runPostAction(void) = 0;
 		void registerBuffer(LibfabricConnection * connection, bool isRecv, size_t bufferId);
 		void freeBuffer(void);

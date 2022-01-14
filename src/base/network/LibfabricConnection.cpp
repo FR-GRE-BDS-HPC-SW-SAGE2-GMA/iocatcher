@@ -23,6 +23,25 @@ namespace IOC
 {
 
 /****************************************************/
+/** Construct a port action by setting the default values. **/
+LibfabricPostAction::LibfabricPostAction(void)
+{
+	this->bufferId = IOC_LF_NO_BUFFER;
+	this->connection = NULL;
+	this->domainBuffer = NULL;
+};
+
+/****************************************************/
+/** 
+ * Destruction responsible of returning the attached ressources (buffers) 
+ * to their place.
+**/
+LibfabricPostAction::~LibfabricPostAction(void)
+{
+	this->freeBuffer();
+};
+
+/****************************************************/
 void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, void * domainBuffer)
 {
 	//check
@@ -44,10 +63,10 @@ void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, v
 void LibfabricPostAction::freeBuffer(void)
 {
 	if (this->connection != NULL) {
-		if (this->isRecv && this->bufferId != -1)
-			connection->repostReceive(this->bufferId);
+		if (this->isRecv && this->bufferId != IOC_LF_NO_BUFFER)
+			this->connection->repostReceive(this->bufferId);
 		if (this->domainBuffer != NULL)
-			connection->getDomain().retMsgBuffer(this->domainBuffer);
+			this->connection->getDomain().retMsgBuffer(this->domainBuffer);
 	}
 }
 
