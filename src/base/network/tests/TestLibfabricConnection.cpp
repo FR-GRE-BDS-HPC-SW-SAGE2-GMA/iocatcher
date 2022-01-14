@@ -734,7 +734,7 @@ TEST(TestLibfabricConnection, sendMessageNoPollWakeup_serialize)
 		sendMessage = true;
 
 		//wait message back
-		LibfabricRemoteResonse response;
+		LibfabricRemoteResponse response;
 		connection.pollMessage(response, IOC_LF_MSG_PONG);
 	});
 
