@@ -65,7 +65,7 @@ workflow:
             cmd: "cd ${SRCDIR}/doc && mkdir -p ${SRCDIR}/${EXPORT_DIR}/doc && make html && mv ./_build/html ${SRCDIR}/${EXPORT_DIR}/doc/sphinx"
             user: "sf-user"
           - label: "CppCheck"
-            cmd: "cd ${SRCDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/check && cppcheck --error-exitcode=0 --quiet -I./src -I./extern-deps/from-cern-lhcb-daqpipe-v2/ -I./extern-deps/from-clovis-sample-apps/ -I./extern-deps/from-motr-sample-apps/ -I./extern-deps/googletest-release-1.10.0/googletest/include/ -I./extern-deps/googletest-release-1.10.0/googlemock/include/ -j2 --std=c++11 --platform=unix64 --relative-paths --report-progress --xml --xml-version=2 --output-file=${SRCDIR}/${EXPORT_DIR}/check/cppcheck.xml ./src"
+            cmd: "cd ${SRCDIR} && mkdir -p ${SRCDIR}/${EXPORT_DIR}/check && cppcheck --error-exitcode=0 --quiet -I./src -I./extern-deps/from-cern-lhcb-daqpipe-v2/ -I./extern-deps/from-clovis-sample-apps/ -I./extern-deps/from-motr-sample-apps/ -I./extern-deps/googletest-release-1.10.0/googletest/include/ -I./extern-deps/googletest-release-1.10.0/googlemock/include/ -j2 --std=c++11 --platform=unix64 --relative-paths --report-progress --xml --xml-version=2 --output-file=${SRCDIR}/${EXPORT_DIR}/check/cppcheck.xml -i tests/ ./src"
             user: "sf-user"
       stop_if_error : true
       disabled : false

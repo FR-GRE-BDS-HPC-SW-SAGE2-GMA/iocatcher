@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string>
 #include <sstream>
+#include <cassert>
 
 /****************************************************/
 namespace IOC
