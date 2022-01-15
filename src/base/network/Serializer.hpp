@@ -94,7 +94,6 @@ class Serializer : public SerializerBase
 {
 	public:
 		Serializer(void * buffer, size_t size) : SerializerBase(buffer, size, SERIALIZER_PACK) {};
-		template <class T> static size_t serialize(void * buffer, size_t bufferSize, T & value);
 };
 
 /****************************************************/
