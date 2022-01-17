@@ -1,7 +1,7 @@
 /*****************************************************
-			PROJECT  : IO Catcher
-			LICENSE  : Apache 2.0
-			COPYRIGHT: 2020 Bull SAS
+*  PROJECT  : IO Catcher                             *
+*  LICENSE  : Apache 2.0                             *
+*  COPYRIGHT: 2020-2022 Bull SAS All rights reserved *
 *****************************************************/
 
 #ifndef IOC_HOOK_OBJECT_READ_HPP
