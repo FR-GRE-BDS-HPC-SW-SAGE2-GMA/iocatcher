@@ -546,10 +546,13 @@ cfg_parse_global_args()
 				SOURCE_DIR="${val}"
 				;;
 			--with-cmake=*)
-				CMAKE="${val}"
+				CFG_CMAKE_COMMAND="${val}"
 				;;
 			--show)
 				ENABLE_DISPLAY_COMMAND='true'
+				;;
+			-D*)
+				cfg_push_cmake_opt "${val}"
 				;;
 			CC=*)
 				CFG_EXTRA_CC="${val}"
