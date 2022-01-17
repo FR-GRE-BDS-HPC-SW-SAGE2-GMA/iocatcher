@@ -1,8 +1,6 @@
 #!/bin/sh
 ######################################################
-#            PROJECT  : numaprof                     #
-#            VERSION  : 1.3.0-dev                    #
-#            AUTHOR   : Sébastien Valat              #
+#            PROJECT  : IO Catcher                   #
 #            LICENSE  : Apache 2.0                   #
 #            COPYRIGHT: 2020 Bull SAS                #
 ######################################################

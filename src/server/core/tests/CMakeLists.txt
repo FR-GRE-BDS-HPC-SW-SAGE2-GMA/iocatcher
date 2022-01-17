@@ -1,7 +1,5 @@
 ######################################################
-#            PROJECT  : lhcb-daqpipe                 #
-#            VERSION  : 2.5.0-dev                    #
-#            AUTHOR   : Valat Sébastien - CERN       #
+#            PROJECT  : IO Catcher                   #
 #            LICENSE  : Apache 2.0                   #
 #            COPYRIGHT: 2020 Bull SAS                #
 ######################################################
