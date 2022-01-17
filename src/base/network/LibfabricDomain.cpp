@@ -332,7 +332,7 @@ MemoryRegion* LibfabricDomain::getMR ( void* ptr, size_t size )
  * set their size to prepare them and keep track of them.
  * @param size Size of the segments we want to be allocated.
 **/
-void LibfabricDomain::setMsgBuffeSize(size_t size)
+void LibfabricDomain::setMsgBufferSize(size_t size)
 {
 	assume(this->msgBuffers.empty(), "Try to change the message buffer size while we already allocated buffers in the pool !");
 	this->msgBufferSize = size;
