@@ -107,7 +107,7 @@ TEST(TestLibfabricConnection, message)
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
 
-		//poll unit get message
+		//poll until get message
 		connection.poll(true);
 	},[&sendMessage](LibfabricConnection & connection){
 		//>>>> client <<<<
@@ -121,7 +121,7 @@ TEST(TestLibfabricConnection, message)
 			//say to unblock the poll(true) loop when return
 			return LF_WAIT_LOOP_UNBLOCK;
 		});
-		//poll unit message to be sent
+		//poll until message to be sent
 		connection.poll(true);
 	});
 	//check
@@ -586,7 +586,6 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 			connection.poll(false);
 
 		//send error and exit
-		domain.setMsgBuffeSize(1024*1024);
 		connection.broadcastErrrorMessage("This is a test error !");
 	});
 
@@ -634,4 +633,99 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	ASSERT_EQ(2, gotConnection);
 	ASSERT_TRUE(gotErrorMessage1);
 	ASSERT_TRUE(gotErrorMessage1);
+}
+
+/****************************************************/
+TEST(TestLibfabricConnection, sendMessage_serialize)
+{
+	bool gotMessage = false;
+	bool sendMessage = false;
+
+	//play client server
+	clientServer([&gotMessage](LibfabricConnection & connection, int clientId){
+		//>>>> server <<<<
+
+		//register hook
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
+			//extract & check
+			LibfabricObjCreateInfos & response = request.message->data.objCreate;
+			EXPECT_EQ(10, response.objectId.low);
+			EXPECT_EQ(20, response.objectId.high);
+
+			//end
+			gotMessage = true;
+			connection->repostReceive(request.msgBufferId);
+			//say to unblock the poll(true) loop when return
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+
+		//poll unit get message
+		connection.poll(true);
+	},[&sendMessage](LibfabricConnection & connection){
+		//>>>> client <<<<
+		LibfabricObjCreateInfos objCreate = {
+			.objectId = {
+				.low = 10,
+				.high = 20,
+			}
+		};
+		connection.sendMessage(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, objCreate, [&sendMessage](void) {
+			sendMessage = true;
+			return LF_WAIT_LOOP_UNBLOCK;
+		});
+		connection.poll(true);
+	});
+
+	ASSERT_TRUE(gotMessage);
+	ASSERT_TRUE(sendMessage);
+}
+
+/****************************************************/
+TEST(TestLibfabricConnection, sendMessageNoPollWakeup_serialize)
+{
+	bool gotMessage = false;
+	bool sendMessage = false;
+
+	//play client server
+	clientServer([&gotMessage](LibfabricConnection & connection, int clientId){
+		//>>>> server <<<<
+
+		//register hook
+		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
+			//extract & check
+			LibfabricObjCreateInfos & response = request.message->data.objCreate;
+			EXPECT_EQ(10, response.objectId.low);
+			EXPECT_EQ(20, response.objectId.high);
+
+			//end
+			gotMessage = true;
+			connection->repostReceive(request.msgBufferId);
+
+			//respond
+			connection->sendResponse(IOC_LF_MSG_PONG, request.lfClientId, 0, true);
+
+			//say to unblock the poll(true) loop when return
+			return LF_WAIT_LOOP_KEEP_WAITING;
+		});
+
+		//poll until get message
+		connection.poll(true);
+	},[&sendMessage](LibfabricConnection & connection){
+		//>>>> client <<<<
+		LibfabricObjCreateInfos objCreate = {
+			.objectId = {
+				.low = 10,
+				.high = 20,
+			}
+		};
+		connection.sendMessageNoPollWakeup(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, objCreate);
+		sendMessage = true;
+
+		//wait message back
+		LibfabricRemoteResponse response;
+		connection.pollMessage(response, IOC_LF_MSG_PONG);
+	});
+
+	ASSERT_TRUE(gotMessage);
+	ASSERT_TRUE(sendMessage);
 }

@@ -25,7 +25,7 @@ TEST(TestLibfaricDomain, constructor)
 TEST(TestLibfaricDomain, getMsgBuffer)
 {
 	LibfabricDomain domain("127.0.0.1", "8555", true);
-	domain.setMsgBuffeSize(1024);
+	domain.setMsgBufferSize(1024);
 	void * ptr = domain.getMsgBuffer();
 	domain.retMsgBuffer(ptr);
 }

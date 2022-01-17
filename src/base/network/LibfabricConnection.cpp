@@ -24,15 +24,32 @@ namespace IOC
 {
 
 /****************************************************/
+void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, void * domainBuffer)
+{
+	//check
+	assert(this->connection == NULL);
+	assert(this->domainBuffer == NULL);
+	assert(connection != NULL);
+	assert(domainBuffer != NULL);
+
+	//setup
+	this->connection = connection;
+	this->domainBuffer = domainBuffer;
+}
+
+/****************************************************/
 /**
  * On deletion of the object we free the attached recieve buffer to return it to
  * the connection.
 **/
 void LibfabricPostAction::freeBuffer(void)
 {
-	if (connection != NULL)
-		if (isRecv)
-			connection->repostReceive(bufferId);
+	if (this->connection != NULL) {
+		if (this->isRecv && this->bufferId != -1)
+			connection->repostReceive(this->bufferId);
+		if (this->domainBuffer != NULL)
+			connection->getDomain().retMsgBuffer(this->domainBuffer);
+	}
 }
 
 /****************************************************/
@@ -42,6 +59,19 @@ void LibfabricPostAction::freeBuffer(void)
 LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 {
 	return this->function();
+}
+
+/****************************************************/
+/**
+ * Nop action. It just returned the associated action.
+ * This is used to only use the par of LibfabricPostAction
+ * which re-register the attached domain buffer to the
+ * domain buffer pool.
+**/
+LibfabricActionResult LibfabricPostActionNop::runPostAction(void)
+{
+	//nothing to do
+	return this->result;
 }
 
 /****************************************************/
@@ -220,11 +250,9 @@ void LibfabricConnection::joinServer(void)
 	if (err != 1)
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 
-	//new message
-	LibfabricMessage * msg = new LibfabricMessage;
-	memset(msg, 0, sizeof(*msg));
-	msg->header.msgType = IOC_LF_MSG_CONNECT_INIT;
-	err = fi_getname(&this->ep->fid, msg->data.firstClientMessage.addr, &addrlen);
+	//build message data
+	LibfabricFirstClientMessage firstClientMessage;
+	err = fi_getname(&this->ep->fid, firstClientMessage.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
@@ -247,10 +275,7 @@ void LibfabricConnection::joinServer(void)
 	});
 
 	//send
-	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, [msg](){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	this->sendMessageNoPollWakeup(IOC_LF_MSG_CONNECT_INIT, IOC_LF_SERVER_ID, firstClientMessage);
 
 	//wait send
 	this->poll(true);
@@ -313,7 +338,7 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::sendRawMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction)
 {
 	//vars
 	int err;
@@ -333,11 +358,26 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 
 	//send
 	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, new LibfabricPostActionFunction(postAction));
+		err = fi_send(this->ep, buffer, size, NULL, it->second, postAction);
 		if (err == -FI_EAGAIN)
 			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
+}
+
+/****************************************************/
+/**
+ * Send a message to the given destination ID.
+ * @param buffer Buffer to be sent.
+ * @param size Size of the given buffer.
+ * @param destrinationEpId ID of the destination.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
+void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
+{
+	this->sendRawMessage(buffer, size, destinationEpId, new LibfabricPostActionFunction(postAction));
 }
 
 /****************************************************/
@@ -350,29 +390,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 **/
 void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId)
 {
-	//vars
-	int err;
-
-	//checks
-	assert(buffer != NULL);
-	assert(size <= recvBuffersSize);
-
-	//debug
-	IOC_DEBUG_ARG("libfabric:msg", "Send message without poll wakeup: dest=%1, buffer=%2").arg(destinationEpId).arg(buffer).end();
-
-	//search
-	auto it = this->remoteLiAddr.find(destinationEpId);
-	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
-		.arg(destinationEpId)
-		.end();
-
-	//send
-	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, IOC_LF_NO_WAKEUP_POST_ACTION);
-		if (err == -FI_EAGAIN)
-			this->pollAllCqInCache();
-	} while(err == -FI_EAGAIN);
-	LIBFABRIC_CHECK_STATUS("fi_send", err);
+	this->sendRawMessage(buffer, size, destinationEpId, IOC_LF_NO_WAKEUP_POST_ACTION);
 }
 
 /****************************************************/
