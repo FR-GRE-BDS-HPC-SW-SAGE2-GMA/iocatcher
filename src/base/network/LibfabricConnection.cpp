@@ -23,15 +23,32 @@ namespace IOC
 {
 
 /****************************************************/
+void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, void * domainBuffer)
+{
+	//check
+	assert(this->connection == NULL);
+	assert(this->domainBuffer == NULL);
+	assert(connection != NULL);
+	assert(domainBuffer != NULL);
+
+	//setup
+	this->connection = connection;
+	this->domainBuffer = domainBuffer;
+}
+
+/****************************************************/
 /**
  * On deletion of the object we free the attached recieve buffer to return it to
  * the connection.
 **/
 void LibfabricPostAction::freeBuffer(void)
 {
-	if (connection != NULL)
-		if (isRecv)
-			connection->repostRecive(bufferId);
+	if (this->connection != NULL) {
+		if (this->isRecv && this->bufferId != -1)
+			connection->repostReceive(this->bufferId);
+		if (this->domainBuffer != NULL)
+			connection->getDomain().retMsgBuffer(this->domainBuffer);
+	}
 }
 
 /****************************************************/
@@ -41,6 +58,19 @@ void LibfabricPostAction::freeBuffer(void)
 LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 {
 	return this->function();
+}
+
+/****************************************************/
+/**
+ * Nop action. It just returned the associated action.
+ * This is used to only use the par of LibfabricPostAction
+ * which re-register the attached domain buffer to the
+ * domain buffer pool.
+**/
+LibfabricActionResult LibfabricPostActionNop::runPostAction(void)
+{
+	//nothing to do
+	return this->result;
 }
 
 /****************************************************/
@@ -169,7 +199,7 @@ void LibfabricConnection::postRecives(size_t size, int count)
 		//LIBFABRIC_CHECK_STATUS("fi_mr_reg", err);
 
 		//post
-		this->repostRecive(i);
+		this->repostReceive(i);
 	}
 }
 
@@ -178,7 +208,7 @@ void LibfabricConnection::postRecives(size_t size, int count)
  * Republish a recive buffer to libfabric by identifying it by its ID.
  * @param id ID of the buffer to repost.
 **/
-void LibfabricConnection::repostRecive(size_t id)
+void LibfabricConnection::repostReceive(size_t id)
 {
 	//check
 	assumeArg(id <recvBuffersCount, "Invalid recive buffer ID: %1").arg(id).end();
@@ -194,11 +224,11 @@ void LibfabricConnection::repostRecive(size_t id)
 /****************************************************/
 /**
  * Republish a recive buffer to libfabric by identifying it by its ID.
- * @param clientMessage The client message struct containing the message buffer ID.
+ * @param request Reference to the request containing the receive buffer ID to be reposted.
 **/
-void LibfabricConnection::repostRecive(const LibfabricClientMessage & clientMessage)
+void LibfabricConnection::repostReceive(const LibfabricClientRequest & request)
 {
-	this->repostRecive(clientMessage.msgBufferId);
+	this->repostReceive(request.msgBufferId);
 }
 
 /****************************************************/
@@ -219,27 +249,24 @@ void LibfabricConnection::joinServer(void)
 	if (err != 1)
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 
-	//new message
-	LibfabricMessage * msg = new LibfabricMessage;
-	memset(msg, 0, sizeof(*msg));
-	msg->header.msgType = IOC_LF_MSG_CONNECT_INIT;
-	err = fi_getname(&this->ep->fid, msg->data.addr, &addrlen);
+	//build message data
+	LibfabricFirstClientMessage firstClientMessage;
+	err = fi_getname(&this->ep->fid, firstClientMessage.addr, &addrlen);
 	LIBFABRIC_CHECK_STATUS("fi_getname", err);
 	assert(addrlen <= IOC_LF_MAX_ADDR_LEN);
 
 	//register hook
-	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, int clientId, size_t msgId, void * buffer) {
+	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, LibfabricClientRequest & request) {
 		//assign id
 		//printf("get clientID %d\n", clientId);
-		this->clientId = clientId;
-		connection->repostRecive(msgId);
+		this->clientId = request.lfClientId;
+		connection->repostReceive(request.msgBufferId);
 
 		//check protocol version
-		LibfabricMessage * message = static_cast<LibfabricMessage*>(buffer);
-		assumeArg(message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
-			"Invalid rdma protocol version from server, expect %1, as %2")
+		assumeArg(request.message->data.firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
+			"Invalid rdma protocol version from server, expected %1, got %2")
 				.arg(IOC_LF_PROTOCOL_VERSION)
-				.arg(message->data.firstHandshakeResponse.protocolVersion)
+				.arg(request.message->data.firstHandshakeResponse.protocolVersion)
 				.end();
 
 		//return back
@@ -247,10 +274,7 @@ void LibfabricConnection::joinServer(void)
 	});
 
 	//send
-	this->sendMessage(msg, sizeof(LibfabricMessage), IOC_LF_SERVER_ID, [msg](){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	this->sendMessageNoPollWakeup(IOC_LF_MSG_CONNECT_INIT, IOC_LF_SERVER_ID, firstClientMessage);
 
 	//wait send
 	this->poll(true);
@@ -313,7 +337,7 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::sendRawMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction)
 {
 	//vars
 	int err;
@@ -333,11 +357,26 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 
 	//send
 	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, new LibfabricPostActionFunction(postAction));
+		err = fi_send(this->ep, buffer, size, NULL, it->second, postAction);
 		if (err == -FI_EAGAIN)
 			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
+}
+
+/****************************************************/
+/**
+ * Send a message to the given destination ID.
+ * @param buffer Buffer to be sent.
+ * @param size Size of the given buffer.
+ * @param destrinationEpId ID of the destination.
+ * @param postAction A lambda function without parameters to be called when the message has been sent.
+ * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
+ * or if it needs to return.
+**/
+void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction)
+{
+	this->sendRawMessage(buffer, size, destinationEpId, new LibfabricPostActionFunction(postAction));
 }
 
 /****************************************************/
@@ -350,29 +389,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
 **/
 void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId)
 {
-	//vars
-	int err;
-
-	//checks
-	assert(buffer != NULL);
-	assert(size <= recvBuffersSize);
-
-	//debug
-	IOC_DEBUG_ARG("libfabric:msg", "Send message without poll wakeup: dest=%1, buffer=%2").arg(destinationEpId).arg(buffer).end();
-
-	//search
-	auto it = this->remoteLiAddr.find(destinationEpId);
-	assumeArg(it != this->remoteLiAddr.end(), "Client endpoint id not found : %1")
-		.arg(destinationEpId)
-		.end();
-
-	//send
-	do {
-		err = fi_send(this->ep, buffer, size, NULL, it->second, IOC_LF_NO_WAKEUP_POST_ACTION);
-		if (err == -FI_EAGAIN)
-			this->pollAllCqInCache();
-	} while(err == -FI_EAGAIN);
-	LIBFABRIC_CHECK_STATUS("fi_send", err);
+	this->sendRawMessage(buffer, size, destinationEpId, IOC_LF_NO_WAKEUP_POST_ACTION);
 }
 
 /****************************************************/
@@ -387,7 +404,7 @@ void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, in
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
 {
 	//check
 	assert(localAddr != NULL);
@@ -436,7 +453,7 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, void *
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int count, LibfabricAddr remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
 {
 	//check
 	assert(iov != NULL);
@@ -492,7 +509,7 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, void * remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, int count, LibfabricAddr remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction)
 {
 	//checks
 	assert(iov != NULL);
@@ -545,7 +562,7 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
  * It returns a LibfabricActionResult which tell to the poll() function if it need to continue polling
  * or if it needs to return.
 **/
-void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, void * remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
+void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction)
 {
 	//checks
 	assert(localAddr != NULL);
@@ -618,7 +635,7 @@ void LibfabricConnection::poll(bool waitMsg)
 }
 
 /****************************************************/
-bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, LibfabricMessageType expectedMessageType)
+bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, LibfabricMessageType expectedMessageType)
 {
 	//vars
 	fi_cq_msg_entry entry;
@@ -629,19 +646,20 @@ bool LibfabricConnection::pollMessage(LibfabricClientMessage & clientMessage, Li
 		.end();
 
 	//fill default
-	clientMessage.lfClientId = -1;
-	clientMessage.message = NULL;
-	clientMessage.msgBufferId = -1;
+	response.lfClientId = -1;
+	response.header = NULL;
+	response.message = NULL;
+	response.msgBufferId = -1;
 
 	//poll
 	for (;;) {
 		int status = pollForCompletion(this->cq, &entry, this->passivePolling);
 		if (status == 1) {
 			if (entry.flags & FI_RECV) {
-				bool status = this->onRecvMessage(clientMessage, (size_t)entry.op_context);
+				bool status = this->onRecvMessage(response, (size_t)entry.op_context);
 				if (status) {
-					assumeArg(clientMessage.message->header.msgType == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
-						.arg(clientMessage.message->header.msgType)
+					assumeArg(response.message->header.msgType == expectedMessageType, "Got an invalide message type (%1) where %2 is expected")
+						.arg(response.message->header.msgType)
 						.arg(expectedMessageType)
 						.end();
 					return true;
@@ -779,16 +797,24 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	void * buffer =  this->recvBuffers[id];
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
+	//build struct
+	LibfabricClientRequest request = {
+		.lfClientId = message->header.lfClientId,
+		.msgBufferId = id,
+		.header = &message->header,
+		.message = message,
+	};
+
 	//switch
 	switch(message->header.msgType) {
 		case IOC_LF_MSG_CONNECT_INIT:
 			onConnInit(message);
-			repostRecive(id);
+			repostReceive(id);
 			break;
 		case IOC_LF_MSG_BAD_AUTH:
 			if (this->hookOnBadAuth) {
 				LibfabricActionResult res = this->hookOnBadAuth();
-				repostRecive(id);
+				repostReceive(id);
 				return res;
 			} else {
 				IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
@@ -804,7 +830,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 				//handle
 				if (it != this->hooks.end())
-					return it->second->onMessage(this, message->header.lfClientId, id, message);
+					return it->second->onMessage(this, request);
 				else
 					IOC_FATAL_ARG("Server has send error message !\n%s").arg((char*)&message->data).end();
 				break;
@@ -820,7 +846,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 				//handle
 				if (it != this->hooks.end())
-					return it->second->onMessage(this, message->header.lfClientId, id, message);
+					return it->second->onMessage(this, request);
 				else
 					IOC_FATAL_ARG("Invalid message type %1").arg(message->header.msgType).end();
 				break;
@@ -834,12 +860,12 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 /****************************************************/
 /**
  * Function to be called when a message is recived by the pollMessage() function.
- * @param clientMessage The client message infos to be filled for the caller.
+ * @param response Reference to the response struct to be filled back when the message has been received.
  * @param id ID of the recive buffer where the message has been recived.
  * @return True if we get a message false otherwise. Caution, it does not check the type of message,
  * the responsability is left to the caller. It just check the eventuell auth.
 **/
-bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, size_t id)
+bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size_t id)
 {
 	//check
 	assert(id < this->recvBuffersCount);
@@ -852,7 +878,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 	if (message->header.msgType == IOC_LF_MSG_BAD_AUTH) {
 		if (this->hookOnBadAuth) {
 			this->hookOnBadAuth();
-			repostRecive(id);
+			repostReceive(id);
 			return false;
 		} else {
 			IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
@@ -870,11 +896,12 @@ bool LibfabricConnection::onRecvMessage(LibfabricClientMessage & clientMessage, 
 			return false;
 		
 		//fill the struct
-		clientMessage.message = message;
-		clientMessage.lfClientId = message->header.lfClientId;
-		clientMessage.msgBufferId = id;
+		response.header = &message->header;
+		response.message = message;
+		response.lfClientId = message->header.lfClientId;
+		response.msgBufferId = id;
 
-		//retu
+		//finish
 		return true;
 	}
 }
@@ -953,7 +980,7 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 	uint64_t epId = this->nextEndpointId++;
 
 	//insert server address in address vector
-	int err = fi_av_insert(this->av, message->data.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
+	int err = fi_av_insert(this->av, message->data.firstClientMessage.addr, 1, &this->remoteLiAddr[epId], 0, NULL);
 	if (err != 1) {
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 	}
@@ -1128,6 +1155,114 @@ void LibfabricConnection::setCheckClientAuth(bool value)
 void LibfabricConnection::setOnBadAuth(std::function<LibfabricActionResult(void)> hookOnBadAuth)
 {
 	this->hookOnBadAuth = hookOnBadAuth;
+}
+
+/****************************************************/
+/**
+ * Build a response message and send it to the client.
+ * @param msgType Define the type of message to be used.
+ * @param lfClientId Define the libfabric ID of the client to which to send the message.
+ * @param status The status code to put in the response.
+ * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
+**/
+void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock)
+{
+	//prepare message
+	LibfabricMessage * msg = new LibfabricMessage;
+	msg->header.msgType = msgType;
+	msg->header.lfClientId = lfClientId;
+	msg->data.response.status = status;
+	msg->data.response.msgDataSize = 0;
+	msg->data.response.msgHasData = false;
+
+	//send message
+	this->sendMessage(msg, sizeof (*msg), lfClientId, [msg, unblock](void){
+		delete msg;
+		if (unblock)
+			return LF_WAIT_LOOP_UNBLOCK;
+		else
+			return LF_WAIT_LOOP_KEEP_WAITING;
+	});
+}
+
+/****************************************************/
+/**
+ * Build a response message and send it to the client with attached data.
+ * @param msgType Define the type of message to be used.
+ * @param lfClientId Define the libfabric ID of the client to which to send the message.
+ * @param status The status code to put in the response.
+ * @param data Address of the data to concat at the end of the message.
+ * @param size Size of the data buffer to be added to the message
+ * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
+**/
+void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock)
+{
+	//prepare message
+	size_t bufferSize = sizeof(LibfabricMessage)+size;
+	void * buffer = malloc(bufferSize);
+	LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+	msg->header.msgType = msgType;
+	msg->header.lfClientId = lfClientId;
+	msg->data.response.status = status;
+	msg->data.response.msgDataSize = size;
+	msg->data.response.msgHasData = true;
+	memcpy(msg->extraData, data, size);
+
+	//send message
+	this->sendMessage(msg, bufferSize, lfClientId, [buffer, unblock](void){
+		free(buffer);
+		if (unblock)
+			return LF_WAIT_LOOP_UNBLOCK;
+		else
+			return LF_WAIT_LOOP_KEEP_WAITING;
+	});
+}
+
+/****************************************************/
+/**
+ * Build a response message and send it to the client with attached data build from several fragments.
+ * @param msgType Define the type of message to be used.
+ * @param lfClientId Define the libfabric ID of the client to which to send the message.
+ * @param status The status code to put in the response.
+ * @param fragments Array of fragments to concatenate in the message.
+ * @param cntFragments Number of fragments to consider.
+ * @param unblock For unit test we need to unblock the polling but not on the server implementation (default).
+**/
+void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * fragments, size_t cntFragments, bool unblock)
+{
+	//check
+	assert(fragments != NULL);
+
+	//calc
+	size_t sumSize = 0;
+	for (size_t i = 0 ; i < cntFragments ; i++)
+		sumSize += fragments[i].size;
+
+	//prepare message
+	size_t bufferSize = sizeof(LibfabricMessage) + sumSize;
+	void * buffer = malloc(bufferSize);
+	LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
+	msg->header.msgType = msgType;
+	msg->header.lfClientId = lfClientId;
+	msg->data.response.status = status;
+	msg->data.response.msgDataSize = sumSize;
+	msg->data.response.msgHasData = true;
+
+	//copy all & concat
+	char * cursor = msg->extraData;
+	for (size_t i = 0 ; i < cntFragments ; i++) {
+		memcpy(cursor, fragments[i].buffer, fragments[i].size);
+		cursor += fragments[i].size;
+	}
+
+	//send message
+	this->sendMessage(msg, bufferSize, lfClientId, [buffer, unblock](void){
+		free(buffer);
+		if (unblock)
+			return LF_WAIT_LOOP_UNBLOCK;
+		else
+			return LF_WAIT_LOOP_KEEP_WAITING;
+	});
 }
 
 }

@@ -59,7 +59,7 @@ Server::Server(const Config * config, const std::string & port)
 
 	//setup domain
 	this->domain = new LibfabricDomain(config->listenIP, port, true);
-	this->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
+	this->domain->setMsgBufferSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_READ));
 
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, !config->activePolling);

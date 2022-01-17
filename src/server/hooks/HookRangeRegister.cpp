@@ -25,44 +25,37 @@ HookRangeRegister::HookRangeRegister(const Config * config, Container * containe
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeRegister::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
+	//extract
+	LibfabricRegisterRange & registerRange = request.message->data.registerRange;
+
 	//get object
-	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
+	Object & object = this->container->getObject(registerRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
 
 	//check
 	int status = 0;
 	ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-	if (clientMessage->data.registerRange.write)
+	if (registerRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		status = tracker.registerRange(clientMessage->header.tcpClientId, clientMessage->data.registerRange.offset, clientMessage->data.registerRange.size, mode);
+		status = tracker.registerRange(request.header->tcpClientId, registerRange.offset, registerRange.size, mode);
 	
 	//debug
 	IOC_DEBUG_ARG("hook:range:register", "Get range register on object %1 (%2->%3) from client %4, response=%5")
-		.arg(clientMessage->data.registerRange.objectId)
-		.arg(clientMessage->data.registerRange.offset)
-		.arg(clientMessage->data.registerRange.size)
-		.arg(lfClientId)
+		.arg(registerRange.objectId)
+		.arg(registerRange.offset)
+		.arg(registerRange.size)
+		.arg(request.lfClientId)
 		.arg(status)
 		.end();
 
-	//fill response
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = status;
-	msg->data.response.msgHasData = false;
-
-	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_REGISTER_ACK, request.lfClientId, status);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

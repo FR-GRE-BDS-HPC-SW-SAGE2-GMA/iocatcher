@@ -25,48 +25,38 @@ HookRangeUnregister::HookRangeUnregister(const Config * config, Container * cont
 }
 
 /****************************************************/
-LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
+	//extract
+	LibfabricUnregisterRange & unregisterRange = request.message->data.unregisterRange;
+
 	//debug
 	IOC_DEBUG_ARG("hook:range:unregister", "Get range unregister %1 on object %2 (%3->%4) from client %5")
-		.arg(clientMessage->data.unregisterRange.id)
-		.arg(clientMessage->data.registerRange.objectId)
-		.arg(clientMessage->data.registerRange.offset)
-		.arg(clientMessage->data.registerRange.size)
-		.arg(lfClientId)
+		.arg(unregisterRange.id)
+		.arg(unregisterRange.objectId)
+		.arg(unregisterRange.offset)
+		.arg(unregisterRange.size)
+		.arg(request.lfClientId)
 		.end();
 
 	//get object
-	Object & object = this->container->getObject(clientMessage->data.registerRange.objectId);
+	Object & object = this->container->getObject(unregisterRange.objectId);
 	ConsistencyTracker & tracker = object.getConsistencyTracker();
-
-	//extract
-	LibfabricUnregisterRange &data = clientMessage->data.unregisterRange;
 
 	//check
 	int status = 0;
 	ConsistencyAccessMode mode = CONSIST_ACCESS_MODE_READ;
-	if (data.write)
+	if (unregisterRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		if (!tracker.unregisterRange(clientMessage->header.tcpClientId, data.id, data.offset, data.size, mode))
+		if (!tracker.unregisterRange(request.header->tcpClientId, unregisterRange.id, unregisterRange.offset, unregisterRange.size, mode))
 			status = -1;
 
-	//fill response
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = status;
-	msg->data.response.msgHasData = false;
-
-	//send message
-	connection->sendMessage(msg, sizeof (*msg), lfClientId, [msg](){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_RANGE_UNREGISTER_ACK, request.lfClientId, status);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	//
 	return LF_WAIT_LOOP_KEEP_WAITING;

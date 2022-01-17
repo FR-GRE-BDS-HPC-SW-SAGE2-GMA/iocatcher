@@ -43,6 +43,9 @@ namespace IOC
 #define IOC_LF_PROTOCOL_VERSION 1
 
 /****************************************************/
+class SerializerBase;
+
+/****************************************************/
 /**
  * Define the type of messages we can exhange via connection.
  * @todo We should split between low level protocol and app implementation
@@ -93,14 +96,31 @@ enum LibfabricMessageType
 };
 
 /****************************************************/
+typedef uint64_t LibfabricAddr;
+
+/****************************************************/
+/**
+ * Define an empty struct to be serialized if we have no data to send
+ * in the message.
+**/
+struct LibfabricEmpty
+{
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	//no content
+};
+
+/****************************************************/
 /**
  * Use to describe the necessary informations to make a RDMA transfer.
  * @brief Informations for an RDMA transfer.
 **/
 struct Iov
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** Base address of the targetted memory region. **/
-	void * addr;
+	LibfabricAddr addr;
 	/** Authentication key to make an RDMA on the given memory region. **/
 	uint64_t key;
 };
@@ -111,6 +131,8 @@ struct Iov
 **/
 struct LibfabricObjectId
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** Low part of the object ID. **/
 	int64_t low;
 	/** High part of the object ID. **/
@@ -124,6 +146,8 @@ struct LibfabricObjectId
 **/
 struct LibfabricMessageHeader
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** Define the type of message **/
 	uint64_t msgType;
 	/** Define the libfabric client ID. **/
@@ -140,6 +164,8 @@ struct LibfabricMessageHeader
 **/
 struct LibfabricObjReadWriteInfos
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** The object ID to read or write **/
 	LibfabricObjectId objectId;
 	/** Description of the memory region the read from or write to so the server can make an RDMA operation. **/
@@ -150,6 +176,8 @@ struct LibfabricObjReadWriteInfos
 	uint64_t size;
 	/** If the message is an eager message and self contain the data to write (no need of RDMA operation). **/
 	bool msgHasData;
+	/** Optional data. **/
+	const char * optionalData;
 };
 
 /****************************************************/
@@ -158,6 +186,8 @@ struct LibfabricObjReadWriteInfos
 **/
 struct LibfabricObjFlushInfos
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** The obejct ID to flus. **/
 	LibfabricObjectId objectId;
 	/** Offset of the flush operation. **/
@@ -172,6 +202,8 @@ struct LibfabricObjFlushInfos
 **/
 struct LibfabricObjCreateInfos
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** The object ID to create. **/
 	LibfabricObjectId objectId;
 };
@@ -182,6 +214,8 @@ struct LibfabricObjCreateInfos
 **/
 struct LibfabricRegisterRange
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** The object ID for which to register range. **/
 	LibfabricObjectId objectId;
 	/** Offset of the range. **/
@@ -198,6 +232,8 @@ struct LibfabricRegisterRange
 **/
 struct LibfabricUnregisterRange
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** The object ID for which to de-register range. **/
 	LibfabricObjectId objectId;
 	/** Offset of the range to unregister. **/
@@ -216,6 +252,8 @@ struct LibfabricUnregisterRange
 **/
 struct LibfabricObjectCow
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
 	/** The ID of the source. **/
 	LibfabricObjectId sourceObjectId;
 	/** The ID of the destication. */
@@ -236,12 +274,18 @@ struct LibfabricObjectCow
 **/
 struct LibfabricResponse
 {
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	/** Basic setup. **/
+	void initStatusOnly(int32_t status);
 	/** Size of the possible extra data placed after the LibfabricMessage header. **/
 	uint64_t msgDataSize;
 	/** Status of the requested operation. **/
 	int32_t status;
 	/** Define if the message contain eager data or not. **/
 	bool msgHasData;
+	/** pointer to the optional data. **/
+	const char * optionalData;
 };
 
 /****************************************************/
@@ -251,7 +295,28 @@ struct LibfabricResponse
 **/
 struct LibfabricFirstHandshake
 {
-	int16_t protocolVersion;
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	/** Define the protocol version in use by the server. **/
+	int32_t protocolVersion;
+};
+
+/****************************************************/
+struct LibfabricFirstClientMessage
+{
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	/** Address of the client. **/
+	char addr[IOC_LF_MAX_ADDR_LEN];
+};
+
+/****************************************************/
+struct LibfabricErrorMessage
+{
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	/** Contain the error message. **/
+	std::string errorMessage;
 };
 
 /****************************************************/
@@ -264,7 +329,7 @@ struct LibfabricMessage
 	LibfabricMessageHeader header;
 	union {
 		/** Client to address to be send to the server on MSG_CONN_INIT **/
-		char addr[IOC_LF_MAX_ADDR_LEN];
+		LibfabricFirstClientMessage firstClientMessage;
 		/** Used for ping pong tests when using RDMA operation. **/
 		Iov iov;
 		/** Response to first handshake. **/
@@ -290,7 +355,9 @@ struct LibfabricMessage
 
 /****************************************************/
 std::ostream & operator <<(std::ostream & out, const LibfabricObjectId & objectId);
-
+std::ostream & operator <<(std::ostream & out, const Iov & iov);
+bool operator==(const LibfabricObjectId & a, const LibfabricObjectId & b);
+bool operator==(const Iov & a, const Iov & b);
 }
 
 #endif //IOC_PROTOCOL_HPP

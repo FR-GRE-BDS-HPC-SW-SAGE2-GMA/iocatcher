@@ -35,41 +35,16 @@ HookObjectWrite::HookObjectWrite(Container * container, ServerStats * stats)
 
 /****************************************************/
 /**
- * Send an error answer due to read failure.
- * @param connection Connection handler.
- * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA read operation.
- * @param segments The list of object segments to transfer.
-**/
-void HookObjectWrite::respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage)
-{
-	//send open
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.lfClientId = 0;
-	msg->data.response.msgHasData = false;
-	msg->data.response.msgDataSize = 0;
-	msg->data.response.status = -1;
-
-	//send ack message
-	connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
-}
-
-/****************************************************/
-/**
  * Fetch data from the client via RDMA.
  * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA write operation.
+ * @param objReadWrite Reference to the write request information.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)
 {
 	//build iovec
-	iovec * iov = Object::buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
-	size_t size = clientMessage->data.objReadWrite.size;
+	iovec * iov = Object::buildIovec(segments, objReadWrite.offset, objReadWrite.size);
+	size_t size = objReadWrite.size;
 
 	//count number of ops
 	int  * ops = new int;
@@ -86,29 +61,18 @@ void HookObjectWrite::objRdmaFetchFromClient(LibfabricConnection * connection, u
 			cnt = IOC_LF_MAX_RDMA_SEGS;
 
 		//emit rdma write vec & implement callback
-		char * addr = (char*)clientMessage->data.objReadWrite.iov.addr + offset;
-		uint64_t key = clientMessage->data.objReadWrite.iov.key;
+		LibfabricAddr addr = objReadWrite.iov.addr + offset;
+		uint64_t key = objReadWrite.iov.key;
 		connection->rdmaReadv(clientId, iov + i, cnt, addr, key, [connection, ops, size, this, clientId](void){
 			//decrement
 			(*ops)--;
 
 			if (*ops == 0) {
-				//send open
-				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-				msg->header.lfClientId = 0;
-				msg->data.response.msgHasData = false;
-				msg->data.response.msgDataSize = 0;
-				msg->data.response.status = 0;
-
 				//stats
 				this->stats->writeSize += size;
 
-				//send ack message
-				connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-					delete msg;
-					return LF_WAIT_LOOP_KEEP_WAITING;
-				});
+				//send response
+				connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 
 				//clean
 				delete ops;
@@ -166,54 +130,48 @@ void HookObjectWrite::objEagerExtractFromMessage(LibfabricConnection * connectio
 		cur += copySize;
 	}
 
-	//send open
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.lfClientId = 0;
-	msg->data.response.status = 0;
-
 	//stats
 	this->stats->writeSize += cur;
 
-	//send ack message
-	connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	//send response
+	connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectWrite::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
+	//extract
+	LibfabricObjReadWriteInfos & objReadWrite = request.message->data.objReadWrite;
+
 	//debug
 	IOC_DEBUG_ARG("hook:obj:write", "Get object write on %1 for %2->%3 from client %4")
-		.arg(clientMessage->data.objReadWrite.objectId)
-		.arg(clientMessage->data.objReadWrite.offset)
-		.arg(clientMessage->data.objReadWrite.size)
-		.arg(lfClientId)
+		.arg(objReadWrite.objectId)
+		.arg(objReadWrite.offset)
+		.arg(objReadWrite.size)
+		.arg(request.lfClientId)
 		.end();
 
 	//get buffers from object
-	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
+	Object & object = this->container->getObject(objReadWrite.objectId);
 	ObjectSegmentList segments;
-	bool status = object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_WRITE, true, true);
+	bool status = object.getBuffers(segments, objReadWrite.offset, objReadWrite.size, ACCESS_WRITE, true, true);
 
 	//eager or rdma
 	if (status) {
-		if (clientMessage->data.objReadWrite.msgHasData) {
-			objEagerExtractFromMessage(connection, lfClientId, clientMessage, segments);
+		if (objReadWrite.msgHasData) {
+			objEagerExtractFromMessage(connection, request.lfClientId, request.message, segments);
 		} else {
-			objRdmaFetchFromClient(connection, lfClientId, clientMessage, segments);
+			objRdmaFetchFromClient(connection, request.lfClientId, objReadWrite, segments);
 		}
 	} else {
-		this->respondError(connection, lfClientId, clientMessage);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, request.lfClientId, 0);
 	}
 
 	//mark dirty
-	object.markDirty(clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
+	object.markDirty(objReadWrite.offset, objReadWrite.size);
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

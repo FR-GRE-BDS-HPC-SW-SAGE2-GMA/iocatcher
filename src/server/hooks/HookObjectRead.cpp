@@ -35,41 +35,16 @@ HookObjectRead::HookObjectRead(Container * container, ServerStats * stats)
 
 /****************************************************/
 /**
- * Send an error answer due to read failure.
- * @param connection Connection handler.
- * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA read operation.
- * @param segments The list of object segments to transfer.
-**/
-void HookObjectRead::respondError(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage)
-{
-	//send open
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.lfClientId = 0;
-	msg->data.response.msgHasData = false;
-	msg->data.response.msgDataSize = 0;
-	msg->data.response.status = -1;
-
-	//send ack message
-	connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
-}
-
-/****************************************************/
-/**
  * Push data to the client via RDMA.
  * @param clientId Define the libfabric client ID.
- * @param clientMessage Pointer the the message requesting the RDMA read operation.
+ * @param objReadWrite Reference to the read request information.
  * @param segments The list of object segments to transfer.
 **/
-void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)
 {
 	//build iovec
-	iovec * iov = Object::buildIovec(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
-	size_t size = clientMessage->data.objReadWrite.size;
+	iovec * iov = Object::buildIovec(segments, objReadWrite.offset, objReadWrite.size);
+	size_t size = objReadWrite.size;
 
 	//dispaly
 	//printf("IOV SIZE %lu (%zu, %zu)\n", segments.size(), clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size);
@@ -92,8 +67,8 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint6
 			cnt = IOC_LF_MAX_RDMA_SEGS;
 
 		//extract
-		char * addr = (char*)clientMessage->data.objReadWrite.iov.addr + offset;
-		uint64_t key = clientMessage->data.objReadWrite.iov.key;
+		LibfabricAddr addr = objReadWrite.iov.addr + offset;
+		uint64_t key = objReadWrite.iov.key;
 
 		//emit rdma write vec & implement callback
 		connection->rdmaWritev(clientId, iov + i, cnt, addr, key, [this, connection, ops,size, clientId](void){
@@ -101,22 +76,11 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint6
 			(*ops)--;
 
 			if (*ops == 0) {
-				//send open
-				LibfabricMessage * msg = new LibfabricMessage;
-				msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-				msg->header.lfClientId = 0;
-				msg->data.response.msgHasData = false;
-				msg->data.response.msgDataSize = 0;
-				msg->data.response.status = 0;
-
 				//stats
 				this->stats->readSize += size;
 
-				//send ack message
-				connection->sendMessage(msg, sizeof (*msg), clientId, [msg](void){
-					delete msg;
-					return LF_WAIT_LOOP_KEEP_WAITING;
-				});
+				//send response
+				connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0);
 
 				//clean
 				delete ops;
@@ -139,30 +103,21 @@ void HookObjectRead::objRdmaPushToClient(LibfabricConnection * connection, uint6
  * Push data to the client making an eager communication and adding the data after the response
  * to the client.
  * @param clientId the libfabric client ID to know the connection to be used.
- * @param clientMessage the request from the client to get the required informations.
+ * @param objReadWrite Reference to the read request information.
  * @param segments The list of object segments to be sent.
 **/
-void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricMessage * clientMessage, ObjectSegmentList & segments)
+void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint64_t clientId, LibfabricObjReadWriteInfos & objReadWrite, ObjectSegmentList & segments)
 {
 	//size
-	size_t dataSize = clientMessage->data.objReadWrite.size;
-	size_t baseOffset = clientMessage->data.objReadWrite.offset;
+	size_t dataSize = objReadWrite.size;
+	size_t baseOffset = objReadWrite.offset;
 
-	//send open
-	//char * buffer = new char[sizeof(LibfabricMessage) + dataSize];
-	LibfabricMessage * msg = (LibfabricMessage *)connection->getDomain().getMsgBuffer();
-	//LibfabricMessage * msg = (LibfabricMessage*)buffer;
-	msg->header.msgType = IOC_LF_MSG_OBJ_READ_WRITE_ACK;
-	msg->header.lfClientId = 0;
-	msg->data.response.msgDataSize = dataSize;
-	msg->data.response.msgHasData = true;
-	msg->data.response.status = 0;
-
-	//get base pointer
-	char * data = msg->extraData;
+	//build vector
+	LibfabricBuffer * buffers = new LibfabricBuffer[segments.size()];
 
 	//copy data
 	size_t cur = 0;
+	int i = 0;
 	for (auto segment : segments) {
 		//compute copy size to stay in data limits
 		size_t copySize = segment.size;
@@ -180,7 +135,10 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 		assert(offset < segment.size);
 		assert(copySize <= segment.size);
 		assert(copySize <= segment.size - offset);
-		memcpy(data + cur, segment.ptr + offset, copySize);
+
+		//setup
+		buffers[i].buffer = segment.ptr + offset;
+		buffers[i].size = copySize;
 
 		//progress
 		cur += copySize;
@@ -190,41 +148,44 @@ void HookObjectRead::objEagerPushToClient(LibfabricConnection * connection, uint
 	this->stats->readSize += dataSize;
 
 	//send ack message
-	connection->sendMessage(msg, sizeof (*msg) + dataSize, clientId, [connection, msg](void){
-		connection->getDomain().retMsgBuffer(msg);
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, clientId, 0, buffers, segments.size());
+
+	//free mem
+	delete [] buffers;
 }
 
 /****************************************************/
-LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, uint64_t lfClientId, size_t msgBufferId, LibfabricMessage * clientMessage)
+LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
+	//extract
+	LibfabricObjReadWriteInfos & objReadWrite = request.message->data.objReadWrite;
+
 	//debug
 	IOC_DEBUG_ARG("hook:obj:read", "Get object read on %1 for %2->%3 from client %4")
-		.arg(clientMessage->data.objReadWrite.objectId)
-		.arg(clientMessage->data.objReadWrite.offset)
-		.arg(clientMessage->data.objReadWrite.size)
-		.arg(lfClientId)
+		.arg(objReadWrite.objectId)
+		.arg(objReadWrite.offset)
+		.arg(objReadWrite.size)
+		.arg(request.lfClientId)
 		.end();
 
 	//get buffers from object
-	Object & object = this->container->getObject(clientMessage->data.objReadWrite.objectId);
+	Object & object = this->container->getObject(objReadWrite.objectId);
 	ObjectSegmentList segments;
-	bool status = object.getBuffers(segments, clientMessage->data.objReadWrite.offset, clientMessage->data.objReadWrite.size, ACCESS_READ);
+	bool status = object.getBuffers(segments, objReadWrite.offset, objReadWrite.size, ACCESS_READ);
 
 	//eager or rdma
 	if (status) {
-		if (clientMessage->data.objReadWrite.size <= IOC_EAGER_MAX_READ) {
-			this->objEagerPushToClient(connection, lfClientId, clientMessage, segments);
+		if (objReadWrite.size <= IOC_EAGER_MAX_READ) {
+			this->objEagerPushToClient(connection, request.lfClientId, objReadWrite, segments);
 		} else {
-			this->objRdmaPushToClient(connection, lfClientId, clientMessage, segments);
+			this->objRdmaPushToClient(connection, request.lfClientId, objReadWrite, segments);
 		}
 	} else {
-		this->respondError(connection, lfClientId, clientMessage);
+		connection->sendResponse(IOC_LF_MSG_OBJ_READ_WRITE_ACK, request.lfClientId, -1);
 	}
 
 	//republish
-	connection->repostRecive(msgBufferId);
+	connection->repostReceive(request.msgBufferId);
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

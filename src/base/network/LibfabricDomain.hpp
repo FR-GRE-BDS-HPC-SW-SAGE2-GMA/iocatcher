@@ -63,7 +63,7 @@ class LibfabricDomain
 		fid_domain * getDomain(void);
 		fid_mr* getFidMR ( void* ptr, size_t size );
 		MemoryRegion* getMR ( void* ptr, size_t size );
-		void setMsgBuffeSize(size_t size);
+		void setMsgBufferSize(size_t size);
 		size_t getMsgBufferSize(void);
 		void * getMsgBuffer(void);
 		void retMsgBuffer(void * buffer);

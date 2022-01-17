@@ -122,7 +122,7 @@ ioc_client_t * ioc_client_init(const char * ip, const char * port)
 	//setup domain
 	client->domain = new LibfabricDomain(ip, port, false);
 	//client->domain->setMsgBuffeSize(sizeof(LibfabricMessage));
-	client->domain->setMsgBuffeSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
+	client->domain->setMsgBufferSize(sizeof(LibfabricMessage)+(IOC_EAGER_MAX_WRITE));
 	client->passive_wait = true;
 
 	//init semaphore
