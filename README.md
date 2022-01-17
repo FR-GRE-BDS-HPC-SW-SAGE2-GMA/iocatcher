@@ -103,9 +103,3 @@ License & finance
 This project is distributed under Apache 2.0 license.
 
 The project was developped for the SAGE2 european project.
-
-Authors
--------
-
-Sébastien Valat (ATOS)
-Christophe Laferrière (ATOS)
