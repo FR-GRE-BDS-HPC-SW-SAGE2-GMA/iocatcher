@@ -47,7 +47,7 @@ struct LibfabricBuffer
 
 /****************************************************/
 /**
- * Define a post action when we recive a message or when an RDMA operation finish.
+ * Define a post action when we receive a message or when a RDMA operation finishes.
  * @brief Post action on RDMA operations.
 **/
 class LibfabricPostAction
@@ -220,7 +220,7 @@ class LibfabricConnection
  * Serialize the given structure and send it as a message.
  * @param msgType Define the type of message.
  * @param destinationEpId Define the ID of the remote entity to target.
- * @param value Define the value to send.
+ * @param data Define the value to serialize and send.
  * @param portAction Provide a lambda function to be called when the message has been sent.
 **/
 template <class T>
@@ -232,9 +232,14 @@ void LibfabricConnection::sendMessage(LibfabricMessageType msgType, int destinat
 /****************************************************/
 /**
  * Serialize the given structure and send it as a message.
+ * This variant of the sendMessage() function do not wake up the poll()
+ * function when the message has been sent.
+ * It aims to be used in client code implementation where we send a request
+ * then poll for a specific message with the pollMessage() function which
+ * needs to wake up only when it recived the response from the server.
  * @param msgType Define the type of message.
  * @param destinationEpId Define the ID of the remote entity to target.
- * @param value Define the value to send.
+ * @param data Define the value to serialize and send.
 **/
 template <class T> 
 void LibfabricConnection::sendMessageNoPollWakeup(LibfabricMessageType msgType, int destinationEpId, T & data)
@@ -242,11 +247,12 @@ void LibfabricConnection::sendMessageNoPollWakeup(LibfabricMessageType msgType, 
 	this->sendMessage(msgType, destinationEpId, data, new LibfabricPostActionNop(LF_WAIT_LOOP_KEEP_WAITING));
 }
 
+/****************************************************/
 /**
  * Serialize the given structure and send it as a message.
  * @param msgType Define the type of message.
  * @param destinationEpId Define the ID of the remote entity to target.
- * @param value Define the value to send.
+ * @param data Define the value to serialize and send.
  * @param portAction Provide a lambda function to be called when the message has been sent.
 **/
 template <class T>
@@ -275,7 +281,7 @@ void LibfabricConnection::sendMessage(LibfabricMessageType msgType, int destinat
 	//extract size
 	size_t finalSize = serializer.getCursor();
 
-	//send the messahe
+	//send the message
 	this->sendRawMessage(buffer, finalSize, destinationEpId, postAction);
 }
 

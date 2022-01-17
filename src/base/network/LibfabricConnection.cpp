@@ -44,9 +44,9 @@ void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, v
 **/
 void LibfabricPostAction::freeBuffer(void)
 {
-	if (connection != NULL) {
-		if (isRecv && bufferId != -1)
-			connection->repostReceive(bufferId);
+	if (this->connection != NULL) {
+		if (this->isRecv && this->bufferId != -1)
+			connection->repostReceive(this->bufferId);
 		if (this->domainBuffer != NULL)
 			connection->getDomain().retMsgBuffer(this->domainBuffer);
 	}
@@ -63,7 +63,10 @@ LibfabricActionResult LibfabricPostActionFunction::runPostAction(void)
 
 /****************************************************/
 /**
- * Nop function, do nothing.
+ * Nop action. It just returned the associated action.
+ * This is used to only use the par of LibfabricPostAction
+ * which re-register the attached domain buffer to the
+ * domain buffer pool.
 **/
 LibfabricActionResult LibfabricPostActionNop::runPostAction(void)
 {
