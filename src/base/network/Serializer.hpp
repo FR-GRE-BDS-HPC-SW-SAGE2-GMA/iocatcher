@@ -85,6 +85,10 @@ class SerializerBase
 		 * to separate the fields.
 		**/
 		bool outFirst;
+		/**
+		 * Be true when we start to stringify not to print the field name.
+		 * False when we enter in the first member so we print the field name.
+		**/
 		bool root;
 };
 

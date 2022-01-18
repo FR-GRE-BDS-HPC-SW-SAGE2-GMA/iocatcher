@@ -426,5 +426,5 @@ void SerializerBase::checkSize(const char * fieldName, size_t size)
 **/
 SerializerAction SerializerBase::getAction(void) const
 {
-	return action;
+	return this->action;
 }

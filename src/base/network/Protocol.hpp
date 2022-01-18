@@ -296,10 +296,14 @@ struct LibfabricResponse
 	bool msgHasData;
 	/** pointer to the optional data. **/
 	const char * optionalData;
-	/** Optional data in a multi-fragment representation (will go in optionalData on deserialize). **/
+	/**
+	 * Optional data in a multi-fragment representation (will go in optionalData on deserialize).
+	 * NULL if none, an array of optionalDataFragmentCount elements otherwise.
+	 * If used optionalData should be NULL.
+	**/
 	const LibfabricBuffer * optionalDataFragments;
 	/** Number of fragments. **/
-	uint64_t optionalDataFragmentCount;
+	uint32_t optionalDataFragmentCount;
 };
 
 /****************************************************/
