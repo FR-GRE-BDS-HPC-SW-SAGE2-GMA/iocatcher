@@ -40,7 +40,7 @@ namespace IOC
 /**
  * Define the protocol version
 **/
-#define IOC_LF_PROTOCOL_VERSION 1
+#define IOC_LF_PROTOCOL_VERSION 2
 
 /****************************************************/
 class SerializerBase;
