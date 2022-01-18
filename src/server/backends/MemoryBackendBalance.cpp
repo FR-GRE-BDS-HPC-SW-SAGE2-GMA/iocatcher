@@ -115,7 +115,7 @@ void MemoryBackendBalance::deallocate(void * addr, size_t size)
 
 /****************************************************/
 /**
- * Return the memory used by the given memory bacend.
+ * Return the memory used by the given memory backend.
  * Used in unit tests.
  * @param id Id of the memory backend we want to check.
 **/

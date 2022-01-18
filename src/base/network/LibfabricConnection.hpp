@@ -31,7 +31,7 @@ namespace IOC
 #define IOC_LF_SERVER_ID 0
 /** No action. **/
 #define IOC_LF_NO_WAKEUP_POST_ACTION ((LibfabricPostAction*)-1)
-/** Has no buffer attached to the post action so nothing to repost in the recive queue. **/
+/** Has no buffer attached to the post action so nothing to repost in the receive queue. **/
 #define IOC_LF_NO_BUFFER ((size_t)-1)
 
 /****************************************************/
@@ -64,7 +64,7 @@ class LibfabricPostAction
 	protected:
 		/** Keep track of the connection. **/
 		LibfabricConnection * connection;
-		/** If the registered buffer id correspond to a recive buffer. **/
+		/** If the registered buffer id correspond to a receive buffer. **/
 		bool isRecv;
 		/** A buffer ID to clean when then post action terminate. **/
 		size_t bufferId;
@@ -106,7 +106,7 @@ class LibfabricPostActionNop : public LibfabricPostAction
 /****************************************************/
 /**
  * Handling wrapper to managment a libfabric connection. It provides the 
- * necessary semantic to recive messages, send messages and make RDMA operation 
+ * necessary semantic to receive messages, send messages and make RDMA operation 
  * and be notified when they finish. It handle the client side and the server
  * side to get the same class to handle all communications.
  * @brief Wrapper to handle a libfabric connection.
@@ -170,11 +170,11 @@ class LibfabricConnection
 		fid_ep *ep;
 		/** If use wait **/
 		bool passivePolling;
-		/** Recive buffers being posted to libfabric. **/
+		/** Receive buffers being posted to libfabric. **/
 		char ** recvBuffers;
-		/** Number of recive buffer. **/
+		/** Number of receive buffer. **/
 		size_t recvBuffersCount;
-		/** Size of each recive buffer. **/
+		/** Size of each receive buffer. **/
 		size_t recvBuffersSize;
 		/** Map of remote addresses to be used to send messages or rdma operation.**/
 		std::map<int, fi_addr_t> remoteLiAddr;
@@ -182,12 +182,12 @@ class LibfabricConnection
 		uint64_t nextEndpointId;
 		/** Hook to be called when a client connect. **/
 		std::function<void(int)> hookOnEndpointConnect;
-		/** Hook to be called when we recive a message with wrong authentication. **/
+		/** Hook to be called when we receive a message with wrong authentication. **/
 		std::function<LibfabricActionResult(void)> hookOnBadAuth;
 		/** Keep track of the client ID if used for client side. **/
 		uint64_t clientId;
 		/** 
-		 * Keep tack of the lambda functions to be called when reciveing
+		 * Keep tack of the lambda functions to be called when receiveing
 		 * the associated message ID.
 		**/
 		std::map<uint64_t, Hook *> hooks;
@@ -238,7 +238,7 @@ void LibfabricConnection::sendMessage(LibfabricMessageType msgType, int destinat
  * function when the message has been sent.
  * It aims to be used in client code implementation where we send a request
  * then poll for a specific message with the pollMessage() function which
- * needs to wake up only when it recived the response from the server.
+ * needs to wake up only when it received the response from the server.
  * @param msgType Define the type of message.
  * @param destinationEpId Define the ID of the remote entity to target.
  * @param data Define the value to serialize and send.

@@ -23,7 +23,7 @@ namespace IOC
 {
 
 /****************************************************/
-/** Construct a port action by setting the default values. **/
+/** Construct a post action by setting the default values. **/
 LibfabricPostAction::LibfabricPostAction(void)
 {
 	this->bufferId = IOC_LF_NO_BUFFER;
@@ -57,8 +57,8 @@ void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, v
 
 /****************************************************/
 /**
- * On deletion of the object we free the attached recieve buffer to return it to
- * the connection.
+ * On deletion of the object we detach the attached recieve buffer to return it to
+ * the domain buffer pool for reuse.
 **/
 void LibfabricPostAction::freeBuffer(void)
 {
@@ -321,7 +321,7 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
 	//disable reception
 	this->disableReceive = true;
 
-	//build messahe
+	//build message
 	LibfabricErrorMessage errorMessage = {
 		.errorMessage = message
 	};
@@ -662,7 +662,7 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 
 	//fill default
 	response.lfClientId = -1;
-	memset(&response.header,0, sizeof(response.header));
+	memset(&response.header, 0, sizeof(response.header));
 	response.message = NULL;
 	response.msgBufferId = -1;
 
