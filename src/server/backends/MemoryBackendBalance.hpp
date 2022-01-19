@@ -31,7 +31,7 @@ class MemoryBackendBalance: public MemoryBackend
 		MemoryBackendBalance(void);
 		virtual ~MemoryBackendBalance(void);
 		void registerBackend(MemoryBackend * backend);
-		size_t getMem(int id) const;
+		size_t getMem(size_t id) const;
 	public:
 		virtual void * allocate(size_t size);
 		virtual void deallocate(void * addr, size_t size);

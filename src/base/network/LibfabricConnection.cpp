@@ -23,6 +23,25 @@ namespace IOC
 {
 
 /****************************************************/
+/** Construct a post action by setting the default values. **/
+LibfabricPostAction::LibfabricPostAction(void)
+{
+	this->bufferId = IOC_LF_NO_BUFFER;
+	this->connection = NULL;
+	this->domainBuffer = NULL;
+};
+
+/****************************************************/
+/** 
+ * Destruction responsible of returning the attached ressources (buffers) 
+ * to their place.
+**/
+LibfabricPostAction::~LibfabricPostAction(void)
+{
+	this->freeBuffer();
+};
+
+/****************************************************/
 void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, void * domainBuffer)
 {
 	//check
@@ -38,16 +57,16 @@ void LibfabricPostAction::attachDomainBuffer(LibfabricConnection * connection, v
 
 /****************************************************/
 /**
- * On deletion of the object we free the attached recieve buffer to return it to
- * the connection.
+ * On deletion of the object we detach the attached recieve buffer to return it to
+ * the domain buffer pool for reuse.
 **/
 void LibfabricPostAction::freeBuffer(void)
 {
 	if (this->connection != NULL) {
-		if (this->isRecv && this->bufferId != -1)
-			connection->repostReceive(this->bufferId);
+		if (this->isRecv && this->bufferId != IOC_LF_NO_BUFFER)
+			this->connection->repostReceive(this->bufferId);
 		if (this->domainBuffer != NULL)
-			connection->getDomain().retMsgBuffer(this->domainBuffer);
+			this->connection->getDomain().retMsgBuffer(this->domainBuffer);
 	}
 }
 
@@ -259,7 +278,7 @@ void LibfabricConnection::joinServer(void)
 	this->registerHook(IOC_LF_MSG_ASSIGN_ID, [this](LibfabricConnection* connection, LibfabricClientRequest & request) {
 		//assign id
 		//printf("get clientID %d\n", clientId);
-		this->clientId = request.lfClientId;
+		this->clientId = request.message->data.firstHandshakeResponse.assignLfClientId;
 		connection->repostReceive(request.msgBufferId);
 
 		//check protocol version
@@ -302,19 +321,15 @@ void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
 	//disable reception
 	this->disableReceive = true;
 
-	//build message to send
-	LibfabricMessage * lfMessage = static_cast<LibfabricMessage*>(buffer);
-	this->fillProtocolHeader(lfMessage->header, IOC_LF_MSG_FATAL_ERROR);
-
-	//push message
-	memcpy(&lfMessage->data, message.c_str(), message.size() + 1);
+	//build message
+	LibfabricErrorMessage errorMessage = {
+		.errorMessage = message
+	};
 
 	//send to all
 	size_t cnt = this->remoteLiAddr.size();
 	for (auto & it : this->remoteLiAddr) {
-		this->sendMessage(buffer, size, it.first, [](){
-			return LF_WAIT_LOOP_UNBLOCK;
-		});
+		this->sendMessage(IOC_LF_MSG_FATAL_ERROR, it.first, errorMessage, new LibfabricPostActionNop(LF_WAIT_LOOP_UNBLOCK));
 	}
 
 	//wait all
@@ -647,7 +662,7 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 
 	//fill default
 	response.lfClientId = -1;
-	response.header = NULL;
+	memset(&response.header, 0, sizeof(response.header));
 	response.message = NULL;
 	response.msgBufferId = -1;
 
@@ -769,14 +784,7 @@ bool LibfabricConnection::checkAuth(LibfabricMessage * message, uint64_t lfClien
 					.end();
 
 		//send message
-		LibfabricMessage * msg = new LibfabricMessage;
-		fillProtocolHeader(msg->header, IOC_LF_MSG_BAD_AUTH);
-
-		//send message
-		this->sendMessage(msg, sizeof (*msg), lfClientId, [msg](void){
-			delete msg;
-			return LF_WAIT_LOOP_UNBLOCK;
-		});
+		this->sendResponse(IOC_LF_MSG_BAD_AUTH, lfClientId, -1);
 
 		//not good
 		return false;
@@ -801,9 +809,13 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	LibfabricClientRequest request = {
 		.lfClientId = message->header.lfClientId,
 		.msgBufferId = id,
-		.header = &message->header,
 		.message = message,
 	};
+
+	//deserialize
+	DeSerializer deserializer(buffer, this->recvBuffersSize);
+	deserializer.apply("header", request.header);
+	request.deserializer = deserializer;
 
 	//switch
 	switch(message->header.msgType) {
@@ -829,10 +841,13 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 				auto it = this->hooks.find(message->header.msgType);
 
 				//handle
-				if (it != this->hooks.end())
+				if (it != this->hooks.end()) {
 					return it->second->onMessage(this, request);
-				else
-					IOC_FATAL_ARG("Server has send error message !\n%s").arg((char*)&message->data).end();
+				} else {
+					LibfabricErrorMessage errorMessage;
+					deserializer.apply("errorMessage", errorMessage);
+					IOC_FATAL_ARG("Server has send error message !\n%s").arg(errorMessage.errorMessage).end();
+				}
 				break;
 			}
 		default:
@@ -874,6 +889,11 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 	void * buffer =  this->recvBuffers[id];
 	LibfabricMessage * message = (LibfabricMessage *)buffer;
 
+	//deserialize
+	DeSerializer deserializer(buffer, this->recvBuffersSize);
+	LibfabricMessageHeader header;
+	deserializer.apply("header", header);
+
 	//switch
 	if (message->header.msgType == IOC_LF_MSG_BAD_AUTH) {
 		if (this->hookOnBadAuth) {
@@ -888,7 +908,9 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 			return false;
 		}
 	} else if (message->header.msgType == IOC_LF_MSG_FATAL_ERROR) {
-		IOC_FATAL_ARG("Server has send error message !\n%1").arg((char*)&message->data).end();
+		LibfabricErrorMessage errorMessage;
+		deserializer.apply("errorMessage", errorMessage);
+		IOC_FATAL_ARG("Server has send error message !\n%1").arg(errorMessage.errorMessage).end();
 		return false;
 	} else {
 		//check auth
@@ -896,10 +918,11 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 			return false;
 		
 		//fill the struct
-		response.header = &message->header;
+		response.header = header;
 		response.message = message;
 		response.lfClientId = message->header.lfClientId;
 		response.msgBufferId = id;
+		response.deserializer = deserializer;
 
 		//finish
 		return true;
@@ -985,13 +1008,6 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 		LIBFABRIC_CHECK_STATUS("fi_av_insert", -1);
 	}
 
-	//send message
-	LibfabricMessage * msg = new LibfabricMessage;
-	memset(msg, 0, sizeof(*msg));
-	msg->header.msgType = IOC_LF_MSG_ASSIGN_ID;
-	msg->header.lfClientId = epId;
-	msg->data.firstHandshakeResponse.protocolVersion = IOC_LF_PROTOCOL_VERSION;
-
 	//debug
 	IOC_DEBUG_ARG("libfabric:client", "Recive client in libfabric lfId=%1, epId=%2")
 		.arg(message->header.lfClientId)
@@ -999,10 +1015,11 @@ void LibfabricConnection::onConnInit(LibfabricMessage * message)
 		.end();
 
 	//send response
-	this->sendMessage(msg, sizeof (*msg), epId, [msg](void){
-		delete msg;
-		return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	LibfabricFirstHandshake firstHandshakeResponse = {
+		.protocolVersion = IOC_LF_PROTOCOL_VERSION,
+		.assignLfClientId = epId,
+	};
+	this->sendMessageNoPollWakeup(IOC_LF_MSG_ASSIGN_ID, epId, firstHandshakeResponse);
 
 	//notify
 	if (this->hookOnEndpointConnect)
@@ -1167,22 +1184,19 @@ void LibfabricConnection::setOnBadAuth(std::function<LibfabricActionResult(void)
 **/
 void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, bool unblock)
 {
-	//prepare message
-	LibfabricMessage * msg = new LibfabricMessage;
-	msg->header.msgType = msgType;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = status;
-	msg->data.response.msgDataSize = 0;
-	msg->data.response.msgHasData = false;
+	//build response
+	LibfabricResponse response = {
+		.msgDataSize = 0,
+		.status = status,
+		.msgHasData = false,
+		.optionalData = NULL,
+	};
 
 	//send message
-	this->sendMessage(msg, sizeof (*msg), lfClientId, [msg, unblock](void){
-		delete msg;
-		if (unblock)
-			return LF_WAIT_LOOP_UNBLOCK;
-		else
-			return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	if (unblock)
+		this->sendMessage(msgType, lfClientId, response, new LibfabricPostActionNop(LF_WAIT_LOOP_UNBLOCK));
+	else
+		this->sendMessage(msgType, lfClientId, response, new LibfabricPostActionNop(LF_WAIT_LOOP_KEEP_WAITING));
 }
 
 /****************************************************/
@@ -1197,25 +1211,19 @@ void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lf
 **/
 void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const char * data, size_t size, bool unblock)
 {
-	//prepare message
-	size_t bufferSize = sizeof(LibfabricMessage)+size;
-	void * buffer = malloc(bufferSize);
-	LibfabricMessage * msg = reinterpret_cast<LibfabricMessage*>(buffer);
-	msg->header.msgType = msgType;
-	msg->header.lfClientId = lfClientId;
-	msg->data.response.status = status;
-	msg->data.response.msgDataSize = size;
-	msg->data.response.msgHasData = true;
-	memcpy(msg->extraData, data, size);
+	//build response
+	LibfabricResponse response = {
+		.msgDataSize = size,
+		.status = status,
+		.msgHasData = true,
+		.optionalData = data,
+	};
 
 	//send message
-	this->sendMessage(msg, bufferSize, lfClientId, [buffer, unblock](void){
-		free(buffer);
-		if (unblock)
-			return LF_WAIT_LOOP_UNBLOCK;
-		else
-			return LF_WAIT_LOOP_KEEP_WAITING;
-	});
+	if (unblock)
+		this->sendMessage(msgType, lfClientId, response, new LibfabricPostActionNop(LF_WAIT_LOOP_UNBLOCK));
+	else
+		this->sendMessage(msgType, lfClientId, response, new LibfabricPostActionNop(LF_WAIT_LOOP_KEEP_WAITING));
 }
 
 /****************************************************/

@@ -295,13 +295,15 @@ TEST(TestProtocol, LibfabricFirstHandshake)
 	//allocate
 	LibfabricFirstHandshake out, in = {
 		.protocolVersion = 10,
+		.assignLfClientId = 20,
 	};
 
 	//apply
-	serializeDeserialize(in, out, 4);
+	serializeDeserialize(in, out, 12);
 
 	//check
 	EXPECT_EQ(in.protocolVersion, out.protocolVersion);
+	EXPECT_EQ(in.assignLfClientId, out.assignLfClientId);
 }
 
 /****************************************************/

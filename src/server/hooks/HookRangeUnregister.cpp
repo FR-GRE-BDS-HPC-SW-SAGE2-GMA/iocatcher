@@ -49,7 +49,7 @@ LibfabricActionResult HookRangeUnregister::onMessage(LibfabricConnection * conne
 	if (unregisterRange.write)
 		mode = CONSIST_ACCESS_MODE_WRITE;
 	if (this->config->consistencyCheck)
-		if (!tracker.unregisterRange(request.header->tcpClientId, unregisterRange.id, unregisterRange.offset, unregisterRange.size, mode))
+		if (!tracker.unregisterRange(request.header.tcpClientId, unregisterRange.id, unregisterRange.offset, unregisterRange.size, mode))
 			status = -1;
 
 	//send response
