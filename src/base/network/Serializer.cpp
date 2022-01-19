@@ -91,7 +91,7 @@ void SerializerBase::apply(const char * fieldName, bool & value)
 	} else if (this->action == SERIALIZER_SIZE) {
 		//do nothing
 	} else {
-		IOC_FATAL_ARG("Unspported action %1 !").arg(this->action).end();
+		IOC_FATAL_ARG("Unsupported action %1 !").arg(this->action).end();
 	}
 
 	//move forward
