@@ -38,6 +38,9 @@ void HookPingPong::reallocateBuffer(size_t rdmaSize)
 		buffer = new char[rdmaSize];
 		bufferSize = rdmaSize;
 		bufferIov = domain->registerSegment(buffer, rdmaSize, true, true, false);
+	} else {
+		this->bufferSize = 0;
+		this->buffer = NULL;
 	}
 }
 
