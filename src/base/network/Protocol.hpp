@@ -40,7 +40,7 @@ namespace IOC
 /**
  * Define the protocol version
 **/
-#define IOC_LF_PROTOCOL_VERSION 1
+#define IOC_LF_PROTOCOL_VERSION 2
 
 /****************************************************/
 class SerializerBase;
@@ -97,6 +97,16 @@ enum LibfabricMessageType
 
 /****************************************************/
 typedef uint64_t LibfabricAddr;
+
+/****************************************************/
+/**
+ * Define a buffer with its size.
+**/
+struct LibfabricBuffer
+{
+	void * buffer;
+	size_t size;
+};
 
 /****************************************************/
 /**
@@ -286,6 +296,14 @@ struct LibfabricResponse
 	bool msgHasData;
 	/** pointer to the optional data. **/
 	const char * optionalData;
+	/**
+	 * Optional data in a multi-fragment representation (will go in optionalData on deserialize).
+	 * NULL if none, an array of optionalDataFragmentCount elements otherwise.
+	 * If used optionalData should be NULL.
+	**/
+	const LibfabricBuffer * optionalDataFragments;
+	/** Number of fragments. **/
+	uint32_t optionalDataFragmentCount;
 };
 
 /****************************************************/

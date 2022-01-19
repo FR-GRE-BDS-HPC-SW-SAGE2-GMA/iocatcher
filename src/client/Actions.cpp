@@ -80,24 +80,24 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 **/
 ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId & objectId, void* buffer, size_t size, size_t offset)
 {
-	//setup message request
-	LibfabricMessage * msg = (LibfabricMessage *)connection.getDomain().getMsgBuffer();
-	memset(msg, 0, sizeof(*msg));
-	connection.fillProtocolHeader(msg->header, IOC_LF_MSG_OBJ_READ);
-	msg->data.objReadWrite.objectId = objectId;
-	msg->data.objReadWrite.offset = offset;
-	msg->data.objReadWrite.size = size;
-	msg->data.objReadWrite.msgHasData = false;
+	//build request
+	LibfabricObjReadWriteInfos objReadWrite = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+		.msgHasData = false,
+		.optionalData = NULL
+	};
 
 	//if rdma
 	if (size > IOC_EAGER_MAX_READ) {
 		//register
 		Iov iov = connection.getDomain().registerSegment(buffer, size, true, true, false);
-		msg->data.objReadWrite.iov = iov;
+		objReadWrite.iov = iov;
 	}
 
 	//send message
-	connection.sendMessageNoPollWakeup(msg, sizeof (*msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_READ, IOC_LF_SERVER_ID, objReadWrite);
 
 	//poll server response
 	LibfabricRemoteResponse serverResponse;
@@ -105,20 +105,21 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//get status
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 
 	//if need to copy data from eager exchange
-	if (serverResponse.message->data.response.msgHasData) {
-		assumeArg(serverResponse.message->data.response.msgDataSize == size, "Invalid message size recieved, expect %1 got %2")
-			.arg(serverResponse.message->data.response.msgDataSize)
+	if (response.msgHasData) {
+		assumeArg(response.msgDataSize == size, "Invalid message size recieved, expect %1 got %2")
+			.arg(response.msgDataSize)
 			.arg(size)
 			.end();
-		memcpy(buffer, serverResponse.message->extraData, serverResponse.message->data.response.msgDataSize);
+		memcpy(buffer, response.optionalData, response.msgDataSize);
 	}
 
 	//repost recv buffer
 	connection.repostReceive(serverResponse);
-	connection.getDomain().retMsgBuffer(msg);
 
 	//unregister
 	if (size > IOC_EAGER_MAX_READ)
@@ -204,16 +205,15 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 **/
 int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_FLUSH);
-	msg.data.objFlush.objectId = objectId;
-	msg.data.objFlush.offset = offset;
-	msg.data.objFlush.size = size;
+	//build message
+	LibfabricObjFlushInfos objFlush = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_FLUSH, IOC_LF_SERVER_ID, objFlush);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -221,7 +221,9 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status & repost buffer
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
@@ -245,17 +247,16 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 **/
 int32_t IOC::obj_range_register(LibfabricConnection &connection, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_REGISTER);
-	msg.data.registerRange.objectId = objectId;
-	msg.data.registerRange.offset = offset;
-	msg.data.registerRange.size = size;
-	msg.data.registerRange.write = write;
+	//setup request
+	LibfabricRegisterRange registerRange = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+		.write = write
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_RANGE_REGISTER, IOC_LF_SERVER_ID, registerRange);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -263,7 +264,9 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
@@ -286,18 +289,17 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 **/
 int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const LibfabricObjectId & objectId, size_t offset, size_t size, bool write)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_RANGE_UNREGISTER);
-	msg.data.unregisterRange.id = id;
-	msg.data.unregisterRange.objectId = objectId;
-	msg.data.unregisterRange.offset = offset;
-	msg.data.unregisterRange.size = size;
-	msg.data.unregisterRange.write = write;
+	//setup request
+	LibfabricUnregisterRange unregisterRange = {
+		.objectId = objectId,
+		.offset = offset,
+		.size = size,
+		.id = id,
+		.write = write
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_RANGE_UNREGISTER, IOC_LF_SERVER_ID, unregisterRange);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -305,7 +307,9 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status & repost buffer
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
@@ -324,14 +328,13 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 **/
 int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & objectId)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_CREATE);
-	msg.data.objFlush.objectId = objectId;
+	//build message
+	LibfabricObjCreateInfos objCreate = {
+		.objectId = objectId
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_CREATE, IOC_LF_SERVER_ID, objCreate);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -339,7 +342,9 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extract status & report buffer
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status
@@ -361,18 +366,17 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 **/
 int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sourceObjectId, const LibfabricObjectId & destObjectId, bool allowExist, size_t offset, size_t size)
 {
-	//setup message request
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_OBJ_COW);
-	msg.data.objCow.sourceObjectId = sourceObjectId;
-	msg.data.objCow.destObjectId = destObjectId;
-	msg.data.objCow.allowExist = allowExist;
-	msg.data.objCow.rangeOffset = offset;
-	msg.data.objCow.rangeSize = size;
+	//build message
+	LibfabricObjectCow objCow = {
+		.sourceObjectId = sourceObjectId,
+		.destObjectId = destObjectId,
+		.allowExist = allowExist,
+		.rangeOffset = offset,
+		.rangeSize = size
+	};
 
 	//send message
-	connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+	connection.sendMessageNoPollWakeup(IOC_LF_MSG_OBJ_COW, IOC_LF_SERVER_ID, objCow);
 
 	//poll
 	LibfabricRemoteResponse serverResponse;
@@ -380,7 +384,9 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	assume(hasMessage, "Fail to get message from pollMessage !");
 
 	//extrace status & repost message
-	int status = serverResponse.message->data.response.status;
+	LibfabricResponse response;
+	serverResponse.deserializer.apply("response", response);
+	int status = response.status;
 	connection.repostReceive(serverResponse);
 
 	//check status

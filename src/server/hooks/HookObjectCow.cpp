@@ -26,12 +26,12 @@ HookObjectCow::HookObjectCow(Container * container)
 LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjectCow & objCow = request.message->data.objCow;
+	LibfabricObjectCow objCow;
+	request.deserializer.apply("objCow", objCow);
 
 	//debug
-	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write from %1 to %2 from client %3")
-		.arg(objCow.sourceObjectId)
-		.arg(objCow.destObjectId)
+	IOC_DEBUG_ARG("hook:obj:cow", "Get copy on write %1 from client %2")
+		.arg(Serializer::stringify(objCow))
 		.arg(request.lfClientId)
 		.end();
 	

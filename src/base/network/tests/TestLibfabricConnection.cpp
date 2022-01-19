@@ -209,11 +209,12 @@ TEST(TestLibfabricConnection, sendResponse_with_data_multi)
 		//register hook
 		connection.registerHook(IOC_LF_MSG_PING, [&gotMessage](LibfabricConnection * connection, LibfabricClientRequest & request) {
 			//extract & check
-			LibfabricResponse & response = request.message->data.response;
+			LibfabricResponse response;
+			request.deserializer.apply("response", response);
 			EXPECT_EQ(-1, response.status);
 			EXPECT_EQ(11, response.msgDataSize);
 			EXPECT_TRUE(response.msgHasData);
-			EXPECT_STREQ("HelloWorld", request.message->extraData);
+			EXPECT_STREQ("HelloWorld", response.optionalData);
 			gotMessage = true;
 			connection->repostReceive(request.msgBufferId);
 			//say to unblock the poll(true) loop when return

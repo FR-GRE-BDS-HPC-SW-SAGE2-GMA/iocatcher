@@ -260,7 +260,7 @@ TEST(TestSerializerBase, stringify)
 	std::string out = Serializer::stringify(data);
 
 	//check
-	EXPECT_EQ("{ ptrSize: 6, ptr: 0x20, { integer: 10, str: \"hello\" } }", out);
+	EXPECT_EQ("{ ptrSize: 6, ptr: 0x20, data: { integer: 10, str: \"hello\" } }", out);
 }
 
 /****************************************************/

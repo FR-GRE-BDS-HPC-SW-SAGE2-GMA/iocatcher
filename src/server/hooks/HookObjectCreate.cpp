@@ -26,11 +26,12 @@ HookObjectCreate::HookObjectCreate(Container * container)
 LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjCreateInfos & objCreate = request.message->data.objCreate;
+	LibfabricObjCreateInfos objCreate;
+	request.deserializer.apply("objCreate", objCreate);
 
 	//debug
 	IOC_DEBUG_ARG("hook:obj:create", "Get create object %1 from client %2")
-		.arg(objCreate.objectId)
+		.arg(Serializer::stringify(objCreate))
 		.arg(request.lfClientId)
 		.end();
 

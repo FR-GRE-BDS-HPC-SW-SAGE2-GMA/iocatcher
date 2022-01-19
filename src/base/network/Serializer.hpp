@@ -65,6 +65,7 @@ class SerializerBase
 		void * getData(void);
 		size_t getDataSize(void);
 		template <class T> static std::string stringify(T & value);
+		SerializerAction getAction(void) const;
 	private:
 		void checkSize(const char * fieldName, size_t size);
 	private:
@@ -84,6 +85,11 @@ class SerializerBase
 		 * to separate the fields.
 		**/
 		bool outFirst;
+		/**
+		 * Be true when we start to stringify not to print the field name.
+		 * False when we enter in the first member so we print the field name.
+		**/
+		bool root;
 };
 
 /****************************************************/
@@ -132,11 +138,12 @@ void SerializerBase::apply(const char * fieldName, T & value)
 	//open bracket for objects
 	if (this->action == SERIALIZER_STRINGIFY) {
 		assert(this->out != NULL);
-		*this->out << (this->outFirst ? "" : ", ") << "{ ";
+		*this->out << (this->outFirst ? "" : ", ") << ((this->root) ? "" : fieldName) << ((this->root) ? "" : ": ") << "{ ";
 		this->outFirst = true;
 	}
 
-	//serialize the value to string
+	//serialize the value
+	this->root = false;
 	value.applySerializerDef(*this);
 
 	//close bracket for objects

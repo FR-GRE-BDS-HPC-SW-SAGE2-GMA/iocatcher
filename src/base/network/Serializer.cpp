@@ -36,6 +36,7 @@ SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction acti
 	this->action = action;
 	this->out = NULL;
 	this->outFirst = false;
+	this->root = true;
 }
 
 /****************************************************/
@@ -55,6 +56,7 @@ SerializerBase::SerializerBase(std::ostream * out)
 	this->action = SERIALIZER_STRINGIFY;
 	this->out = out;
 	this->outFirst = true;
+	this->root = true;
 }
 
 /****************************************************/
@@ -418,4 +420,13 @@ void SerializerBase::checkSize(const char * fieldName, size_t size)
 			.arg(requested)
 			.end();
 	}
+}
+
+/****************************************************/
+/**
+ * Return the configured action.
+**/
+SerializerAction SerializerBase::getAction(void) const
+{
+	return this->action;
 }

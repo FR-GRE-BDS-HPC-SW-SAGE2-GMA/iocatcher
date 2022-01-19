@@ -26,13 +26,12 @@ HookFlush::HookFlush(Container * container)
 LibfabricActionResult HookFlush::onMessage(LibfabricConnection * connection, LibfabricClientRequest & request)
 {
 	//extract
-	LibfabricObjFlushInfos & objFlush = request.message->data.objFlush;
+	LibfabricObjFlushInfos objFlush;
+	request.deserializer.apply("objFlush", objFlush);
 
 	//debug
-	IOC_DEBUG_ARG("hook:obj:flush", "Get flush object %1 on %2->%3 from client %4")
-		.arg(objFlush.objectId)
-		.arg(objFlush.offset)
-		.arg(objFlush.size)
+	IOC_DEBUG_ARG("hook:obj:flush", "Get flush %1 client %2")
+		.arg(Serializer::stringify(objFlush))
 		.arg(request.lfClientId)
 		.end();
 
