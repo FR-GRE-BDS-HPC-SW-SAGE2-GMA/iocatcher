@@ -18,6 +18,8 @@ using namespace IOC;
  * @param domain Reference to the libfabric domain to be used.
  * @param connection Reference to the client connection to be used.
  * @param cnt Number of time to make the ping pong roundtrip.
+ * @param eagerSize Define the sier of the data to embed directly in the message to send to the server.
+ * @param rdmaSize Define the size of the data to transfer to the server via an RDMA operation.
 **/
 void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, int cnt, size_t eagerSize, size_t rdmaSize)
 {
