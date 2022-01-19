@@ -1240,6 +1240,7 @@ void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lf
 {
 	//check
 	assert(fragments != NULL);
+	assert(cntFragments < UINT32_MAX);
 
 	//calc
 	size_t sumSize = 0;
@@ -1253,7 +1254,7 @@ void LibfabricConnection::sendResponse(LibfabricMessageType msgType, uint64_t lf
 			.msgHasData = true,
 			.optionalData = NULL,
 			.optionalDataFragments = fragments,
-			.optionalDataFragmentCount = cntFragments,
+			.optionalDataFragmentCount = (uint32_t)cntFragments,
 	};
 
 	//send message
