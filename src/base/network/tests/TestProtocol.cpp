@@ -48,9 +48,6 @@ TEST(TestProtocol, LibfabricObjectId_operator_equal_equal)
 template <class T>
 void serializeDeserialize(T & in, T & out, size_t expectedSize)
 {
-	//memset the out struct
-	memset(&out, 0, sizeof(out));
-
 	//check
 	EXPECT_LE(sizeof(T), IOC_STRUCT_MAX);
 
