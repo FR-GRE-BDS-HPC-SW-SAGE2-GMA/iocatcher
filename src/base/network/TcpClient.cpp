@@ -132,7 +132,7 @@ int TcpClient::tcp_connect(const char *addr, const char *aport)
 /*****************************************************/
 /**
  * After establishing the connection we make some read operation
- * on the connection to recive the auth information so we are
+ * on the connection to receive the auth information so we are
  * ready to exchange messages on the libfabric protocol.
  * @return Return a struct containing the auth informations recieved from the server.
 **/

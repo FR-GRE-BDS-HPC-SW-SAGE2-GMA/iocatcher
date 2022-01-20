@@ -69,7 +69,7 @@ enum LibfabricMessageType
 	IOC_LF_MSG_CONNECT_INIT,
 	/** As a response to IOC_LF_MSG_CONNECT_INIT the server send ID assignement. **/
 	IOC_LF_MSG_ASSIGN_ID,
-	/** If recive a message with wrong auth the server will respond with this message. **/
+	/** If receive a message with wrong auth the server will respond with this message. **/
 	IOC_LF_MSG_BAD_AUTH,
 	/** Message saying an error append on the server and lead to a crash. **/
 	IOC_LF_MSG_FATAL_ERROR,

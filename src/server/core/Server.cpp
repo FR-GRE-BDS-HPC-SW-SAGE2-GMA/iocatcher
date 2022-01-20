@@ -64,7 +64,7 @@ Server::Server(const Config * config, const std::string & port)
 	//establish connections
 	this->connection = new LibfabricConnection(this->domain, !config->activePolling);
 	assert(IOC_POST_RECEIVE_WRITE < 1024*1024);
-	this->connection->postRecives(1024*1024, 128);
+	this->connection->postReceives(1024*1024, 128);
 	if (config->clientAuth)
 		this->connection->setCheckClientAuth(true);
 
@@ -153,7 +153,7 @@ void Server::setMemoryBackend(MemoryBackend * memoryBackend)
 
 /****************************************************/
 /**
- * Setup the TCP server to recive new cilents. It start a new thread
+ * Setup the TCP server to receive new cilents. It start a new thread
  * to handle the connection. It also provide the handler to assign
  * clientIDs and client key (randomly generated) to auth the clients.
  * @param port Define the TCP port to listen.

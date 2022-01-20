@@ -106,7 +106,7 @@ class LibfabricConnection
 	public:
 		LibfabricConnection(LibfabricDomain * lfDomain, bool passivePolling);
 		~LibfabricConnection(void);
-		void postRecives(size_t size, int count);
+		void postReceives(size_t size, int count);
 		void joinServer(void);
 		void poll(bool waitMsg);
 		bool pollMessage(LibfabricRemoteResponse & response, LibfabricMessageType expectedMessageType);

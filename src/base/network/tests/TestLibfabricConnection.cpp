@@ -29,7 +29,7 @@ void clientServer(std::function<void(LibfabricConnection & connection,int client
 	std::thread server([&gotConnection, &serverReady, &serverAction]{
 		LibfabricDomain domain("127.0.0.1", "8446", true);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(1024*1024, 64);
+		connection.postReceives(1024*1024, 64);
 		int clientId = 0;
 		connection.setHooks([&gotConnection,&clientId](int id) {
 			gotConnection = true;
@@ -52,7 +52,7 @@ void clientServer(std::function<void(LibfabricConnection & connection,int client
 	std::thread client([&clientAction]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
+		connection.postReceives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		clientAction(connection);
 	});
@@ -446,7 +446,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		LibfabricConnection connection(&domain, false);
 		connection.getClientRegistry().registerClient(10, 123456789);
 		connection.setCheckClientAuth(true);
-		connection.postRecives(1024*1024, 64);
+		connection.postReceives(1024*1024, 64);
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection = true;
 		});
@@ -469,7 +469,7 @@ TEST(TestLibfabricConnection, message_auth_ok)
 		LibfabricDomain domain("127.0.0.1", "8455", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123456789);
-		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
+		connection.postReceives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//send message
 		LibfabricEmpty empty;
@@ -506,7 +506,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		LibfabricConnection connection(&domain, false);
 		connection.getClientRegistry().registerClient(10, 123456789);
 		connection.setCheckClientAuth(true);
-		connection.postRecives(1024*1024, 64);
+		connection.postReceives(1024*1024, 64);
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection = true;
 		});
@@ -529,7 +529,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		LibfabricDomain domain("127.0.0.1", "8465", false);
 		LibfabricConnection connection(&domain, false);
 		connection.setTcpClientInfos(10, 123);
-		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
+		connection.postReceives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//on error
 		connection.setOnBadAuth([&gotError](){
@@ -571,7 +571,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	std::thread server([&gotConnection, &serverReady]{
 		LibfabricDomain domain("127.0.0.1", "8446", true);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(1024*1024, 64);
+		connection.postReceives(1024*1024, 64);
 		connection.setHooks([&gotConnection](int id) {
 			gotConnection++;
 		});
@@ -592,7 +592,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	std::thread client1([&gotErrorMessage1]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
+		connection.postReceives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//hook
 		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage1](LibfabricConnection * connection, LibfabricClientRequest & request){
@@ -608,7 +608,7 @@ TEST(TestLibfabricConnection, broadcastErrrorMessage)
 	std::thread client2([&gotErrorMessage2]{
 		LibfabricDomain domain("127.0.0.1", "8446", false);
 		LibfabricConnection connection(&domain, false);
-		connection.postRecives(IOC_POST_RECEIVE_READ, 2);
+		connection.postReceives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//hook
 		connection.registerHook(IOC_LF_MSG_FATAL_ERROR, [&gotErrorMessage2](LibfabricConnection * connection, LibfabricClientRequest & request){
