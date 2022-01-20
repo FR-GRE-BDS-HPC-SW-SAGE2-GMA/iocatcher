@@ -60,13 +60,21 @@ endif (MERO_FOUND)
 target_link_libraries(serverlib iocatcher-base)
 
 ######################################################
+add_executable(iocatcher-server ${IOC_SERVER_INTERNAL_CODE} main.cpp)
+target_link_libraries(iocatcher-server iocatcher-base)
+
+######################################################
 if (MERO_FOUND)
-	add_executable(iocatcher-server ${IOC_SERVER_INTERNAL_CODE} main.cpp)
-	target_link_libraries(iocatcher-server iocatcher-base)
 	target_link_libraries(iocatcher-server ${MERO_LIBRARIES})
-	install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
 	SET_TARGET_PROPERTIES(iocatcher-server PROPERTIES COMPILE_FLAGS "${MERO_COMPILE_FLAGS}")
 endif (MERO_FOUND)
+if (MOTR_FOUND)
+	target_link_libraries(iocatcher-server ${MOTR_LIBRARIES})
+	SET_TARGET_PROPERTIES(iocatcher-server PROPERTIES COMPILE_FLAGS "${MOTR_COMPILE_FLAGS}")
+endif (MOTR_FOUND)
+
+######################################################
+install(TARGETS iocatcher-server DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ######################################################
 add_executable(iocatcher-server-no-mero ${IOC_SERVER_INTERNAL_CODE_NOMERO} main.cpp)
