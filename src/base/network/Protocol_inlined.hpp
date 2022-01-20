@@ -5,48 +5,27 @@
 *****************************************************/
 
 /****************************************************/
+#ifndef IOC_PROTOCOL_INLINED_HPP
+#define IOC_PROTOCOL_INLINED_HPP
+
+/****************************************************/
 //internal
 #include "Serializer.hpp"
 #include "Protocol.hpp"
 
 /****************************************************/
-using namespace IOC;
-
-/****************************************************/
-std::ostream & IOC::operator <<(std::ostream & out, const LibfabricObjectId & objectId)
+namespace IOC
 {
-	out << objectId.high << ':' << objectId.low;
-	return out;
-}
 
 /****************************************************/
-std::ostream & operator <<(std::ostream & out, const Iov & iov)
-{
-	out << iov.addr << ':' << iov.key;
-	return out;
-}
-
-/****************************************************/
-bool IOC::operator==(const Iov & a, const Iov & b)
-{
-	return a.addr == b.addr && a.key == b.key;
-}
-
-/****************************************************/
-bool IOC::operator==(const LibfabricObjectId & a, const LibfabricObjectId & b)
-{
-	return a.low == b.low && a.high == b.high;
-}
-
-/****************************************************/
-void Iov::applySerializerDef(SerializerBase & serializer)
+inline void Iov::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("addr", this->addr);
 	serializer.apply("key", this->key);
 }
 
 /****************************************************/
-void LibfabricPing::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricPing::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("rdmaSize", this->rdmaSize);
 	serializer.apply("eagerSize", this->eagerSize);
@@ -56,14 +35,14 @@ void LibfabricPing::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricObjectId::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricObjectId::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("low", this->low);
 	serializer.apply("high", this->high);
 }
 
 /****************************************************/
-void LibfabricMessageHeader::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricMessageHeader::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("msgType", this->msgType);
 	serializer.apply("lfClientId", this->lfClientId);
@@ -72,7 +51,7 @@ void LibfabricMessageHeader::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricObjReadWriteInfos::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricObjReadWriteInfos::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("objectId", this->objectId);
 	serializer.apply("iov", this->iov);
@@ -84,7 +63,7 @@ void LibfabricObjReadWriteInfos::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricObjFlushInfos::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricObjFlushInfos::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("objectId", this->objectId);
 	serializer.apply("objectoffsetId", this->offset);
@@ -92,13 +71,13 @@ void LibfabricObjFlushInfos::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricObjCreateInfos::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricObjCreateInfos::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("objectId", this->objectId);
 }
 
 /****************************************************/
-void LibfabricRegisterRange::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricRegisterRange::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("objectId", this->objectId);
 	serializer.apply("offset", this->offset);
@@ -107,7 +86,7 @@ void LibfabricRegisterRange::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricUnregisterRange::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricUnregisterRange::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("objectId", this->objectId);
 	serializer.apply("offset", this->offset);
@@ -117,7 +96,7 @@ void LibfabricUnregisterRange::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricObjectCow::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricObjectCow::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("sourceObjectId", this->sourceObjectId);
 	serializer.apply("destObjectId", this->destObjectId);
@@ -127,7 +106,7 @@ void LibfabricObjectCow::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricResponse::initStatusOnly(int32_t status)
+inline void LibfabricResponse::initStatusOnly(int32_t status)
 {
 	this->msgDataSize = 0;
 	this->optionalData = NULL;
@@ -138,7 +117,7 @@ void LibfabricResponse::initStatusOnly(int32_t status)
 }
 
 /****************************************************/
-void LibfabricResponse::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricResponse::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("msgDataSize", this->msgDataSize);
 	serializer.apply("status", this->status);
@@ -155,25 +134,29 @@ void LibfabricResponse::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
-void LibfabricFirstHandshake::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricFirstHandshake::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("protocolVersion", this->protocolVersion);
 	serializer.apply("assignLfClientId", this->assignLfClientId);
 }
 
 /****************************************************/
-void LibfabricFirstClientMessage::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricFirstClientMessage::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("addr", this->addr, sizeof(this->addr));
 }
 
 /****************************************************/
-void LibfabricEmpty::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricEmpty::applySerializerDef(SerializerBase & serializer)
 {
 }
 
 /****************************************************/
-void LibfabricErrorMessage::applySerializerDef(SerializerBase & serializer)
+inline void LibfabricErrorMessage::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("errorMessage", this->errorMessage);
 }
+
+}
+
+#endif //IOC_PROTOCOL_INLINED_HPP
