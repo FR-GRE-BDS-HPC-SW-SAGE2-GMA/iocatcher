@@ -140,7 +140,6 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool passiv
 		cq_attr.wait_obj = FI_WAIT_UNSPEC;
 	else
 		cq_attr.wait_obj = FI_WAIT_NONE;
-	//printf("CQ_SIZE: %ld\n", cq_attr.size);
 
 	//setup cq
 	err = fi_cq_open(domain, &cq_attr, &this->cq, nullptr);
@@ -281,7 +280,6 @@ void LibfabricConnection::joinServer(void)
 		request.deserializer.apply("firstHandshakeResponse", firstHandshakeResponse);
 
 		//assign id
-		//printf("get clientID %d\n", clientId);
 		this->clientId = firstHandshakeResponse.assignLfClientId;
 		connection->repostReceive(request.msgBufferId);
 
@@ -1088,7 +1086,6 @@ int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_
 
 	//has one
 	if (ret > 0) {
-		//fprintf(stderr,"cq_read = %d\n", ret);
 		return 1;
 	} else if (ret != -FI_EAGAIN) {
 		struct fi_cq_err_entry err_entry;

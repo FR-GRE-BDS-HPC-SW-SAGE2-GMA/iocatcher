@@ -169,8 +169,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 	};
 
 	//if rdma
-	if (size > IOC_EAGER_MAX_WRITE)
-	{
+	if (size > IOC_EAGER_MAX_WRITE) {
 		//register
 		Iov iov = connection.getDomain().registerSegment((char*)buffer, size, true, false, false);
 		objReadWrite.iov = iov;

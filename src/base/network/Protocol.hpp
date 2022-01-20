@@ -42,11 +42,11 @@ namespace IOC
  */
 #define IOC_STRUCT_MAX (64)
 /**
- * Post recive to have enough room for eager read
+ * Post receive to have enough room for eager read
  */
 #define IOC_POST_RECEIVE_READ (sizeof(LibfabricMessageHeader) + IOC_STRUCT_MAX + IOC_EAGER_MAX_READ)
 /**
- * Post recive to have enough room for eager write
+ * Post receive to have enough room for eager write
  */
 #define IOC_POST_RECEIVE_WRITE (sizeof(LibfabricMessageHeader) + IOC_STRUCT_MAX + IOC_EAGER_MAX_WRITE)
 /**

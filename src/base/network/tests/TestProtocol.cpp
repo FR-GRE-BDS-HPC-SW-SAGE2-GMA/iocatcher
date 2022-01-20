@@ -51,7 +51,7 @@ void serializeDeserialize(T & in, T & out, size_t expectedSize)
 	//check
 	EXPECT_LE(sizeof(T), IOC_STRUCT_MAX);
 
-	//serialize & dersialize
+	//serialize & deserialize
 	char buffer[1024];
 	memset(buffer, 1, 1024);
 
