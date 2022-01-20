@@ -38,6 +38,18 @@ namespace IOC
 **/
 #define IOC_EAGER_MAX_READ (32*1024)
 /**
+ * Define the considered max size of the struct.
+ */
+#define IOC_STRUCT_MAX (64)
+/**
+ * Post receive to have enough room for eager read
+ */
+#define IOC_POST_RECEIVE_READ (sizeof(LibfabricMessageHeader) + IOC_STRUCT_MAX + IOC_EAGER_MAX_READ)
+/**
+ * Post receive to have enough room for eager write
+ */
+#define IOC_POST_RECEIVE_WRITE (sizeof(LibfabricMessageHeader) + IOC_STRUCT_MAX + IOC_EAGER_MAX_WRITE)
+/**
  * Define the protocol version
 **/
 #define IOC_LF_PROTOCOL_VERSION 2
@@ -358,40 +370,6 @@ struct LibfabricErrorMessage
 	inline void applySerializerDef(SerializerBase & serializer);
 	/** Contain the error message. **/
 	std::string errorMessage;
-};
-
-/****************************************************/
-/**
- * Global definition of a message. 
- **/
-struct LibfabricMessage
-{
-	/** Header send by all messages. **/
-	LibfabricMessageHeader header;
-	union {
-		/** Client to address to be send to the server on MSG_CONN_INIT **/
-		LibfabricFirstClientMessage firstClientMessage;
-		/** Used for ping pong tests when using RDMA operation. **/
-		Iov iov;
-		/** Response to first handshake. **/
-		LibfabricFirstHandshake firstHandshakeResponse;
-		/** Response to be send after most operations. **/
-		LibfabricResponse response;
-		/** Infos to make read/write operation on objects. **/
-		LibfabricObjReadWriteInfos objReadWrite;
-		/** Infos to make a flush operation on an object. **/
-		LibfabricObjFlushInfos objFlush;
-		/** Infos to create an object. **/
-		LibfabricObjCreateInfos objCreate;
-		/** Infos to register a mapping range. **/
-		LibfabricRegisterRange registerRange;
-		/** Infos to register a mapping range. **/
-		LibfabricUnregisterRange unregisterRange;
-		/** Info to make a copy on write of an object. **/
-		LibfabricObjectCow objCow;
-	} data;
-	/** Extra data to ba placed after the header. **/
-	char extraData[0];
 };
 
 /****************************************************/

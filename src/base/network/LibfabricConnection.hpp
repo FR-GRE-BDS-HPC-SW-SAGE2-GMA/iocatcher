@@ -146,8 +146,8 @@ class LibfabricConnection
 		LibfabricActionResult onRecv(size_t id);
 		bool onRecvMessage(LibfabricRemoteResponse & response, size_t id);
 		void onSent(void * buffer);
-		void onConnInit(LibfabricMessage * message);
-		bool checkAuth(LibfabricMessage * message, uint64_t clientId, int id);
+		void onConnInit(LibfabricClientRequest & request);
+		bool checkAuth(LibfabricMessageHeader & header, uint64_t clientId, int id);
 		void pollAllCqInCache(void);
 	private:
 		/** Pointer to the libfabric domain to be used to establish the connection. **/
