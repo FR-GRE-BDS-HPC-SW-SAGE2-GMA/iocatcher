@@ -19,6 +19,8 @@ HookPingPong::HookPingPong(LibfabricDomain * domain)
 	this->buffer = NULL;
 	this->bufferSize = 0;
 	this->domain = domain;
+	this->bufferIov.addr = 0;
+	this->bufferIov.key = 0;
 }
 
 /****************************************************/
@@ -41,6 +43,8 @@ void HookPingPong::reallocateBuffer(size_t rdmaSize)
 	} else {
 		this->bufferSize = 0;
 		this->buffer = NULL;
+		this->bufferIov.addr = 0;
+		this->bufferIov.key = 0;
 	}
 }
 
