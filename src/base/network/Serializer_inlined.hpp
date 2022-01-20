@@ -5,16 +5,21 @@
 *****************************************************/
 
 /****************************************************/
+#ifndef IOC_SERIALIZER_INLINED_HPP
+#define IOC_SERIALIZER_INLINED_HPP
+
+/****************************************************/
 #include <cstring>
 #include <cassert>
 #include "../common/Debug.hpp"
 #include "Serializer.hpp"
 
 /****************************************************/
-using namespace IOC;
+namespace IOC
+{
 
 /****************************************************/
-#define ACTION_DEFINED(action) ((action) == SERIALIZER_PACK || (action) == SERIALIZER_UNPACK || (action) == SERIALIZER_STRINGIFY || (action) == SERIALIZER_SIZE)
+#define SERIALIZER_ACTION_DEFINED(action) ((action) == SERIALIZER_PACK || (action) == SERIALIZER_UNPACK || (action) == SERIALIZER_STRINGIFY || (action) == SERIALIZER_SIZE)
 
 /****************************************************/
 /**
@@ -23,7 +28,7 @@ using namespace IOC;
  * @param size of the buffer.
  * @param acion The action to be performed by the serializer.
 **/
-SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction action)
+inline SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction action)
 {
 	//check
 	if (action != SERIALIZER_UNSET && action != SERIALIZER_SIZE) {
@@ -47,7 +52,7 @@ SerializerBase::SerializerBase(void * buffer, size_t size, SerializerAction acti
  * Serialize the object into a string format in the output stream.
  * @param out Pointer to the output stream to be used.
 **/
-SerializerBase::SerializerBase(std::ostream * out)
+inline SerializerBase::SerializerBase(std::ostream * out)
 {
 	//check
 	assert(out != NULL);
@@ -66,7 +71,7 @@ SerializerBase::SerializerBase(std::ostream * out)
 /**
  * Destructor of the serialize, currently do nothing.
 **/
-SerializerBase::~SerializerBase(void)
+inline SerializerBase::~SerializerBase(void)
 {
 	//nothing
 }
@@ -78,10 +83,10 @@ SerializerBase::~SerializerBase(void)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, bool & value)
+inline void SerializerBase::apply(const char * fieldName, bool & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
@@ -115,10 +120,10 @@ void SerializerBase::apply(const char * fieldName, bool & value)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, uint32_t & value)
+inline void SerializerBase::apply(const char * fieldName, uint32_t & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
@@ -152,10 +157,10 @@ void SerializerBase::apply(const char * fieldName, uint32_t & value)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, int32_t & value)
+inline void SerializerBase::apply(const char * fieldName, int32_t & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
@@ -189,10 +194,10 @@ void SerializerBase::apply(const char * fieldName, int32_t & value)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, int64_t & value)
+inline void SerializerBase::apply(const char * fieldName, int64_t & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
@@ -226,10 +231,10 @@ void SerializerBase::apply(const char * fieldName, int64_t & value)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, uint64_t & value)
+inline void SerializerBase::apply(const char * fieldName, uint64_t & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, sizeof(value));
 
 	//apply
@@ -263,10 +268,10 @@ void SerializerBase::apply(const char * fieldName, uint64_t & value)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, std::string & value)
+inline void SerializerBase::apply(const char * fieldName, std::string & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 
 	//modes
 	switch(this->action) {
@@ -314,10 +319,10 @@ void SerializerBase::apply(const char * fieldName, std::string & value)
  * message in case of buffer overflow.
  * @param value The value to push.
 **/
-void SerializerBase::apply(const char * fieldName, const std::string & value)
+inline void SerializerBase::apply(const char * fieldName, const std::string & value)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	assert(this->action != SERIALIZER_UNPACK);
 
 	//modes
@@ -372,11 +377,11 @@ void SerializerBase::apply(const char * fieldName, const std::string & value)
  * @param buffer The data to push/pop
  * @param size The size of the buffer to push/pop.
 **/
-void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
+inline void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
 {
 	//check
 	assert(buffer != NULL);
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, size);
 
 	//modes
@@ -424,10 +429,10 @@ void SerializerBase::apply(const char * fieldName, void * buffer, size_t size)
  * @param buffer The data to push/pop
  * @param size The size of the buffer to push/pop.
 **/
-void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buffer, size_t size)
+inline void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buffer, size_t size)
 {
 	//check
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	this->checkSize(fieldName, size);
 
 	//modes
@@ -461,11 +466,11 @@ void SerializerBase::serializeOrPoint(const char * fieldName, const char * & buf
  * @param buffer The data to push/pop
  * @param size The size of the buffer to push/pop.
 **/
-void SerializerBase::apply(const char * fieldName, const void * buffer, size_t size)
+inline void SerializerBase::apply(const char * fieldName, const void * buffer, size_t size)
 {
 	//check
 	assert(buffer != NULL);
-	assert(ACTION_DEFINED(this->action));
+	assert(SERIALIZER_ACTION_DEFINED(this->action));
 	assert(this->action != SERIALIZER_UNPACK);
 	this->checkSize(fieldName, size);
 
@@ -497,7 +502,7 @@ void SerializerBase::apply(const char * fieldName, const void * buffer, size_t s
 /**
  * Return the cursor position in the buffer.
 **/
-const size_t SerializerBase::getCursor(void)
+inline const size_t SerializerBase::getCursor(void)
 {
 	return this->cursor;
 }
@@ -508,7 +513,7 @@ const size_t SerializerBase::getCursor(void)
  * @param fieldName The name of the field name to be used in the error message.
  * @param size Size of the desired move.
 **/
-void SerializerBase::checkSize(const char * fieldName, size_t size)
+inline void SerializerBase::checkSize(const char * fieldName, size_t size)
 {
 	if (this->action != SERIALIZER_STRINGIFY) {
 		size_t requested = this->cursor + size;
@@ -525,7 +530,102 @@ void SerializerBase::checkSize(const char * fieldName, size_t size)
 /**
  * Return the configured action.
 **/
-SerializerAction SerializerBase::getAction(void) const
+inline SerializerAction SerializerBase::getAction(void) const
 {
 	return this->action;
 }
+
+/****************************************************/
+/**
+ * Apply the serialization / deserialization on any unknown type.
+ * The given type must have a applySerializerDef(SerializationBase & serializer)
+ * member function to be used to know how to serialize.
+ * 
+ * Example:
+ * @code
+ * struct {
+ * 	void applySerializerDef(SerializationBase & serializer) {
+ * 		serializer.apply("a", this->a);
+ * 		serializer.apply("b", this->b);
+ * 	};
+ * 	uint64_t a;
+ * 	uint64_t b;
+ * }
+ * @endcode
+**/
+template <class T >
+void SerializerBase::apply(const char * fieldName, T & value)
+{
+	//open bracket for objects
+	if (this->action == SERIALIZER_STRINGIFY) {
+		assert(this->out != NULL);
+		*this->out << (this->outFirst ? "" : ", ") << ((this->root) ? "" : fieldName) << ((this->root) ? "" : ": ") << "{ ";
+		this->outFirst = true;
+	}
+
+	//serialize the value
+	this->root = false;
+	value.applySerializerDef(*this);
+
+	//close bracket for objects
+	if (this->action == SERIALIZER_STRINGIFY)
+		*this->out << (this->outFirst ? "" : " ") << "}";
+
+	//move
+	this->outFirst = false;
+}
+
+/****************************************************/
+/**
+ * Pop a value from the deserialize. This is just a wrapper on the apply
+ * method.
+ * @param value The value to be extracted from the buffer.
+**/
+template <class T>
+void DeSerializer::pop(T & value)
+{
+	this->apply("pop", value);
+}
+
+/****************************************************/
+/**
+ * Make possible to use the stream operator to deserialize (similar to pop()).
+ * @param out Define the variable in which to apply the deserialization.
+ * @param deserializer Define the deserializer to use.
+**/
+template <class T>
+T & operator << (T & out, DeSerializer & deserializer)
+{
+	deserializer.apply("operator <<", out);
+	return out;
+}
+
+/****************************************************/
+/**
+ * Take structure and stringify it to ease debug messages creation.
+ * @param value The value to stringify.
+**/
+template <class T>
+std::string SerializerBase::stringify(T & value)
+{
+	std::stringstream sout;
+	SerializerBase serialize(&sout);
+	serialize.apply("value", value);
+	return sout.str();
+}
+
+/****************************************************/
+/**
+ * Only compute the size of the final buffer.
+**/
+template <class T>
+size_t SerializerBase::computeSize(T & value)
+{
+	SerializerBase serialize(NULL, SIZE_MAX, SERIALIZER_SIZE);
+	serialize.apply("value", value);
+	return serialize.getCursor();
+}
+
+}
+
+#endif //IOC_SERIALIZER_INLINED_HPP

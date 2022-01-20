@@ -52,25 +52,25 @@ class SerializerBase
 		SerializerBase(void * buffer, size_t size, SerializerAction action);
 		SerializerBase(std::ostream * out);
 		~SerializerBase(void);
-		void apply(const char * fieldName, uint32_t & value);
-		void apply(const char * fieldName, uint64_t & value);
-		void apply(const char * fieldName, int32_t & value);
-		void apply(const char * fieldName, int64_t & value);
-		void apply(const char * fieldName, std::string & value);
-		void apply(const char * fieldName, const std::string & value);
-		void apply(const char * fieldName, void * buffer, size_t size);
-		void apply(const char * fieldName, const void * buffer, size_t size);
-		void serializeOrPoint(const char * fieldName, const char * & buffer, size_t size);
-		void apply(const char * fieldName, bool & value);
+		inline void apply(const char * fieldName, uint32_t & value);
+		inline void apply(const char * fieldName, uint64_t & value);
+		inline void apply(const char * fieldName, int32_t & value);
+		inline void apply(const char * fieldName, int64_t & value);
+		inline void apply(const char * fieldName, std::string & value);
+		inline void apply(const char * fieldName, const std::string & value);
+		inline void apply(const char * fieldName, void * buffer, size_t size);
+		inline void apply(const char * fieldName, const void * buffer, size_t size);
+		inline void serializeOrPoint(const char * fieldName, const char * & buffer, size_t size);
+		inline void apply(const char * fieldName, bool & value);
 		template <class T > void apply(const char * fieldName, T & value);
-		const size_t getCursor(void);
-		void * getData(void);
-		size_t getDataSize(void);
+		inline const size_t getCursor(void);
+		inline void * getData(void);
+		inline size_t getDataSize(void);
 		template <class T> static std::string stringify(T & value);
 		template <class T> static size_t computeSize(T & value);
-		SerializerAction getAction(void) const;
+		inline SerializerAction getAction(void) const;
 	private:
-		void checkSize(const char * fieldName, size_t size);
+		inline void checkSize(const char * fieldName, size_t size);
 	private:
 		/** The buffer in which to serialize or to read from. **/
 		char * buffer;
@@ -117,97 +117,10 @@ class DeSerializer : public SerializerBase
 		template <class T> void pop(T & value);
 };
 
-/****************************************************/
-/**
- * Apply the serialization / deserialization on any unknown type.
- * The given type must have a applySerializerDef(SerializationBase & serializer)
- * member function to be used to know how to serialize.
- * 
- * Example:
- * @code
- * struct {
- * 	void applySerializerDef(SerializationBase & serializer) {
- * 		serializer.apply("a", this->a);
- * 		serializer.apply("b", this->b);
- * 	};
- * 	uint64_t a;
- * 	uint64_t b;
- * }
- * @endcode
-**/
-template <class T >
-void SerializerBase::apply(const char * fieldName, T & value)
-{
-	//open bracket for objects
-	if (this->action == SERIALIZER_STRINGIFY) {
-		assert(this->out != NULL);
-		*this->out << (this->outFirst ? "" : ", ") << ((this->root) ? "" : fieldName) << ((this->root) ? "" : ": ") << "{ ";
-		this->outFirst = true;
-	}
-
-	//serialize the value
-	this->root = false;
-	value.applySerializerDef(*this);
-
-	//close bracket for objects
-	if (this->action == SERIALIZER_STRINGIFY)
-		*this->out << (this->outFirst ? "" : " ") << "}";
-
-	//move
-	this->outFirst = false;
 }
 
 /****************************************************/
-/**
- * Pop a value from the deserialize. This is just a wrapper on the apply
- * method.
- * @param value The value to be extracted from the buffer.
-**/
-template <class T>
-void DeSerializer::pop(T & value)
-{
-	this->apply("pop", value);
-}
-
-/****************************************************/
-/**
- * Make possible to use the stream operator to deserialize (similar to pop()).
- * @param out Define the variable in which to apply the deserialization.
- * @param deserializer Define the deserializer to use.
-**/
-template <class T>
-T & operator << (T & out, DeSerializer & deserializer)
-{
-	deserializer.apply("operator <<", out);
-	return out;
-}
-
-/****************************************************/
-/**
- * Take structure and stringify it to ease debug messages creation.
- * @param value The value to stringify.
-**/
-template <class T>
-std::string SerializerBase::stringify(T & value)
-{
-	std::stringstream sout;
-	SerializerBase serialize(&sout);
-	serialize.apply("value", value);
-	return sout.str();
-}
-
-/****************************************************/
-/**
- * Only compute the size of the final buffer.
-**/
-template <class T>
-size_t SerializerBase::computeSize(T & value)
-{
-	SerializerBase serialize(NULL, SIZE_MAX, SERIALIZER_SIZE);
-	serialize.apply("value", value);
-	return serialize.getCursor();
-}
-
-}
+//import the all inlined implementatoin
+#include "Serializer_inlined.hpp"
 
 #endif //IOC_SERIALIZER_HPP

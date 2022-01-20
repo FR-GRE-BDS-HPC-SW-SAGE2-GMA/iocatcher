@@ -10,7 +10,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
 include_directories(../)
 
 ######################################################
-set(BENCH_NAMES BenchLibfabricDomain)
+set(BENCH_NAMES BenchLibfabricDomain BenchSerializer)
 
 ######################################################
 FOREACH(test_name ${BENCH_NAMES})

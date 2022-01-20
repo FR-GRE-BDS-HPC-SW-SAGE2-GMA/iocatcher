@@ -116,7 +116,7 @@ struct LibfabricBuffer
 struct LibfabricEmpty
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	//no content
 };
 
@@ -128,7 +128,7 @@ struct LibfabricEmpty
 struct Iov
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Base address of the targetted memory region. **/
 	LibfabricAddr addr;
 	/** Authentication key to make an RDMA on the given memory region. **/
@@ -145,7 +145,7 @@ struct Iov
 struct LibfabricPing
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Data to be fetched by the server via RDMA. **/
 	uint64_t rdmaSize;
 	/** Size of the eager communication (embedded in the request message). **/
@@ -163,7 +163,7 @@ struct LibfabricPing
 struct LibfabricObjectId
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Low part of the object ID. **/
 	int64_t low;
 	/** High part of the object ID. **/
@@ -178,7 +178,7 @@ struct LibfabricObjectId
 struct LibfabricMessageHeader
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Define the type of message **/
 	uint64_t msgType;
 	/** Define the libfabric client ID. **/
@@ -196,7 +196,7 @@ struct LibfabricMessageHeader
 struct LibfabricObjReadWriteInfos
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** The object ID to read or write **/
 	LibfabricObjectId objectId;
 	/** Description of the memory region the read from or write to so the server can make an RDMA operation. **/
@@ -218,7 +218,7 @@ struct LibfabricObjReadWriteInfos
 struct LibfabricObjFlushInfos
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** The obejct ID to flus. **/
 	LibfabricObjectId objectId;
 	/** Offset of the flush operation. **/
@@ -234,7 +234,7 @@ struct LibfabricObjFlushInfos
 struct LibfabricObjCreateInfos
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** The object ID to create. **/
 	LibfabricObjectId objectId;
 };
@@ -246,7 +246,7 @@ struct LibfabricObjCreateInfos
 struct LibfabricRegisterRange
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** The object ID for which to register range. **/
 	LibfabricObjectId objectId;
 	/** Offset of the range. **/
@@ -264,7 +264,7 @@ struct LibfabricRegisterRange
 struct LibfabricUnregisterRange
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** The object ID for which to de-register range. **/
 	LibfabricObjectId objectId;
 	/** Offset of the range to unregister. **/
@@ -284,7 +284,7 @@ struct LibfabricUnregisterRange
 struct LibfabricObjectCow
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** The ID of the source. **/
 	LibfabricObjectId sourceObjectId;
 	/** The ID of the destication. */
@@ -306,9 +306,9 @@ struct LibfabricObjectCow
 struct LibfabricResponse
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Basic setup. **/
-	void initStatusOnly(int32_t status);
+	inline void initStatusOnly(int32_t status);
 	/** Size of the possible extra data placed after the LibfabricMessage header. **/
 	uint64_t msgDataSize;
 	/** Status of the requested operation. **/
@@ -335,7 +335,7 @@ struct LibfabricResponse
 struct LibfabricFirstHandshake
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Define the protocol version in use by the server. **/
 	int32_t protocolVersion;
 	/** Define the client ID to assign. **/
@@ -346,7 +346,7 @@ struct LibfabricFirstHandshake
 struct LibfabricFirstClientMessage
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Address of the client. **/
 	char addr[IOC_LF_MAX_ADDR_LEN];
 };
@@ -355,7 +355,7 @@ struct LibfabricFirstClientMessage
 struct LibfabricErrorMessage
 {
 	/** Used to serialize and de-serialize the struct **/
-	void applySerializerDef(SerializerBase & serializer);
+	inline void applySerializerDef(SerializerBase & serializer);
 	/** Contain the error message. **/
 	std::string errorMessage;
 };
@@ -400,5 +400,8 @@ std::ostream & operator <<(std::ostream & out, const Iov & iov);
 bool operator==(const LibfabricObjectId & a, const LibfabricObjectId & b);
 bool operator==(const Iov & a, const Iov & b);
 }
+
+/****************************************************/
+#include "Protocol_inlined.hpp"
 
 #endif //IOC_PROTOCOL_HPP
