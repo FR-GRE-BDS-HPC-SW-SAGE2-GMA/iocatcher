@@ -114,9 +114,9 @@ class LibfabricConnection
 		void broadcastErrrorMessage(const std::string & message);
 		template <class T> void sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, LibfabricPostAction * postAction);
 		template <class T> void sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, std::function<LibfabricActionResult(void)> postAction);
-		template <class T> void sendMessageNoPollWakeup(LibfabricMessageType msgType, int destinationEpId, T & data);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
 		void sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId);
+		template <class T> void sendMessageNoPollWakeup(LibfabricMessageType msgType, int destinationEpId, T & data);
 		void rdmaRead(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, LibfabricAddr remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaWrite(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);

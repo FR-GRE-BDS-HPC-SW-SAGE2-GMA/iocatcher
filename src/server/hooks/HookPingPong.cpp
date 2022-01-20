@@ -61,11 +61,19 @@ LibfabricActionResult HookPingPong::onMessage(LibfabricConnection * connection, 
 	if (this->bufferSize < ping.rdmaSize)
 		this->reallocateBuffer(ping.rdmaSize);
 
+	//check eager data
+	for (size_t i = 0 ; i < ping.eagerSize ; i++)
+		assert(ping.eagerData[i] == 43);
+
 	//apply rdma
 	uint64_t lfClientId = request.lfClientId;
 	size_t msgBufferId = request.msgBufferId;
 	if (ping.rdmaSize > 0) {
-		connection->rdmaRead(request.lfClientId, this->buffer, ping.rdmaIov.addr, ping.rdmaIov.key, ping.rdmaSize, [connection, lfClientId, msgBufferId](void) {
+		connection->rdmaRead(request.lfClientId, this->buffer, ping.rdmaIov.addr, ping.rdmaIov.key, ping.rdmaSize, [this, connection, lfClientId, msgBufferId, ping](void) {
+			//check eager data
+			for (size_t i = 0 ; i < ping.rdmaSize ; i++)
+				assert(this->buffer[i] == 42);
+
 			//send response
 			connection->sendResponse(IOC_LF_MSG_PONG, lfClientId, 0);
 

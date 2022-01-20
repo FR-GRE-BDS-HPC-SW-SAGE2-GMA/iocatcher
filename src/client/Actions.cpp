@@ -75,7 +75,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 
 	//free mem
 	if (rdmaBuffer != NULL) {
-		domain.unregisterSegment(rdmaBuffer, TEST_RDMA_SIZE);
+		domain.unregisterSegment(rdmaBuffer, rdmaSize);
 		delete [] rdmaBuffer;
 	}
 	if (eagerBuffer != NULL)
