@@ -54,7 +54,19 @@ TEST_F(TestClientServer, constructor)
 /****************************************************/
 TEST_F(TestClientServer, pingpong)
 {
-	ioc_client_ping_pong(client, 100);
+	ioc_client_ping_pong(client, 100, 0, 0);
+}
+
+/****************************************************/
+TEST_F(TestClientServer, pingpong_eager)
+{
+	ioc_client_ping_pong(client, 100, 4096, 0);
+}
+
+/****************************************************/
+TEST_F(TestClientServer, pingpong_rdma)
+{
+	ioc_client_ping_pong(client, 100, 0, 1024*1024);
 }
 
 /****************************************************/

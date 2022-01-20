@@ -180,10 +180,10 @@ ssize_t ioc_client_obj_write(ioc_client_t * client, int64_t high, int64_t low, c
 }
 
 /****************************************************/
-void ioc_client_ping_pong(ioc_client_t * client, int cnt)
+void ioc_client_ping_pong(ioc_client_t * client, int cnt, size_t eagerSize, size_t rdmaSize)
 {
 	LibfabricConnection * connection = ioc_client_get_connection(client);
-	ping_pong(*client->domain, *connection, cnt);
+	ping_pong(*client->domain, *connection, cnt, eagerSize, rdmaSize);
 	ioc_client_ret_connection(client, connection);
 }
 

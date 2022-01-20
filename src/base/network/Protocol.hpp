@@ -53,7 +53,7 @@ class SerializerBase;
 **/
 enum LibfabricMessageType
 {
-	/** We establish a connection and the client send this as first message. **/
+	/** We establish a connection and the client sends this as first message. **/
 	IOC_LF_MSG_CONNECT_INIT,
 	/** As a response to IOC_LF_MSG_CONNECT_INIT the server send ID assignement. **/
 	IOC_LF_MSG_ASSIGN_ID,
@@ -67,9 +67,9 @@ enum LibfabricMessageType
 	IOC_LF_MSG_PING = 10,
 	/** Aswser to ping by the server. **/
 	IOC_LF_MSG_PONG,
-	/** The client send this message to ask for a read operatoin on the given object. **/
+	/** The client sends this message to ask for a read operation on the given object. **/
 	IOC_LF_MSG_OBJ_READ = 100,
-	/** The client send this message to ask for a write operatoin on the given object. **/
+	/** The client sends this message to ask for a write operation on the given object. **/
 	IOC_LF_MSG_OBJ_WRITE,
 	/** Aswer by the server to a object read or write operation. **/
 	IOC_LF_MSG_OBJ_READ_WRITE_ACK,
@@ -133,6 +133,27 @@ struct Iov
 	LibfabricAddr addr;
 	/** Authentication key to make an RDMA on the given memory region. **/
 	uint64_t key;
+};
+
+/****************************************************/
+/**
+ * Message to make a ping pong operation between the client and the server.
+ * The client send a ping with some data and the server responds a pong without
+ * data. The data are sent as eager in the message and as RDMA.
+ * @brief Structure for the ping pong.
+**/
+struct LibfabricPing
+{
+	/** Used to serialize and de-serialize the struct **/
+	void applySerializerDef(SerializerBase & serializer);
+	/** Data to be fetched by the server via RDMA. **/
+	uint64_t rdmaSize;
+	/** Size of the eager communication (embedded in the request message). **/
+	uint64_t eagerSize;
+	/** Iov to make the rdma. **/
+	Iov rdmaIov;
+	/** Pointer to the eager data. **/
+	const char * eagerData;
 };
 
 /****************************************************/

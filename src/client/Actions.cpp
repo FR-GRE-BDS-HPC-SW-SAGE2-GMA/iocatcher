@@ -18,26 +18,34 @@ using namespace IOC;
  * @param domain Reference to the libfabric domain to be used.
  * @param connection Reference to the client connection to be used.
  * @param cnt Number of time to make the ping pong roundtrip.
+ * @param eagerSize Define the sier of the data to embed directly in the message to send to the server.
+ * @param rdmaSize Define the size of the data to transfer to the server via an RDMA operation.
 **/
-void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, int cnt)
+void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, int cnt, size_t eagerSize, size_t rdmaSize)
 {
 	//rma
-	char * buffer = new char[TEST_RDMA_SIZE];
-	memset(buffer, 0, TEST_RDMA_SIZE);
-	Iov iov = domain.registerSegment(buffer, TEST_RDMA_SIZE, true, true, false);
+	Iov rdmaIov = {0,0};
+	char * rdmaBuffer = NULL;
+	if (rdmaSize > 0) {
+		rdmaBuffer = new char[rdmaSize];
+		memset(rdmaBuffer, 42, rdmaSize);
+		rdmaIov = domain.registerSegment(rdmaBuffer, rdmaSize, true, true, false);
+	}
 
-	//send open
-	LibfabricMessage msg;
-	memset(&msg, 0, sizeof(msg));
-	connection.fillProtocolHeader(msg.header, IOC_LF_MSG_PING);
-	msg.data.iov = iov;
+	//eager
+	char * eagerBuffer = NULL;
+	if (eagerSize > 0) {
+		eagerBuffer = new char[eagerSize];
+		memset(eagerBuffer, 43, eagerSize);
+	}
 
-	//register hook
-	connection.registerHook(IOC_LF_MSG_PONG, [](LibfabricConnection * connection, LibfabricClientRequest & request) {
-		//printf("get 11 %d\n", clientId);
-		connection->repostReceive(request.msgBufferId);
-		return LF_WAIT_LOOP_UNBLOCK;
-	});
+	//build message
+	LibfabricPing ping = {
+		.rdmaSize = rdmaSize,
+		.eagerSize = eagerSize,
+		.rdmaIov = rdmaIov,
+		.eagerData = eagerBuffer
+	};
 
 	//time
 	struct timespec start, stop;
@@ -46,7 +54,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	//send
 	for (int i = 0 ; i < cnt ; i++) {
 		//send message
-		connection.sendMessageNoPollWakeup(&msg, sizeof (msg), IOC_LF_SERVER_ID);
+		connection.sendMessageNoPollWakeup(IOC_LF_MSG_PING, IOC_LF_SERVER_ID, ping);
 
 		//poll server response
 		LibfabricRemoteResponse serverResponse;
@@ -61,11 +69,17 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 	clock_gettime(CLOCK_MONOTONIC, &stop);
 	double result = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1e9;    // in microseconds
 	double rate = (double)cnt / result / 1000.0;
-	double bandwidth = 8.0 * (double)cnt * (double)(TEST_RDMA_SIZE+sizeof(msg)) / result / 1000.0 / 1000.0 / 1000.0;
-	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, size: %zu\n", result, rate, bandwidth, sizeof(msg));
+	size_t msgSize = rdmaSize + Serializer::computeSize(ping);
+	double bandwidth = 8.0 * (double)cnt * (double)(msgSize) / result / 1000.0 / 1000.0 / 1000.0;
+	printf("Time: %g s, rate: %g kOPS, bandwidth: %g GBits/s, size: %zu\n", result, rate, bandwidth, msgSize);
 
-	//unregister
-	domain.unregisterSegment(buffer, TEST_RDMA_SIZE);
+	//free mem
+	if (rdmaBuffer != NULL) {
+		domain.unregisterSegment(rdmaBuffer, rdmaSize);
+		delete [] rdmaBuffer;
+	}
+	if (eagerBuffer != NULL)
+		delete [] eagerBuffer;
 }
 
 /****************************************************/

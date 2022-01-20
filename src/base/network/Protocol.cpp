@@ -46,6 +46,16 @@ void Iov::applySerializerDef(SerializerBase & serializer)
 }
 
 /****************************************************/
+void LibfabricPing::applySerializerDef(SerializerBase & serializer)
+{
+	serializer.apply("rdmaSize", this->rdmaSize);
+	serializer.apply("eagerSize", this->eagerSize);
+	serializer.apply("rdmaIov", this->rdmaIov);
+	if (eagerSize > 0)
+		serializer.serializeOrPoint("eagerData", this->eagerData, this->eagerSize);
+}
+
+/****************************************************/
 void LibfabricObjectId::applySerializerDef(SerializerBase & serializer)
 {
 	serializer.apply("low", this->low);
@@ -134,7 +144,7 @@ void LibfabricResponse::applySerializerDef(SerializerBase & serializer)
 	serializer.apply("status", this->status);
 	serializer.apply("msgHasData", this->msgHasData);
 	if (this->msgHasData) {
-		if (serializer.getAction() == SERIALIZER_PACK && this->optionalDataFragments != NULL) {
+		if ((serializer.getAction() == SERIALIZER_PACK || serializer.getAction() == SERIALIZER_SIZE) && this->optionalDataFragments != NULL) {
 			assert(this->optionalData == NULL);
 			for (uint64_t i = 0 ; i < this->optionalDataFragmentCount ; i++)
 				serializer.apply("optionalDataFragment", this->optionalDataFragments[i].buffer, this->optionalDataFragments[i].size);

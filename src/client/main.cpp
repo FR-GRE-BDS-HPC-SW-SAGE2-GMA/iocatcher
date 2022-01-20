@@ -27,11 +27,11 @@ int main(int argc, char ** argv)
 
 	//do one ping pong to check server is joint and working
 	printf("Run one ping pong\n");
-	ioc_client_ping_pong(client, 1);
+	ioc_client_ping_pong(client, 1, 0, 0);
 
 	//do ping pong
 	printf("Run many ping pong\n");
-	ioc_client_ping_pong(client, 100000);
+	ioc_client_ping_pong(client, 100000,0, 0);
 
 	//create object
 	printf("Create obj\n");

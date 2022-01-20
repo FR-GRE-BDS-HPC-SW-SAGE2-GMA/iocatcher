@@ -264,7 +264,25 @@ TEST(TestSerializerBase, stringify)
 }
 
 /****************************************************/
-// Most simple use case
+// Test size computation
+TEST(TestSerializerBase, computeSize)
+{
+	//vars
+	DataB data = {
+		.ptrSize = 6,
+		.ptr = (const char*)0x20,
+		.data = {
+			.integer = 10,
+			.str = "hello",
+		}
+	};
+
+	//calc
+	EXPECT_EQ(22, Serializer::computeSize(data));
+}
+
+/****************************************************/
+// Test the basic constructor.
 TEST(TestSerialerDeserializer, simple)
 {
 	//vars
