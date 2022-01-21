@@ -153,8 +153,8 @@ void Server::setMemoryBackend(MemoryBackend * memoryBackend)
 
 /****************************************************/
 /**
- * Setup the TCP server to receive new cilents. It start a new thread
- * to handle the connection. It also provide the handler to assign
+ * Setup the TCP server to receive new clients. It starts a new thread
+ * to handle the connection. It also provides the handler to assign
  * clientIDs and client key (randomly generated) to auth the clients.
  * @param port Define the TCP port to listen.
  * @param maxport If different than port it allows auto 

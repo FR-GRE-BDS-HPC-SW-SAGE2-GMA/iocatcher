@@ -140,8 +140,6 @@ class LibfabricConnection
 		void sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * buffers, size_t cntBuffers, bool unblock = false);
 	private:
 		void sendRawMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction);
-		bool pollRx(void);
-		bool pollTx(void);
 		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache = true);
 		LibfabricActionResult onRecv(size_t id);
 		bool onRecvMessage(LibfabricRemoteResponse & response, size_t id);
