@@ -115,7 +115,6 @@ class LibfabricConnection
 		template <class T> void sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, LibfabricPostAction * postAction);
 		template <class T> void sendMessage(LibfabricMessageType msgType, int destinationEpId, T & data, std::function<LibfabricActionResult(void)> postAction);
 		void sendMessage(void * buffer, size_t size, int destinationEpId, std::function<LibfabricActionResult(void)> postAction);
-		void sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId);
 		template <class T> void sendMessageNoPollWakeup(LibfabricMessageType msgType, int destinationEpId, T & data);
 		void rdmaRead(int destinationEpId, void * localAddr, LibfabricAddr remoteAddr, uint64_t remoteKey, size_t size, std::function<LibfabricActionResult(void)> postAction);
 		void rdmaReadv(int destinationEpId, struct iovec * iov, int count, LibfabricAddr remoteAddr, uint64_t remoteKey, std::function<LibfabricActionResult(void)> postAction);
@@ -140,6 +139,7 @@ class LibfabricConnection
 		void sendResponse(LibfabricMessageType msgType, uint64_t lfClientId, int32_t status, const LibfabricBuffer * buffers, size_t cntBuffers, bool unblock = false);
 	private:
 		void sendRawMessage(void * buffer, size_t size, int destinationEpId, LibfabricPostAction * postAction);
+		void sendRawMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId);
 		int pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache = true);
 		LibfabricActionResult onRecv(size_t id);
 		bool onRecvMessage(LibfabricRemoteResponse & response, size_t id);

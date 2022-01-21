@@ -404,7 +404,7 @@ void LibfabricConnection::sendMessage(void * buffer, size_t size, int destinatio
  * @param size Size of the given buffer.
  * @param destrinationEpId ID of the destination.
 **/
-void LibfabricConnection::sendMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId)
+void LibfabricConnection::sendRawMessageNoPollWakeup(void * buffer, size_t size, int destinationEpId)
 {
 	this->sendRawMessage(buffer, size, destinationEpId, IOC_LF_NO_WAKEUP_POST_ACTION);
 }
