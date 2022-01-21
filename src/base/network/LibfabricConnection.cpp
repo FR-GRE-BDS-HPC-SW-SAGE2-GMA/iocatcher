@@ -193,11 +193,11 @@ LibfabricConnection::~LibfabricConnection(void)
 
 /****************************************************/
 /**
- * Allocate recive buffer and pose them to libfabric.
- * @param size Size of the recive buffer.
- * @param count Number of recive buffer to allocate and post.
+ * Allocate receive buffers and pose them to libfabric.
+ * @param size Size of the receive buffer.
+ * @param count Number of receive buffers to allocate and post.
 **/
-void LibfabricConnection::postRecives(size_t size, int count)
+void LibfabricConnection::postReceives(size_t size, int count)
 {
 	//setup
 	this->recvBuffersCount = count;
@@ -223,16 +223,16 @@ void LibfabricConnection::postRecives(size_t size, int count)
 
 /****************************************************/
 /**
- * Republish a recive buffer to libfabric by identifying it by its ID.
+ * Republish a receive buffer to libfabric by identifying it by its ID.
  * @param id ID of the buffer to repost.
 **/
 void LibfabricConnection::repostReceive(size_t id)
 {
 	//check
-	assumeArg(id <recvBuffersCount, "Invalid recive buffer ID: %1").arg(id).end();
+	assumeArg(id <recvBuffersCount, "Invalid receive buffer ID: %1").arg(id).end();
 
 	//debug
-	IOC_DEBUG_ARG("libfabric:conn", "Repost recive buffer %1").arg(id).end();
+	IOC_DEBUG_ARG("libfabric:conn", "Repost receive buffer %1").arg(id).end();
 
 	//post
 	int err = fi_recv(this->ep, this->recvBuffers[id], recvBuffersSize, 0, 0, (void*)id);
@@ -241,7 +241,7 @@ void LibfabricConnection::repostReceive(size_t id)
 
 /****************************************************/
 /**
- * Republish a recive buffer to libfabric by identifying it by its ID.
+ * Republish a receive buffer to libfabric by identifying it by its ID.
  * @param request Reference to the request containing the receive buffer ID to be reposted.
 **/
 void LibfabricConnection::repostReceive(const LibfabricClientRequest & request)
@@ -308,7 +308,7 @@ void LibfabricConnection::joinServer(void)
 /**
  * Function to be used in case of crash to send an error
  * message to all clients before exit. It disable handling
- * of all recived messages before sending the message.
+ * of all received messages before sending the message.
  * @param message The message to be sent.
 **/
 void LibfabricConnection::broadcastErrrorMessage(const std::string & message)
@@ -699,43 +699,6 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 
 /****************************************************/
 /**
- * Wait to recive a data (not used anymore).
-**/
-bool LibfabricConnection::pollRx(void)
-{
-	//vars
-	fi_cq_msg_entry entry;
-
-	//poll
-	int status = pollForCompletion(this->cq, &entry, this->passivePolling);
-	if (status == 1) {
-		printf("ENTRY RECV FLAG: %lu == %llu == %llu\n", entry.flags, FI_RECV, FI_SEND);
-		this->onRecv((size_t)entry.op_context);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-/****************************************************/
-/**
- * Wait for a RDMA operation to terminate.
-**/
-bool LibfabricConnection::pollTx(void)
-{
-	fi_cq_msg_entry entry;
-	int status = pollForCompletion(this->cq, &entry, this->passivePolling);
-	if (status == 1) {
-		printf("ENTRY SENT FLAG: %lu\n", entry.flags);
-		this->onSent((void*)entry.op_context);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-/****************************************************/
-/**
  * @todo Remove
  * No implemented stays from old code to be removed.
  * @deprecated
@@ -754,12 +717,12 @@ void LibfabricConnection::onSent(void * buffer)
 
 /****************************************************/
 /**
- * Check the authentication information from a reicved message.
- * @param message The message which has been recived.
+ * Check the authentication information from a received message.
+ * @param header The message header which has been received.
  * @param lfClientId The libfabric client ID to know to who send an error message in 
  * case of failure.
- * @param id Id of the recive buffer to be reposted in case of authentication failure.
- * @return True in case of succes, false otherwise (and a message will automatically be
+ * @param id Id of the receive buffer to be reposted in case of authentication failure.
+ * @return True in case of success, false otherwise (and a message will automatically be
  * send to the client).
 **/
 bool LibfabricConnection::checkAuth(LibfabricMessageHeader & header, uint64_t lfClientId, int id)
@@ -791,8 +754,8 @@ bool LibfabricConnection::checkAuth(LibfabricMessageHeader & header, uint64_t lf
 
 /****************************************************/
 /**
- * Function to be called when a message is recived by the poll() function.
- * @param id ID of the recive buffer where the message has been recived.
+ * Function to be called when a message is received by the poll() function.
+ * @param id ID of the receive buffer where the message has been received.
 **/
 LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 {
@@ -869,11 +832,11 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 
 /****************************************************/
 /**
- * Function to be called when a message is recived by the pollMessage() function.
+ * Function to be called when a message is received by the pollMessage() function.
  * @param response Reference to the response struct to be filled back when the message has been received.
- * @param id ID of the recive buffer where the message has been recived.
+ * @param id ID of the receive buffer where the message has been received.
  * @return True if we get a message false otherwise. Caution, it does not check the type of message,
- * the responsability is left to the caller. It just check the eventuell auth.
+ * the responsability is left to the caller. It just checks the potential auth.
 **/
 bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size_t id)
 {
@@ -952,7 +915,7 @@ void LibfabricConnection::registerHook(int messageType, Hook * hook)
 /**
  * Register a lamda functon to be called when a message arrive with a given ID.
  * @param messageType Type of message to which attach the given lambda function;
- * @param function The lambda function to call on message recive. Its parameters
+ * @param function The lambda function to call on message receive. Its parameters
  * represent:
  *   - A pointer to the libfabric connection
  *   - The client ID.
@@ -984,7 +947,7 @@ void LibfabricConnection::unregisterHook(int messageType)
 /****************************************************/
 /**
  * Function to be called on connection initialization.
- * @param message The first message recived to establish the connection.
+ * @param request The request containing the first message received to establish the connection.
 **/
 void LibfabricConnection::onConnInit(LibfabricClientRequest & request)
 {
@@ -1005,7 +968,7 @@ void LibfabricConnection::onConnInit(LibfabricClientRequest & request)
 	}
 
 	//debug
-	IOC_DEBUG_ARG("libfabric:client", "Recive client in libfabric lfId=%1, epId=%2")
+	IOC_DEBUG_ARG("libfabric:client", "Receive client in libfabric lfId=%1, epId=%2")
 		.arg(request.lfClientId)
 		.arg(epId)
 		.end();
@@ -1051,11 +1014,11 @@ void LibfabricConnection::pollAllCqInCache(void)
 /**
  * Poll the libfabric completion queue to get a completion.
  * @param cq The completion queue to poll.
- * @param entry The completion entry to fill on event recive.
+ * @param entry The completion entry to fill on event receive.
  * @param passivePolling Use passive or active polling. On passive polling the function
- * @param acceptCache Allow taking event from the completion cache.
  * will block waiting an event. On active polling it will return on the first
  * check so the caller need to establish the waiting loop.
+ * @param acceptCache Allow taking event from the completion cache.
 **/
 int LibfabricConnection::pollForCompletion(struct fid_cq * cq, struct fi_cq_msg_entry* entry, bool passivePolling, bool acceptCache)
 {

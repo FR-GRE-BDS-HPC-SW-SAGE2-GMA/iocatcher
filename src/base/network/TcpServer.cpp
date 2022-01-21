@@ -155,7 +155,7 @@ void TcpServer::acceptOneClientCallback(evutil_socket_t fd, short unused_events,
 
 /****************************************************/
 /**
- * Callback used when libevent recive a message from the client.
+ * Callback used when libevent receives a message from the client.
  * @param fd File descriptor to join the client.
  * @param unused_events Unused.
  * @param clnt Pointer to the client structure.
@@ -232,7 +232,7 @@ void TcpServer::loop(std::function<void(uint64_t*, uint64_t*, TcpClientInfo*)> o
  * Create a listening socket for TCP V4.
  * @param firstPost Try on this port, if failed try others.
  * @param maxPort Maximum port to try.
- * @param bound_potr Pointer to recive the final port;
+ * @param boundPort Pointer to receive the final port;
 **/
 int TcpServer::createSocketV4(int firstPort, int maxPort, int *boundPort)
 {
