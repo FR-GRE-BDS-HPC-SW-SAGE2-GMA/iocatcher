@@ -281,7 +281,7 @@ void LibfabricConnection::joinServer(void)
 
 		//assign id
 		this->clientId = firstHandshakeResponse.assignLfClientId;
-		connection->repostReceive(request.msgBufferId);
+		request.terminate();
 
 		//check protocol version
 		assumeArg(firstHandshakeResponse.protocolVersion == IOC_LF_PROTOCOL_VERSION,
@@ -772,6 +772,7 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 		.lfClientId = header.lfClientId,
 		.msgBufferId = id,
 		.header = header,
+		.connection = this,
 		.deserializer = deserializer,
 	};
 
@@ -779,12 +780,11 @@ LibfabricActionResult LibfabricConnection::onRecv(size_t id)
 	switch(header.msgType) {
 		case IOC_LF_MSG_CONNECT_INIT:
 			onConnInit(request);
-			repostReceive(id);
 			break;
 		case IOC_LF_MSG_BAD_AUTH:
 			if (this->hookOnBadAuth) {
 				LibfabricActionResult res = this->hookOnBadAuth();
-				repostReceive(id);
+				request.terminate();
 				return res;
 			} else {
 				IOC_FATAL_ARG("Invalid authentification while exchanging with server, have ID = %1, KEY = %2 !")
@@ -879,6 +879,7 @@ bool LibfabricConnection::onRecvMessage(LibfabricRemoteResponse & response, size
 		response.lfClientId = header.lfClientId;
 		response.msgBufferId = id;
 		response.deserializer = deserializer;
+		response.connection = this;
 
 		//finish
 		return true;
@@ -983,6 +984,9 @@ void LibfabricConnection::onConnInit(LibfabricClientRequest & request)
 	//notify
 	if (this->hookOnEndpointConnect)
 		this->hookOnEndpointConnect(epId);
+
+	//terminate
+	request.terminate();
 }
 
 /****************************************************/

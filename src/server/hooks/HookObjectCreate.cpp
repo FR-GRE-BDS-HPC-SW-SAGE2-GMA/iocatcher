@@ -43,7 +43,7 @@ LibfabricActionResult HookObjectCreate::onMessage(LibfabricConnection * connecti
 	connection->sendResponse(IOC_LF_MSG_OBJ_CREATE_ACK, request.lfClientId, ret);
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

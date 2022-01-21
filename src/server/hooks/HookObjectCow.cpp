@@ -51,7 +51,7 @@ LibfabricActionResult HookObjectCow::onMessage(LibfabricConnection * connection,
 	connection->sendResponse(IOC_LF_MSG_OBJ_COW_ACK, request.lfClientId, (status)?0:-1);
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	//ret
 	return LF_WAIT_LOOP_KEEP_WAITING;

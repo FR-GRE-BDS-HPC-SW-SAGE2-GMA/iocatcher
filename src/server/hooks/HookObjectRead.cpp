@@ -184,7 +184,7 @@ LibfabricActionResult HookObjectRead::onMessage(LibfabricConnection * connection
 	}
 
 	//republish
-	connection->repostReceive(request.msgBufferId);
+	request.terminate();
 
 	return LF_WAIT_LOOP_KEEP_WAITING;
 }

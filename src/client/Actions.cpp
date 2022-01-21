@@ -62,7 +62,7 @@ void IOC::ping_pong(LibfabricDomain & domain, LibfabricConnection &connection, i
 		assume(hasMessage, "Fail to get message from pollMessage !");
 
 		///repost message
-		connection.repostReceive(serverResponse);
+		serverResponse.terminate();
 	}
 
 	//time
@@ -133,7 +133,7 @@ ssize_t IOC::obj_read(LibfabricConnection &connection, const LibfabricObjectId &
 	}
 
 	//repost recv buffer
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//unregister
 	if (size > IOC_EAGER_MAX_READ)
@@ -193,7 +193,7 @@ ssize_t IOC::obj_write(LibfabricConnection &connection, const LibfabricObjectId 
 	LibfabricResponse response;
 	serverResponse.deserializer.apply("response", response);
 	int status = response.status;
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//unregister
 	if (size > IOC_EAGER_MAX_WRITE)
@@ -236,7 +236,7 @@ int IOC::obj_flush(LibfabricConnection &connection, const LibfabricObjectId & ob
 	LibfabricResponse response;
 	serverResponse.deserializer.apply("response", response);
 	int status = response.status;
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//check status
 	if (status != 0)
@@ -279,7 +279,7 @@ int32_t IOC::obj_range_register(LibfabricConnection &connection, const Libfabric
 	LibfabricResponse response;
 	serverResponse.deserializer.apply("response", response);
 	int status = response.status;
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//check status
 	//if (status != 0)
@@ -322,7 +322,7 @@ int IOC::obj_range_unregister(LibfabricConnection &connection, int32_t id, const
 	LibfabricResponse response;
 	serverResponse.deserializer.apply("response", response);
 	int status = response.status;
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//check status
 	//if (status != 0)
@@ -357,7 +357,7 @@ int IOC::obj_create(LibfabricConnection &connection, const LibfabricObjectId & o
 	LibfabricResponse response;
 	serverResponse.deserializer.apply("response", response);
 	int status = response.status;
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//check status
 	//if (status != 0)
@@ -399,7 +399,7 @@ int IOC::obj_cow(LibfabricConnection &connection, const LibfabricObjectId & sour
 	LibfabricResponse response;
 	serverResponse.deserializer.apply("response", response);
 	int status = response.status;
-	connection.repostReceive(serverResponse);
+	serverResponse.terminate();
 
 	//check status
 	//if (status != 0)
