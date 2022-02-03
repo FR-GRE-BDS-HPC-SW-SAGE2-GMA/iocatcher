@@ -29,6 +29,14 @@ include(GNUInstallDirs)
 option(BUILD_GMOCK "Builds the googlemock subproject" ON)
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
+######################################################
+# disable one warning on new gcc to avoid somes from 1.7.0 version of google mock.
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-Wno-deprecated-copy HAS_NO_DEPRECATED_COPY)
+if (HAS_NO_DEPRECATED_COPY)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-copy")
+endif (HAS_NO_DEPRECATED_COPY)
+
 if(BUILD_GMOCK)
   add_subdirectory( googlemock )
 else()
