@@ -52,4 +52,8 @@ TEST(TestLibfaricDomain, register_mem_and_getmr)
 	//check
 	EXPECT_NE(mr1, mr2);
 	EXPECT_NE(mr1->mem_desc, mr2->mem_desc);
+
+	//deregister
+	domain.unregisterSegment(buffer1, 1024);
+	domain.unregisterSegment(buffer2, 1024);
 }

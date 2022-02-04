@@ -346,6 +346,11 @@ TEST(TestLibfabricConnection, rdma)
 		ASSERT_EQ(1, ((char*)ptrServer1)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer2)[i]) << i;
 	}
+
+	//free
+	free(ptrClient);
+	free(ptrServer1);
+	free(ptrServer2);
 }
 
 /****************************************************/
@@ -429,6 +434,11 @@ TEST(TestLibfabricConnection, rdmav)
 		ASSERT_EQ(1, ((char*)ptrServer1)[i]) << i;
 		ASSERT_EQ(1, ((char*)ptrServer2)[i]) << i;
 	}
+
+	//free mem
+	free(ptrClient);
+	free(ptrServer1);
+	free(ptrServer2);
 }
 
 /****************************************************/
@@ -532,7 +542,7 @@ TEST(TestLibfabricConnection, message_auth_not_ok)
 		connection.postReceives(IOC_POST_RECEIVE_READ, 2);
 		connection.joinServer();
 		//on error
-		connection.setOnBadAuth([&gotError](){
+		connection.setOnBadAuth([&gotError, &connection](){
 			gotError = true;
 			return LF_WAIT_LOOP_UNBLOCK;
 		});

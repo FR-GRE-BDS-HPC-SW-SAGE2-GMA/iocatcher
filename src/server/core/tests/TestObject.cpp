@@ -291,6 +291,9 @@ TEST(TestObject, buildIovec_no_offset)
 	iovec * res = Object::buildIovec(segList, 0, 512);
 	EXPECT_EQ((void*)buffer, (void*)(res[0].iov_base));
 	EXPECT_EQ(512, res[0].iov_len);
+
+	//cleara
+	delete [] res;
 }
 
 /****************************************************/
@@ -308,4 +311,7 @@ TEST(TestObject, buildIovec_offset)
 	iovec * res = Object::buildIovec(segList, 128, 512);
 	EXPECT_EQ((void*)(buffer+128), (void*)(res[0].iov_base));
 	EXPECT_EQ(512-128, res[0].iov_len);
+
+	//clear
+	delete [] res;
 }
