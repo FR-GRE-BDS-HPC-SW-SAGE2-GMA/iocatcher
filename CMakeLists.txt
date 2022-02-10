@@ -44,6 +44,14 @@ setup_internal_gmock_and_gtest()
 enable_cxx_11()
 
 ######################################################
+# disable one warning on new gcc to avoid somes from 1.7.0 version of google mock.
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-Wno-deprecated-copy HAS_NO_DEPRECATED_COPY)
+if (HAS_NO_DEPRECATED_COPY)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-copy")
+endif (HAS_NO_DEPRECATED_COPY)
+
+######################################################
 set(ENABLE_COVERAGE OFF CACHE BOOL "Enable coverage profiling.")
 if (ENABLE_COVERAGE)
 	enable_gcc_coverage()

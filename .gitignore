@@ -1,5 +1,4 @@
-build
-build-coverage
-doxygen
-.vscode
-doc/_build
+/build*
+/doxygen
+/.vscode
+/doc/_build
