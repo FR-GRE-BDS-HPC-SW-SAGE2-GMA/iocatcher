@@ -40,8 +40,7 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	this->msgBufferSize = 1024*1024;
 
 	//allocate fi
-	struct fi_info *hints;
-	hints = fi_allocinfo();
+	struct fi_info *hints = fi_allocinfo();
 	if (!hints) {
 		printf("fi_allocinfo failed\n");
 		exit(1);
@@ -65,6 +64,9 @@ LibfabricDomain::LibfabricDomain(const std::string & serverIp, const std::string
 	//printf("MSG: %d\n", this->fi->caps & FI_MSG);
 	//printf("RMA: %d\n", this->fi->caps & FI_RMA);
 	//printf("RMA_PMEM: %d\n", this->fi->caps & FI_RMA_PMEM);
+
+	//free
+	fi_freeinfo(hints);
 
 	//display
 	//IOC_INFO_ARG("NET: %1").arg(fi->fabric_attr->prov_name).end();

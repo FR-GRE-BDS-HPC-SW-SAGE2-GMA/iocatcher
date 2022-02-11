@@ -116,6 +116,7 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool passiv
 	this->tcpClientKey = 0;
 	this->checkClientAuth = false;
 	this->disableReceive = false;
+	this->pendingAction = 0;
 
 	//debug
 	IOC_DEBUG("libfabric:conn", "Create new connection");
@@ -173,6 +174,9 @@ LibfabricConnection::LibfabricConnection(LibfabricDomain * lfDomain, bool passiv
 **/
 LibfabricConnection::~LibfabricConnection(void)
 {
+	//wait all pending send
+	this->pollAllPendingAction();
+
 	//close
 	fi_close((fid_t)ep);
 	fi_close((fid_t)av);
@@ -379,6 +383,9 @@ void LibfabricConnection::sendRawMessage(void * buffer, size_t size, int destina
 			this->pollAllCqInCache();
 	} while(err == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_send", err);
+
+	//incr
+	this->pendingAction++;
 }
 
 /****************************************************/
@@ -453,6 +460,9 @@ void LibfabricConnection::rdmaRead(int destinationEpId, void * localAddr, Libfab
 			this->pollAllCqInCache();
 	} while(ret == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_read", ret);
+
+	//incr
+	this->pendingAction++;
 }
 
 /****************************************************/
@@ -506,6 +516,9 @@ void LibfabricConnection::rdmaReadv(int destinationEpId, struct iovec * iov, int
 			this->pollAllCqInCache();
 	} while(ret == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_readv", ret);
+
+	//incr
+	this->pendingAction++;
 
 	//clear tmp
 	delete [] mrDesc;
@@ -563,6 +576,9 @@ void LibfabricConnection::rdmaWritev(int destinationEpId, struct iovec * iov, in
 	} while(ret == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_writev", ret);
 
+	//incr
+	this->pendingAction++;
+
 	//clear tmp
 	delete [] mrDesc;
 }
@@ -612,6 +628,9 @@ void LibfabricConnection::rdmaWrite(int destinationEpId, void * localAddr, Libfa
 			this->pollAllCqInCache();
 	} while(ret == -FI_EAGAIN);
 	LIBFABRIC_CHECK_STATUS("fi_write", ret);
+
+	//incr
+	this->pendingAction++;
 }
 
 /****************************************************/
@@ -642,13 +661,28 @@ void LibfabricConnection::poll(bool waitMsg)
 				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
 				LibfabricActionResult status = action->runPostAction();
 				delete action;
+				this->pendingAction--;
+				assert(this->pendingAction >= 0);
 				if (status == LF_WAIT_LOOP_UNBLOCK)
 					break;
+			} else {
+				this->pendingAction--;
+				assert(this->pendingAction >= 0);
 			}
 		}
 		if (!waitMsg)
 			break;
 	}
+}
+
+/****************************************************/
+/**
+ * Wait all send to have finished not to create leaks when we exit in unit tests.
+**/
+void LibfabricConnection::pollAllPendingAction(void)
+{
+	while (this->pendingAction > 0)
+		this->poll(false);
 }
 
 /****************************************************/
@@ -689,6 +723,8 @@ bool LibfabricConnection::pollMessage(LibfabricRemoteResponse & response, Libfab
 					.end();
 				LibfabricPostAction * action = (LibfabricPostAction*)entry.op_context;
 				LibfabricActionResult status = action->runPostAction();
+				this->pendingAction--;
+				assert(this->pendingAction >= 0);
 				delete action;
 				if (status == LF_WAIT_LOOP_UNBLOCK)
 					return false;

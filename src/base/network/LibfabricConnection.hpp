@@ -147,6 +147,7 @@ class LibfabricConnection
 		void onConnInit(LibfabricClientRequest & request);
 		bool checkAuth(LibfabricMessageHeader & header, uint64_t clientId, int id);
 		void pollAllCqInCache(void);
+		void pollAllPendingAction(void);
 	private:
 		/** Pointer to the libfabric domain to be used to establish the connection. **/
 		LibfabricDomain * lfDomain;
@@ -203,6 +204,8 @@ class LibfabricConnection
 		bool disableReceive;
 		/** Buffer to store batch readed completion queue entries **/
 		std::list<fi_cq_msg_entry> cqEntries;
+		/** Number of pending send. **/
+		int pendingAction;
 };
 
 /****************************************************/
