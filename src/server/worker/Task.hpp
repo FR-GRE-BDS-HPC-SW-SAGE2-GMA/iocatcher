@@ -40,7 +40,7 @@ class Task
 		inline void performAll(void);
 		inline bool isImmediate(void) const;
 		inline void markAsImmediate(void);
-		inline bool getStage(void) const;
+		inline TaskStage getStage(void) const;
 	protected:
 		/** Prepage stage to compute the buffer addresses for the run stage. */
 		virtual void runPrepare(void) = 0;
@@ -153,7 +153,7 @@ void Task::markAsImmediate(void)
 
 /****************************************************/
 /** Return the current stage of the task. **/
-bool Task::getStage(void) const
+TaskStage Task::getStage(void) const
 {
 	return this->nextStage;
 };
